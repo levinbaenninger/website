@@ -22,3 +22,17 @@ Docs are local at `node_modules/vite-plus/docs` or online at https://viteplus.de
 Before any Next.js work, find and read the relevant doc in `node_modules/next/dist/docs/`. Your training data is outdated — the docs are the source of truth.
 
 <!-- END:nextjs-agent-rules -->
+
+# Agent skills
+
+## Issue tracker
+
+Issues and PRDs live in GitHub Issues; external PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+## Triage labels
+
+Triage labels use the default mattpocock/skills vocabulary. See `docs/agents/triage-labels.md`.
+
+## Domain docs
+
+This repo uses a single-context domain doc layout. See `docs/agents/domain.md`.
