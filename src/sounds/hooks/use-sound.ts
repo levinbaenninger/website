@@ -32,6 +32,7 @@ export const useSound = (
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
+  const bufferPromiseRef = useRef<Promise<AudioBuffer> | null>(null);
   const stopOnUnmountRef = useRef(stopOnUnmount);
 
   useEffect(() => {
@@ -39,21 +40,10 @@ export const useSound = (
   });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const buffer = await decodeAudioData(sound.dataUri);
-
-      if (!cancelled) {
-        bufferRef.current = buffer;
-        setDuration(buffer.duration);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [sound.dataUri]);
+    bufferRef.current = null;
+    bufferPromiseRef.current = null;
+    setDuration(sound.duration ?? null);
+  }, [sound.dataUri, sound.duration]);
 
   const stop = useCallback(() => {
     if (sourceRef.current) {
@@ -70,42 +60,58 @@ export const useSound = (
 
   const play = useCallback(
     (overrides?: { volume?: number; playbackRate?: number }) => {
-      if (!soundEnabled || !bufferRef.current) {
+      if (!soundEnabled) {
         return;
-      }
-
-      const ctx = getAudioContext();
-
-      if (ctx.state === "suspended") {
-        void ctx.resume();
       }
 
       if (interrupt && sourceRef.current) {
         stop();
       }
 
-      const source = ctx.createBufferSource();
-      const gain = ctx.createGain();
+      void (async () => {
+        const ctx = getAudioContext();
 
-      source.buffer = bufferRef.current;
-      source.playbackRate.value = overrides?.playbackRate ?? playbackRate;
-      gain.gain.value = overrides?.volume ?? volume;
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+        }
 
-      source.connect(gain);
-      gain.connect(ctx.destination);
+        bufferPromiseRef.current ??= decodeAudioData(sound.dataUri);
+        const buffer = await bufferPromiseRef.current;
+        bufferRef.current = buffer;
+        setDuration(buffer.duration);
 
-      source.addEventListener("ended", () => {
-        setIsPlaying(false);
-        onEnd?.();
-      });
+        const source = ctx.createBufferSource();
+        const gain = ctx.createGain();
 
-      source.start(0);
-      sourceRef.current = source;
-      gainRef.current = gain;
-      setIsPlaying(true);
-      onPlay?.();
+        source.buffer = buffer;
+        source.playbackRate.value = overrides?.playbackRate ?? playbackRate;
+        gain.gain.value = overrides?.volume ?? volume;
+
+        source.connect(gain);
+        gain.connect(ctx.destination);
+
+        source.addEventListener("ended", () => {
+          setIsPlaying(false);
+          onEnd?.();
+        });
+
+        source.start(0);
+        sourceRef.current = source;
+        gainRef.current = gain;
+        setIsPlaying(true);
+        onPlay?.();
+      })();
     },
-    [soundEnabled, playbackRate, volume, interrupt, stop, onPlay, onEnd]
+    [
+      soundEnabled,
+      interrupt,
+      stop,
+      sound.dataUri,
+      playbackRate,
+      volume,
+      onEnd,
+      onPlay,
+    ]
   );
 
   const pause = useCallback(() => {
