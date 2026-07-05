@@ -9,10 +9,13 @@
     "prepare": "vp config"
   },
   "dependencies": {
+    "@tanstack/react-hotkeys": "^0.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.23.0",
+    "motion": "^12.42.2",
     "next": "16.2.10",
+    "next-themes": "^0.4.6",
     "radix-ui": "^1.6.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -22,6 +25,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tanstack/react-devtools": "^0.10.8",
+    "@tanstack/react-hotkeys-devtools": "^0.7.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -38,5 +43,6 @@
       "version": "11.9.0",
       "onFail": "download"
     }
-  }
+  },
+  "packageManager": "pnpm@11.9.0"
 }
