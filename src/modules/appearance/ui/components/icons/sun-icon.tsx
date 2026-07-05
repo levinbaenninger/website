@@ -1,16 +1,16 @@
 "use client";
 
 import type { Variants } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { motion } from "motion/react";
 import type { HTMLAttributes } from "react";
-import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import { forwardRef } from "react";
 
 import { cn } from "@/lib/utils";
 
-export interface SunIconHandle {
-  startAnimation: () => void;
-  stopAnimation: () => void;
-}
+import { useAnimatedIconControls } from "./hooks/use-animated-icon-controls";
+import type { AnimatedIconHandle } from "./hooks/use-animated-icon-controls";
+
+export type SunIconHandle = AnimatedIconHandle;
 
 interface SunIconProps extends HTMLAttributes<HTMLDivElement> {
   size?: number;
@@ -26,43 +26,13 @@ const PATH_VARIANTS: Variants = {
 
 const SunIcon = forwardRef<SunIconHandle, SunIconProps>(
   ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
-    const controls = useAnimation();
-    const isControlledRef = useRef(false);
+    const { controls, handleMouseEnter, handleMouseLeave } =
+      useAnimatedIconControls({
+        onMouseEnter,
+        onMouseLeave,
+        ref,
+      });
 
-    useImperativeHandle(ref, () => {
-      isControlledRef.current = true;
-
-      return {
-        startAnimation: () => {
-          void controls.start("animate");
-        },
-        stopAnimation: () => {
-          void controls.start("normal");
-        },
-      };
-    });
-
-    const handleMouseEnter = useCallback(
-      (e: React.MouseEvent<HTMLDivElement>) => {
-        if (isControlledRef.current) {
-          onMouseEnter?.(e);
-        } else {
-          void controls.start("animate");
-        }
-      },
-      [controls, onMouseEnter]
-    );
-
-    const handleMouseLeave = useCallback(
-      (e: React.MouseEvent<HTMLDivElement>) => {
-        if (isControlledRef.current) {
-          onMouseLeave?.(e);
-        } else {
-          void controls.start("normal");
-        }
-      },
-      [controls, onMouseLeave]
-    );
     return (
       <div
         className={cn(className)}

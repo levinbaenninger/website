@@ -13,8 +13,8 @@ import {
 import { clickSoftSound } from "@/modules/sounds/assets/click-soft";
 import { useSound } from "@/modules/sounds/ui/hooks/use-sound";
 
-import { MoonIcon } from "./moon-icon";
-import { SunIcon } from "./sun-icon";
+import { MoonIcon } from "./icons/moon-icon";
+import { SunIcon } from "./icons/sun-icon";
 
 export const ThemeToggle = () => {
   const { resolvedTheme, setTheme } = useTheme();
