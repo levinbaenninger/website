@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { DevTools } from "@/components/dev-tools";
-import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/modules/appearance/providers/theme-provider";
+import { DevToolsLoader } from "@/modules/devtools/ui/components/devtools-loader";
 
 import "./globals.css";
 
@@ -39,7 +39,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>{children}</TooltipProvider>
-          <DevTools />
+          <DevToolsLoader />
         </ThemeProvider>
       </body>
     </html>
