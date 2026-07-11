@@ -15,13 +15,14 @@
   "menuColor": "default",
   "menuAccent": "subtle",
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "components": "@/shared",
+    "utils": "@/shared/ui/cn",
+    "ui": "@/shared/ui",
+    "lib": "@/shared",
+    "hooks": "@/shared/browser"
   },
   "registries": {
-    "@soundcn": "https://soundcn.xyz/r/{name}.json"
+    "@soundcn": "https://soundcn.xyz/r/{name}.json",
+    "@svgl": "https://svgl.app/r/{name}.json"
   }
 }

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/modules/appearance/providers/theme-provider";
-import { DevToolsLoader } from "@/modules/devtools/ui/components/devtools-loader";
+import { ThemeProvider } from "@/app/_appearance/theme-provider";
+import { DevToolsLoader } from "@/app/_devtools/devtools-loader";
+import { Header } from "@/app/_shell/header";
+import { TooltipProvider } from "@/shared/ui/tooltip";
 
 import "./globals.css";
 
@@ -31,14 +32,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            <Header />
+            <main>{children}</main>
+          </TooltipProvider>
           <DevToolsLoader />
         </ThemeProvider>
       </body>

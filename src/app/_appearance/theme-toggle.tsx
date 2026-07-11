@@ -3,16 +3,12 @@
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useTheme } from "next-themes";
 
-import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { clickSoftSound } from "@/modules/sounds/assets/click-soft";
-import { useSound } from "@/modules/sounds/ui/hooks/use-sound";
+import { useSound } from "@/shared/audio/use-sound";
+import { Button } from "@/shared/ui/button";
+import { Kbd } from "@/shared/ui/kbd";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 
+import { clickSoftSound } from "./click-soft";
 import { MoonIcon } from "./icons/moon-icon";
 import { SunIcon } from "./icons/sun-icon";
 

@@ -5,10 +5,10 @@ import { motion } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/ui/cn";
 
-import { useAnimatedIconControls } from "./hooks/use-animated-icon-controls";
-import type { AnimatedIconHandle } from "./hooks/use-animated-icon-controls";
+import { useAnimatedIconControls } from "./use-animated-icon-controls";
+import type { AnimatedIconHandle } from "./use-animated-icon-controls";
 
 export type SunIconHandle = AnimatedIconHandle;
 

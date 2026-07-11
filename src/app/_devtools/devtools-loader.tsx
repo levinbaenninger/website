@@ -6,8 +6,7 @@ const DevTools =
   process.env.NODE_ENV === "development"
     ? dynamic(
         async () => {
-          const devTools =
-            await import("@/modules/devtools/ui/components/devtools");
+          const devTools = await import("@/app/_devtools/devtools");
           return devTools.DevTools;
         },
         { ssr: false }
