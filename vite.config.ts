@@ -22,6 +22,17 @@ export default defineConfig({
           "no-restricted-imports": [
             "error",
             {
+              paths: [
+                {
+                  name: "@/app",
+                  message: "Shared foundations cannot depend on app.",
+                },
+                {
+                  name: "@/modules",
+                  message:
+                    "Shared foundations cannot depend on product modules.",
+                },
+              ],
               patterns: [
                 {
                   group: ["@/app/**", "@/modules/**"],
@@ -39,6 +50,16 @@ export default defineConfig({
           "no-restricted-imports": [
             "error",
             {
+              paths: [
+                {
+                  name: "@/app",
+                  message: "Product modules cannot depend on app.",
+                },
+                {
+                  name: "@/modules",
+                  message: "Product modules cannot import the modules root.",
+                },
+              ],
               patterns: [
                 {
                   group: ["@/app/**", "@/modules/**"],
@@ -56,6 +77,13 @@ export default defineConfig({
           "no-restricted-imports": [
             "error",
             {
+              paths: [
+                {
+                  name: "@/modules",
+                  message:
+                    "App code must consume a specific product module entrypoint.",
+                },
+              ],
               patterns: [
                 {
                   group: ["@/modules/*/**"],
@@ -69,6 +97,8 @@ export default defineConfig({
       },
     ],
     rules: {
+      "import/no-relative-parent-imports": "error",
+      "typescript/no-require-imports": "error",
       "vite-plus/prefer-vite-plus-imports": "error",
       "sort-keys": "off",
     },

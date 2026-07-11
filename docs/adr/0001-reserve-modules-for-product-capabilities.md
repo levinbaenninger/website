@@ -26,6 +26,6 @@ Shared code is organized primarily by cohesive technical responsibility, such as
 
 The initial product modules are Portfolio and Blog. Existing Site, Appearance, Devtools, Socials, and Sounds folders are not peer product modules: shell, appearance, and development wiring are app-owned; social profiles are Portfolio-owned; and the reusable sound mechanism is shared.
 
-Whether a concern serves an independently meaningful visitor goal remains a design and review judgment. After the source migration, tooling should enforce the mechanical boundaries: shared imports neither app nor modules, modules import neither app nor peer modules, and external consumers access modules only through their designated public entrypoints.
+Whether a concern serves an independently meaningful visitor goal remains a design and review judgment. Linting enforces the normal dependency boundaries by requiring aliases across parent folders, prohibiting CommonJS imports, restricting app and module aliases by source zone, and allowing external consumers to access modules only through their designated public entrypoints. The rare literal dynamic import remains a review concern.
 
 Private app-wide implementation lives in responsibility-based folders inside `src/app`, such as `_shell`, `_appearance`, and `_devtools`. These folders hold application composition and cross-cutting behavior; they are not product modules and are not grouped globally by technical types such as components or providers.
