@@ -1,4 +1,5 @@
-export { PORTFOLIO_NAVIGATION_ITEMS } from "./navigation";
-export { SOCIAL_PROFILES } from "./social-profiles";
-export type { PortfolioNavigationItem } from "./navigation";
-export type { SocialProfile } from "./social-profile";
+export {
+  PORTFOLIO_NAVIGATION_ITEMS,
+  type PortfolioNavigationItem,
+} from "./navigation/navigation-items";
+export { SOCIAL_PROFILES, type SocialProfile } from "./social/profiles";

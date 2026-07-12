@@ -1,8 +1,19 @@
 "use client";
 
-import { TanStackDevtools } from "@tanstack/react-devtools";
-import { hotkeysDevtoolsPlugin } from "@tanstack/react-hotkeys-devtools";
+import dynamic from "next/dynamic";
 
-export const DevTools = () => (
-  <TanStackDevtools plugins={[hotkeysDevtoolsPlugin()]} />
-);
+export const DevTools =
+  process.env.NODE_ENV === "development"
+    ? dynamic(
+        async () => {
+          const [{ TanStackDevtools }, { hotkeysDevtoolsPlugin }] =
+            await Promise.all([
+              import("@tanstack/react-devtools"),
+              import("@tanstack/react-hotkeys-devtools"),
+            ]);
+
+          return () => <TanStackDevtools plugins={[hotkeysDevtoolsPlugin()]} />;
+        },
+        { ssr: false }
+      )
+    : () => null;

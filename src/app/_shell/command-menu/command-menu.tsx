@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactElement } from "react";
 
+import { PRIMARY_NAVIGATION_ITEMS } from "@/app/_shell/navigation/primary-navigation-items";
 import {
   PORTFOLIO_NAVIGATION_ITEMS,
   SOCIAL_PROFILES,
@@ -27,8 +28,6 @@ import {
   CommandShortcut,
 } from "@/shared/ui/command";
 import { Kbd, KbdGroup } from "@/shared/ui/kbd";
-
-import { PRIMARY_NAVIGATION_ITEMS } from "./navigation";
 
 interface CommandItemConfig {
   title: string;

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { ThemeProvider } from "@/app/_appearance/theme-provider";
-import { DevToolsLoader } from "@/app/_devtools/devtools-loader";
-import { Header } from "@/app/_shell/header";
+import { DevTools } from "@/app/_devtools/devtools";
+import { Header } from "@/app/_shell";
+import { ThemeProvider } from "@/app/_theme/theme-provider";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 
 import "./globals.css";
@@ -43,7 +43,7 @@ export default function RootLayout({
             <Header />
             <main>{children}</main>
           </TooltipProvider>
-          <DevToolsLoader />
+          <DevTools />
         </ThemeProvider>
       </body>
     </html>

@@ -1,7 +1,7 @@
 import { NewspaperIcon } from "lucide-react";
 import type { ReactElement } from "react";
 
-import { BrandMark } from "./brand-mark";
+import { BrandMark } from "@/app/_shell/branding/brand-mark";
 
 export interface PrimaryNavigationItem {
   title: string;

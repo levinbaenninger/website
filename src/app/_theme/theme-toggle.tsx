@@ -3,14 +3,13 @@
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useTheme } from "next-themes";
 
+import { clickSoftSound } from "@/shared/audio/sounds/click-soft";
 import { useSound } from "@/shared/audio/use-sound";
 import { Button } from "@/shared/ui/button";
+import { MoonIcon } from "@/shared/ui/icons/moon-icon";
+import { SunIcon } from "@/shared/ui/icons/sun-icon";
 import { Kbd } from "@/shared/ui/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
-
-import { clickSoftSound } from "./click-soft";
-import { MoonIcon } from "./icons/moon-icon";
-import { SunIcon } from "./icons/sun-icon";
 
 export const ThemeToggle = () => {
   const { resolvedTheme, setTheme } = useTheme();

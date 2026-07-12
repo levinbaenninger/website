@@ -1,7 +1,14 @@
 import { GitHub } from "./icons/github";
 import { LinkedIn } from "./icons/linkedin";
 import { X } from "./icons/x";
-import type { SocialProfile } from "./social-profile";
+
+export interface SocialProfile {
+  name: string;
+  title: string;
+  icon: React.ReactElement;
+  handle: string;
+  href: string;
+}
 
 export const SOCIAL_PROFILES: SocialProfile[] = [
   {
