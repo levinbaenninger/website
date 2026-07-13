@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactElement } from "react";
 
-import { PRIMARY_NAVIGATION_ITEMS } from "@/app/_shell/navigation/primary-navigation-items";
+import { PRIMARY_NAVIGATION_ITEMS } from "@/app/_shell/navigation/items";
 import {
   PORTFOLIO_NAVIGATION_ITEMS,
   SOCIAL_PROFILES,
