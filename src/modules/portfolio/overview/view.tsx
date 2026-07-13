@@ -9,7 +9,7 @@ import {
 } from "./overview-item";
 
 export const OverviewView = () => (
-  <section className="screen-line-top screen-line-bottom mx-auto grid w-full grid-cols-2 border-x md:w-3xl gap-x-4 gap-y-3 p-4">
+  <section className="screen-line-top screen-line-bottom mx-auto grid w-full grid-cols-1 md:grid-cols-2 border-x md:w-3xl gap-x-4 gap-y-3 p-4">
     <OverviewItem className="sm:col-span-2">
       <OverviewItemIcon>
         <CodeXmlIcon />
