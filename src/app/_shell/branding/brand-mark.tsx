@@ -1,4 +1,4 @@
-import { BRAND_MARK_PATH } from "@/app/_shell/branding/brand-mark-path";
+import { BRAND_MARK_PATH } from "@/shared/branding/brand-mark-path";
 
 export const BrandMark = (props: React.ComponentProps<"svg">) => (
   <svg

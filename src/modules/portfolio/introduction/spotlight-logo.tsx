@@ -10,12 +10,12 @@ import {
 } from "motion/react";
 import { useEffect, useId, useRef } from "react";
 
+import { metalClickSound } from "@/shared/audio/sounds/metal-click";
+import { useSound } from "@/shared/audio/use-sound";
 import {
   BRAND_MARK_OUTLINE_PATH,
   BRAND_MARK_PATH,
-} from "@/app/_shell/branding/brand-mark-path";
-import { metalClickSound } from "@/shared/audio/sounds/metal-click";
-import { useSound } from "@/shared/audio/use-sound";
+} from "@/shared/branding/brand-mark-path";
 
 const VIEWBOX_WIDTH = 555;
 const VIEWBOX_HEIGHT = 344;

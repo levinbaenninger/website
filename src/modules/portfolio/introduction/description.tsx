@@ -14,7 +14,7 @@ const INTRODUCTIONS = [
   "Collecting ideas worth keeping.",
 ] as const;
 
-export const RotatingIntroduction = () => {
+export const IntroductionDescription = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef);
