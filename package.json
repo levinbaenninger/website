@@ -9,6 +9,7 @@
     "prepare": "vp config"
   },
   "dependencies": {
+    "@js-temporal/polyfill": "0.5.1",
     "@module-federation/enhanced": "2.7.0",
     "@tanstack/react-hotkeys": "0.10.0",
     "class-variance-authority": "0.7.1",
