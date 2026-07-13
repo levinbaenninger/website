@@ -23,8 +23,9 @@ const ISOMETRIC_X_SCALE = 0.72;
 const ISOMETRIC_Y_SCALE = 0.416;
 const ISOMETRIC_X_OFFSET = 1;
 const ISOMETRIC_Y_OFFSET = 214;
-const ISOMETRIC_TRANSFORM = `matrix(${ISOMETRIC_X_SCALE} -${ISOMETRIC_Y_SCALE} ${ISOMETRIC_X_SCALE} ${ISOMETRIC_Y_SCALE} ${ISOMETRIC_X_OFFSET} ${ISOMETRIC_Y_OFFSET})`;
 const EXTRUSION_DEPTH = 22;
+const ISOMETRIC_TRANSFORM = `matrix(${ISOMETRIC_X_SCALE} -${ISOMETRIC_Y_SCALE} ${ISOMETRIC_X_SCALE} ${ISOMETRIC_Y_SCALE} ${ISOMETRIC_X_OFFSET} ${ISOMETRIC_Y_OFFSET})`;
+const GUIDE_TRANSFORM = `matrix(${ISOMETRIC_X_SCALE} -${ISOMETRIC_Y_SCALE} ${ISOMETRIC_X_SCALE} ${ISOMETRIC_Y_SCALE} ${ISOMETRIC_X_OFFSET} ${ISOMETRIC_Y_OFFSET + EXTRUSION_DEPTH})`;
 const PRESSED_OFFSET = 12;
 const VISIBLE_SIDE_EDGES = [
   [
@@ -170,85 +171,106 @@ export const SpotlightLogo = () => {
   }, [isInView, pointerX, pointerY, shouldReduceMotion]);
 
   return (
-    <motion.svg
-      ref={ref}
-      className="h-auto w-full touch-manipulation cursor-pointer [--pattern:color-mix(in_oklab,var(--foreground)_12%,var(--background))] [--stroke:color-mix(in_oklab,var(--foreground)_18%,var(--background))]"
-      viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-      initial="normal"
-      whileTap={shouldReduceMotion === true ? undefined : "pressed"}
-      onTap={() => {
-        play();
-      }}
-    >
-      <defs>
-        <path id={ids.mark} d={BRAND_MARK_PATH} />
-        <path id={ids.outline} d={BRAND_MARK_OUTLINE_PATH} />
-
-        <pattern
-          id={ids.pattern}
-          x="0"
-          y="0"
-          width="10"
-          height="10"
-          patternUnits="userSpaceOnUse"
-        >
-          <path
-            d="M-1 1l2-2M0 10 10 0M9 11l2-2"
-            stroke="var(--pattern)"
-            strokeWidth="1"
-          />
-        </pattern>
-
-        <motion.radialGradient
-          id={ids.radialGradient}
-          cx={cx}
-          cy={cy}
-          r="184"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop
-            className="dark:[stop-color:#fff]"
-            stopColor="var(--color-zinc-700)"
-          />
-          <stop
-            className="dark:[stop-color:var(--color-zinc-600)]"
-            offset="1"
-            stopColor="var(--color-zinc-400)"
-            stopOpacity="0"
-          />
-        </motion.radialGradient>
-      </defs>
-
-      <motion.path
-        variants={{
-          normal: { d: sideFaces.normal },
-          pressed: { d: sideFaces.pressed },
-        }}
-        transition={transition}
-        className="fill-background"
-        stroke="var(--stroke)"
-      />
-
-      <motion.g
-        variants={{
-          normal: { transform: "translateY(0px)" },
-          pressed: { transform: `translateY(${PRESSED_OFFSET}px)` },
-        }}
-        transition={transition}
+    <div className="relative w-full">
+      <svg
+        className="pointer-events-none absolute inset-0 -z-1 h-auto w-full overflow-visible"
+        viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden
       >
-        <g transform={ISOMETRIC_TRANSFORM}>
-          <use href={`#${ids.mark}`} className="fill-background" />
-          <use href={`#${ids.mark}`} fill={`url(#${ids.pattern})`} />
-          <use href={`#${ids.outline}`} stroke="var(--stroke)" />
-          <use
-            href={`#${ids.outline}`}
-            stroke={`url(#${ids.radialGradient})`}
-          />
+        <g
+          transform={GUIDE_TRANSFORM}
+          stroke="var(--line)"
+          strokeWidth="1"
+          strokeDasharray="4 2"
+        >
+          <path d="M0 -2048V2048" vectorEffect="non-scaling-stroke" />
+          <path d="M256 -2048V2048" vectorEffect="non-scaling-stroke" />
+          <path d="M-2048 256H2048" vectorEffect="non-scaling-stroke" />
         </g>
-      </motion.g>
-    </motion.svg>
+      </svg>
+
+      <motion.svg
+        ref={ref}
+        className="block h-auto w-full touch-manipulation cursor-pointer [--pattern:color-mix(in_oklab,var(--foreground)_12%,var(--background))] [--stroke:color-mix(in_oklab,var(--foreground)_18%,var(--background))]"
+        viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden
+        initial="normal"
+        whileTap={shouldReduceMotion === true ? undefined : "pressed"}
+        onTap={() => {
+          play();
+        }}
+      >
+        <defs>
+          <path id={ids.mark} d={BRAND_MARK_PATH} />
+          <path id={ids.outline} d={BRAND_MARK_OUTLINE_PATH} />
+
+          <pattern
+            id={ids.pattern}
+            x="0"
+            y="0"
+            width="10"
+            height="10"
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d="M-1 1l2-2M0 10 10 0M9 11l2-2"
+              stroke="var(--pattern)"
+              strokeWidth="1"
+            />
+          </pattern>
+
+          <motion.radialGradient
+            id={ids.radialGradient}
+            cx={cx}
+            cy={cy}
+            r="184"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop
+              className="dark:[stop-color:#fff]"
+              stopColor="var(--color-zinc-700)"
+            />
+            <stop
+              className="dark:[stop-color:var(--color-zinc-600)]"
+              offset="1"
+              stopColor="var(--color-zinc-400)"
+              stopOpacity="0"
+            />
+          </motion.radialGradient>
+        </defs>
+
+        <motion.path
+          variants={{
+            normal: { d: sideFaces.normal },
+            pressed: { d: sideFaces.pressed },
+          }}
+          transition={transition}
+          className="fill-background"
+          stroke="var(--stroke)"
+        />
+
+        <motion.g
+          variants={{
+            normal: { transform: "translateY(0px)" },
+            pressed: { transform: `translateY(${PRESSED_OFFSET}px)` },
+          }}
+          transition={transition}
+        >
+          <g transform={ISOMETRIC_TRANSFORM}>
+            <use href={`#${ids.mark}`} className="fill-background" />
+            <use href={`#${ids.mark}`} fill={`url(#${ids.pattern})`} />
+            <use href={`#${ids.outline}`} stroke="var(--stroke)" />
+            <use
+              href={`#${ids.outline}`}
+              stroke={`url(#${ids.radialGradient})`}
+            />
+          </g>
+        </motion.g>
+      </motion.svg>
+    </div>
   );
 };
