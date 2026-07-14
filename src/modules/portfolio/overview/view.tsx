@@ -5,11 +5,11 @@ import {
   OverviewItem,
   OverviewItemContent,
   OverviewItemIcon,
-  OverviewItemLink,
 } from "./overview-item";
+import { OverviewLinkItem } from "./overview-link-item";
 
 export const OverviewView = () => (
-  <section className="screen-line-top screen-line-bottom mx-auto grid w-full grid-cols-1 md:grid-cols-2 border-x md:w-3xl gap-x-4 gap-y-3 p-4">
+  <div className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2">
     <OverviewItem className="sm:col-span-2">
       <OverviewItemIcon>
         <CodeXmlIcon />
@@ -19,39 +19,21 @@ export const OverviewView = () => (
       </OverviewItemContent>
     </OverviewItem>
 
-    <OverviewItem>
-      <OverviewItemIcon>
-        <MapPinIcon />
-      </OverviewItemIcon>
-      <OverviewItemContent>
-        <OverviewItemLink href="https://maps.app.goo.gl/XruCEPhmEibs6vqm8">
-          Switzerland
-        </OverviewItemLink>
-      </OverviewItemContent>
-    </OverviewItem>
+    <OverviewLinkItem
+      href="https://maps.app.goo.gl/XruCEPhmEibs6vqm8"
+      icon={<MapPinIcon />}
+    >
+      Switzerland
+    </OverviewLinkItem>
 
     <CurrentLocalTimeItem timeZone="Europe/Zurich" />
 
-    <OverviewItem>
-      <OverviewItemIcon>
-        <LinkIcon />
-      </OverviewItemIcon>
-      <OverviewItemContent>
-        <OverviewItemLink href="https://levin.baenninger.me">
-          levin.baenninger.me
-        </OverviewItemLink>
-      </OverviewItemContent>
-    </OverviewItem>
+    <OverviewLinkItem href="https://levin.baenninger.me" icon={<LinkIcon />}>
+      levin.baenninger.me
+    </OverviewLinkItem>
 
-    <OverviewItem>
-      <OverviewItemIcon>
-        <MailIcon />
-      </OverviewItemIcon>
-      <OverviewItemContent>
-        <OverviewItemLink href="mailto:levin@baenninger.me">
-          levin@baenninger.me
-        </OverviewItemLink>
-      </OverviewItemContent>
-    </OverviewItem>
-  </section>
+    <OverviewLinkItem href="mailto:levin@baenninger.me" icon={<MailIcon />}>
+      levin@baenninger.me
+    </OverviewLinkItem>
+  </div>
 );
