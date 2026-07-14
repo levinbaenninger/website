@@ -193,7 +193,7 @@ export const SpotlightLogo = () => {
 
       <motion.svg
         ref={ref}
-        className="block h-auto w-full touch-manipulation cursor-pointer [--pattern:color-mix(in_oklab,var(--foreground)_12%,var(--background))] [--stroke:color-mix(in_oklab,var(--foreground)_18%,var(--background))]"
+        className="block h-auto w-full cursor-pointer touch-manipulation [--pattern:color-mix(in_oklab,var(--foreground)_12%,var(--background))] [--stroke:color-mix(in_oklab,var(--foreground)_18%,var(--background))]"
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

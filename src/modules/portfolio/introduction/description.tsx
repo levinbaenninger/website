@@ -38,7 +38,7 @@ export const IntroductionDescription = () => {
   return (
     <div
       ref={containerRef}
-      className="overflow-hidden font-mono text-xs text-muted-foreground p-2 sm:text-sm border-t border-line ps-4"
+      className="overflow-hidden border-t border-line p-2 ps-4 font-mono text-xs text-muted-foreground sm:text-sm"
     >
       <AnimatePresence initial={false} mode="wait">
         <motion.p

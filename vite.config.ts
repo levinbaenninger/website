@@ -10,6 +10,11 @@ export default defineConfig({
   },
   fmt: {
     ...ultracite,
+    sortTailwindcss: {
+      stylesheet: "src/app/globals.css",
+      functions: ["clsx", "cn"],
+      preserveWhitespace: true,
+    },
   },
   lint: {
     extends: [core, next, react],
