@@ -4,7 +4,7 @@ import { IntroductionDescription } from "./description";
 import { IntroductionName } from "./name";
 
 export const IntroductionView = () => (
-  <section className="screen-line-bottom mx-auto grid w-full grid-cols-[auto_1fr] grid-rows-[1fr_auto] border-x md:w-3xl">
+  <section className="screen-line-bottom mx-auto grid w-full grid-cols-[auto_1fr] grid-rows-[1fr_auto] border-x border-line md:w-3xl">
     <IntroductionArtwork />
     <IntroductionAvatar />
 

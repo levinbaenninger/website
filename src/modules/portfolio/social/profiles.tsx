@@ -12,18 +12,18 @@ export interface SocialProfile {
 
 export const SOCIAL_PROFILES: SocialProfile[] = [
   {
-    name: "x",
-    icon: <X />,
-    title: "X",
-    handle: "@levinbaenninger",
-    href: "https://x.com/levinbaenninger",
-  },
-  {
     name: "github",
     icon: <GitHub />,
     title: "GitHub",
     handle: "levinbaenninger",
     href: "https://github.com/levinbaenninger",
+  },
+  {
+    name: "x",
+    icon: <X />,
+    title: "X",
+    handle: "@levinbaenninger",
+    href: "https://x.com/levinbaenninger",
   },
   {
     name: "linkedin",
