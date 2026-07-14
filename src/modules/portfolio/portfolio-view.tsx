@@ -1,3 +1,4 @@
+import { ContributionsView } from "./contributions/view";
 import { IntroductionView } from "./introduction";
 import { OverviewView } from "./overview/view";
 import { SectionSeparator } from "./section-separator";
@@ -10,5 +11,7 @@ export const PortfolioView = () => (
     <OverviewView />
     <SectionSeparator />
     <SocialView />
+    <SectionSeparator />
+    <ContributionsView />
   </>
 );
