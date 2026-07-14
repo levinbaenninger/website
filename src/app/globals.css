@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./typeset.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -130,6 +131,15 @@
   html {
     @apply font-sans;
   }
+}
+
+.typeset-docs {
+  --typeset-font-body: var(--font-geist);
+  --typeset-font-heading: var(--font-geist);
+  --typeset-font-mono: var(--font-geist-mono);
+  --typeset-size: 14px;
+  --typeset-leading: 1.75;
+  --typeset-flow: 1em;
 }
 
 @utility hit-area-debug {
@@ -299,6 +309,14 @@
     @apply absolute bottom-0 left-[-100vw] -z-1 h-px w-[200vw] bg-line;
     content: "";
   }
+}
+
+@utility screen-line-top-none {
+  @apply before:content-none;
+}
+
+@utility screen-line-bottom-none {
+  @apply after:content-none;
 }
 
 @utility screen-dashed-line-bottom {

@@ -12,7 +12,7 @@ import { LocationItem } from "./location-item";
 import { WebsiteItem } from "./website-item";
 
 export const OverviewView = () => (
-  <Panel className="mx-auto w-full md:w-3xl">
+  <Panel className="mx-auto w-full screen-line-bottom-none md:w-3xl">
     <PanelVisuallyHiddenHeader>
       <PanelTitle>Overview</PanelTitle>
     </PanelVisuallyHiddenHeader>

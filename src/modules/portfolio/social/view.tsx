@@ -9,7 +9,7 @@ import { SOCIAL_PROFILES } from "./profiles";
 import { SocialProfileItem } from "./social-profile-item";
 
 export const SocialView = () => (
-  <Panel className="mx-auto w-full md:w-3xl">
+  <Panel className="mx-auto w-full screen-line-bottom-none md:w-3xl">
     <PanelVisuallyHiddenHeader>
       <PanelTitle>Social profiles</PanelTitle>
     </PanelVisuallyHiddenHeader>
