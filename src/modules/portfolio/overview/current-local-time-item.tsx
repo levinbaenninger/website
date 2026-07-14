@@ -11,6 +11,7 @@ import {
 } from "./overview-item";
 
 const NANOSECONDS_PER_HOUR = 3_600_000_000_000;
+const TIME_ZONE = "Europe/Zurich";
 
 const getClock = (timeZone: string) => {
   const now = Temporal.Now.instant();
@@ -39,12 +40,12 @@ const getClock = (timeZone: string) => {
   return { difference: ` // ${hours}h ${direction}`, time };
 };
 
-export const CurrentLocalTimeItem = ({ timeZone }: { timeZone: string }) => {
+export const CurrentLocalTimeItem = () => {
   const [clock, setClock] = useState<ReturnType<typeof getClock> | null>(null);
 
   useEffect(() => {
     const updateClock = () => {
-      setClock(getClock(timeZone));
+      setClock(getClock(TIME_ZONE));
     };
 
     updateClock();
@@ -53,7 +54,7 @@ export const CurrentLocalTimeItem = ({ timeZone }: { timeZone: string }) => {
     return () => {
       window.clearInterval(interval);
     };
-  }, [timeZone]);
+  }, []);
 
   return (
     <OverviewItem>
