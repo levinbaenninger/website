@@ -16,17 +16,25 @@ const Panel = ({ className, ...props }: React.ComponentProps<"section">) => (
 
 const PanelHeader = ({
   className,
-  visuallyHidden = false,
   ...props
-}: React.ComponentProps<"header"> & { visuallyHidden?: boolean }) => (
+}: React.ComponentProps<"header">) => (
   <header
     data-slot="panel-header"
     className={cn(
-      visuallyHidden
-        ? "sr-only"
-        : "screen-line-bottom px-4 has-data-[slot=panel-description]:*:data-[slot=panel-title]:screen-line-bottom",
+      "screen-line-bottom px-4 has-data-[slot=panel-description]:*:data-[slot=panel-title]:screen-line-bottom",
       className
     )}
+    {...props}
+  />
+);
+
+const PanelVisuallyHiddenHeader = ({
+  className,
+  ...props
+}: React.ComponentProps<"header">) => (
+  <header
+    data-slot="panel-header"
+    className={cn("sr-only", className)}
     {...props}
   />
 );
@@ -89,4 +97,5 @@ export {
   PanelHeader,
   PanelTitle,
   PanelTitleSup,
+  PanelVisuallyHiddenHeader,
 };

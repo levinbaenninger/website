@@ -1,8 +1,8 @@
 import {
   Panel,
   PanelContent,
-  PanelHeader,
   PanelTitle,
+  PanelVisuallyHiddenHeader,
 } from "@/shared/ui/panel";
 
 import { CurrentLocalTimeItem } from "./current-local-time-item";
@@ -13,9 +13,9 @@ import { WebsiteItem } from "./website-item";
 
 export const OverviewView = () => (
   <Panel className="mx-auto w-full md:w-3xl">
-    <PanelHeader visuallyHidden>
+    <PanelVisuallyHiddenHeader>
       <PanelTitle>Overview</PanelTitle>
-    </PanelHeader>
+    </PanelVisuallyHiddenHeader>
     <PanelContent className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2">
       <EmploymentItem />
       <LocationItem />
