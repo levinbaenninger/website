@@ -20,9 +20,7 @@ export const ExperiencesView = () => (
           <TimelineItem
             description={position.description}
             heading={
-              <h4 className="flex-1 font-medium text-balance">
-                {position.title}
-              </h4>
+              <h4 className="font-medium text-balance">{position.title}</h4>
             }
             icon={<BriefcaseBusinessIcon aria-hidden />}
             key={position.id}

@@ -49,7 +49,7 @@ export const TimelineItem = ({
             {icon}
           </div>
 
-          {heading}
+          <div className="min-w-0 flex-1">{heading}</div>
 
           <ChevronsUpDownIcon
             ref={iconRef}

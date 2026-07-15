@@ -23,7 +23,7 @@ export const EducationView = () => (
           <TimelineItem
             description={education.description}
             heading={
-              <h3 className="flex-1 font-medium text-balance">
+              <h3 className="font-medium text-balance">
                 {education.institution}
               </h3>
             }
