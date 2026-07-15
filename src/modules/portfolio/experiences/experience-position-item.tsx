@@ -2,11 +2,15 @@
 
 import { differenceInMonths, parse } from "date-fns";
 import { BriefcaseBusinessIcon, InfinityIcon } from "lucide-react";
-import { Collapsible } from "radix-ui";
 import { useRef } from "react";
 import ReactMarkdown from "react-markdown";
 
 import { Badge } from "@/shared/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/shared/ui/collapsible";
 import { ChevronsUpDownIcon } from "@/shared/ui/icons/chevrons-up-down-icon";
 import type { ChevronsUpDownIconHandle } from "@/shared/ui/icons/chevrons-up-down-icon";
 import { Separator } from "@/shared/ui/separator";
@@ -41,7 +45,7 @@ export const ExperiencePositionItem = ({
   const duration = formatDuration(position.startDate, position.endDate);
 
   return (
-    <Collapsible.Root
+    <Collapsible
       className="group/experience-position relative"
       onOpenChange={(open) => {
         if (open) {
@@ -55,7 +59,7 @@ export const ExperiencePositionItem = ({
         <span className="size-full -translate-y-2.25 rounded-bl-sm border-b border-l" />
       </div>
 
-      <Collapsible.Trigger className="group relative block w-full text-left outline-none before:absolute before:-inset-y-1 before:-right-1 before:left-7 before:-z-1 before:rounded-lg before:transition-colors hover:before:bg-accent focus-visible:before:ring-2 focus-visible:before:ring-ring/50">
+      <CollapsibleTrigger className="group relative block w-full text-left outline-none before:absolute before:-inset-y-1 before:-right-1 before:left-7 before:-z-1 before:rounded-lg before:transition-colors hover:before:bg-accent focus-visible:before:ring-2 focus-visible:before:ring-ring/50">
         <div className="relative z-1 mb-1 flex items-start gap-3 text-base">
           <div className="flex size-6 shrink-0 items-center justify-center rounded-md border border-muted-foreground/15 bg-muted text-muted-foreground ring-1 ring-line ring-offset-1 ring-offset-background [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
             <BriefcaseBusinessIcon aria-hidden />
@@ -98,13 +102,13 @@ export const ExperiencePositionItem = ({
             <dd className="tabular-nums">{duration}</dd>
           </div>
         </dl>
-      </Collapsible.Trigger>
+      </CollapsibleTrigger>
 
-      <Collapsible.Content className="overflow-hidden">
+      <CollapsibleContent className="overflow-hidden">
         <div className="typeset pt-2 pl-9 [--color-foreground:var(--color-muted-foreground)] [--typeset-leading:1.5] [--typeset-size:0.875rem]">
           <ReactMarkdown skipHtml>{position.description}</ReactMarkdown>
         </div>
-      </Collapsible.Content>
+      </CollapsibleContent>
 
       <ul className="flex flex-wrap gap-1.5 pt-3 pl-9">
         {position.skills.map((skill) => (
@@ -113,6 +117,6 @@ export const ExperiencePositionItem = ({
           </li>
         ))}
       </ul>
-    </Collapsible.Root>
+    </Collapsible>
   );
 };
