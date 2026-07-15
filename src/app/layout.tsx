@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { DevTools } from "@/app/_devtools/devtools";
-import { AppShell } from "@/app/_shell";
-import { SITE_CONTENT } from "@/app/_shell/content";
+import { AppShell, SITE_CONTENT } from "@/app/_shell";
 import { ThemeProvider } from "@/app/_theme/theme-provider";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 

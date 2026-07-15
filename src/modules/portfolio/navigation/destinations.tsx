@@ -5,6 +5,7 @@ import {
   BriefcaseBusinessIcon,
   GraduationCapIcon,
   InfoIcon,
+  Layers3Icon,
 } from "lucide-react";
 import type { ReactElement } from "react";
 
@@ -19,6 +20,11 @@ export const PORTFOLIO_DESTINATIONS: PortfolioDestination[] = [
     title: "About",
     href: "/#about",
     icon: <InfoIcon />,
+  },
+  {
+    title: "Stack",
+    href: "/#stack",
+    icon: <Layers3Icon />,
   },
   {
     title: "Experience",
