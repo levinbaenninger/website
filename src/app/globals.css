@@ -109,8 +109,8 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0 0 0);
-  --selection: oklch(0 0 0);
-  --selection-foreground: oklch(1 0 0);
+  --selection: oklch(1 0 0);
+  --selection-foreground: oklch(0 0 0);
   --line: color-mix(in oklab, var(--border) 64%, var(--background));
   --chart-1: oklch(0.871 0.006 286.286);
   --chart-2: oklch(0.552 0.016 285.938);
