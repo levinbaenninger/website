@@ -1,7 +1,14 @@
-import type { Experience } from "./content";
-import { ExperiencePositionItem } from "./experience-position-item";
+import { TimelineTrack } from "@/modules/portfolio/timeline/track";
 
-export const ExperienceItem = ({ experience }: { experience: Experience }) => {
+import type { Experience } from "./content";
+
+export const ExperienceItem = ({
+  children,
+  experience,
+}: {
+  children: React.ReactNode;
+  experience: Experience;
+}) => {
   const CompanyLogo = experience.company.logo;
 
   return (
@@ -36,11 +43,7 @@ export const ExperienceItem = ({ experience }: { experience: Experience }) => {
         </div>
       </div>
 
-      <div className="relative flex flex-col gap-4 before:absolute before:top-0 before:bottom-0 before:left-3 before:w-px before:bg-border">
-        {experience.positions.map((position) => (
-          <ExperiencePositionItem position={position} key={position.id} />
-        ))}
-      </div>
+      <TimelineTrack>{children}</TimelineTrack>
     </article>
   );
 };
