@@ -13,11 +13,12 @@ export const EXPERIENCES = [
     positions: [
       {
         id: "software-engineer-apprentice",
-        description:
-          "I help maintain our **component library** so teams can ship faster without compromising the user experience.",
+        description: `- Built solid computer science foundations: web engineering, algorithms, databases, and the “why” behind the “what”.
+- Engineered custom Azure Container Jobs to optimize Azure DevOps pipelines – reduced build times, increased scalability, and lowered infrastructure overhead, accelerating delivery cycles.
+- Developed our internal component library used across products – consistent UI, reusable components, faster shipping.`,
         employmentType: "Full-time",
         endDate: null as string | null,
-        skills: ["Skill one", "Skill two", "Skill three"],
+        skills: ["Angular", "TypeScript", "Azure", "DevOps"],
         startDate: "08.2023",
         title: "Software Engineer Apprentice",
       },

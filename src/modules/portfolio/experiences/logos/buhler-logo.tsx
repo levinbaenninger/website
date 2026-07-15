@@ -1,6 +1,5 @@
 import type { SVGProps } from "react";
 
-// Source: https://www.buhlergroup.com/favicon.ico
 export const BuhlerLogo = (props: SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" {...props}>
     <image
