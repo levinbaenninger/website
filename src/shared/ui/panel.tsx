@@ -3,6 +3,8 @@ import * as React from "react";
 
 import { cn } from "@/shared/ui/cn";
 
+export { PanelTitleCopy } from "@/shared/ui/panel-title-copy";
+
 const Panel = ({ className, ...props }: React.ComponentProps<"section">) => (
   <section
     data-slot="panel"
