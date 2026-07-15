@@ -1,12 +1,13 @@
-import { Biography } from "./about/biography";
-import { ABOUT_CONTENT } from "./about/content";
-import { ContributionsView } from "./about/contributions/view";
-import { IntroductionView } from "./about/introduction/view";
-import { OverviewView } from "./about/overview/view";
-import { GITHUB_PROFILE } from "./about/social/profiles";
-import { SocialView } from "./about/social/view";
-import { PORTFOLIO_NAME } from "./content";
-import { SectionSeparator } from "./section-separator";
+import { PORTFOLIO_NAME } from "@/modules/portfolio/content";
+import { SectionSeparator } from "@/modules/portfolio/section-separator";
+
+import { Biography } from "./biography";
+import { ABOUT_CONTENT } from "./content";
+import { ContributionsView } from "./contributions/view";
+import { IntroductionView } from "./introduction/view";
+import { OverviewView } from "./overview/view";
+import { GITHUB_PROFILE } from "./social/profiles";
+import { SocialView } from "./social/view";
 
 export const AboutView = () => (
   <>

@@ -77,6 +77,46 @@ export default defineConfig({
         },
       },
       {
+        files: ["src/modules/portfolio/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        rules: {
+          "no-restricted-imports": [
+            "error",
+            {
+              paths: [
+                {
+                  name: "@/app",
+                  message: "Portfolio cannot depend on app.",
+                },
+                {
+                  name: "@/modules",
+                  message: "Portfolio cannot import the modules root.",
+                },
+                {
+                  name: "@/modules/portfolio",
+                  message:
+                    "Portfolio internals must not import their public entrypoint.",
+                },
+              ],
+              patterns: [
+                {
+                  group: ["@/app/**"],
+                  message: "Portfolio cannot depend on app.",
+                },
+                {
+                  group: [
+                    "@/modules/*",
+                    "@/modules/*/**",
+                    "!@/modules/portfolio",
+                    "!@/modules/portfolio/**",
+                  ],
+                  message: "Portfolio cannot depend on peer modules.",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
         files: ["src/app/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
         rules: {
           "no-restricted-imports": [
