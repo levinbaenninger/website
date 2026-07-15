@@ -3,4 +3,5 @@ export {
   type PortfolioNavigationItem,
 } from "./navigation/navigation-items";
 export { PortfolioView } from "./portfolio-view";
+export { SiteFooter } from "./site-footer";
 export { SOCIAL_PROFILES, type SocialProfile } from "./social/profiles";

@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { DevTools } from "@/app/_devtools/devtools";
 import { Header } from "@/app/_shell";
 import { ThemeProvider } from "@/app/_theme/theme-provider";
+import { SiteFooter } from "@/modules/portfolio";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 
 import "./globals.css";
@@ -42,6 +43,7 @@ export default function RootLayout({
           <TooltipProvider>
             <Header />
             <main>{children}</main>
+            <SiteFooter />
           </TooltipProvider>
           <DevTools />
         </ThemeProvider>
