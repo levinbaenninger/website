@@ -16,17 +16,28 @@ import {
   ContributionGraphLegend,
   ContributionGraphTotalCount,
 } from "./contribution-graph";
+import type { ContributionsResult } from "./get-contributions";
 
 export const GitHubContributions = ({
   contributions,
   githubProfileUrl,
   className,
 }: {
-  contributions: Promise<Activity[]>;
+  contributions: Promise<ContributionsResult>;
   githubProfileUrl: string;
   className?: string;
 }) => {
-  const data = use(contributions);
+  const result = use(contributions);
+
+  if (result.status === "unavailable") {
+    return (
+      <div className="flex h-40.5 w-full items-center justify-center px-4 text-center font-mono text-sm text-muted-foreground">
+        Contributions unavailable.
+      </div>
+    );
+  }
+
+  const data: Activity[] = result.contributions;
 
   return (
     <ContributionGraph

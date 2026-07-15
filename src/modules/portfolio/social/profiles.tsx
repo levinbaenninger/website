@@ -10,14 +10,16 @@ export interface SocialProfile {
   href: string;
 }
 
-export const SOCIAL_PROFILES: SocialProfile[] = [
-  {
-    name: "github",
-    icon: <GitHub />,
-    title: "GitHub",
-    handle: "levinbaenninger",
-    href: "https://github.com/levinbaenninger",
-  },
+export const GITHUB_PROFILE = {
+  name: "github",
+  icon: <GitHub />,
+  title: "GitHub",
+  handle: "levinbaenninger",
+  href: "https://github.com/levinbaenninger",
+} satisfies SocialProfile;
+
+export const SOCIAL_PROFILES = [
+  GITHUB_PROFILE,
   {
     name: "x",
     icon: <X />,
@@ -32,4 +34,4 @@ export const SOCIAL_PROFILES: SocialProfile[] = [
     handle: "levinbaenninger",
     href: "https://linkedin.com/in/levinbaenninger",
   },
-];
+] satisfies SocialProfile[];

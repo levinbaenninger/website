@@ -13,8 +13,14 @@ import {
   GitHubContributionsFallback,
 } from "./github-contributions";
 
-export const ContributionsView = () => {
-  const contributions = getContributions("levinbaenninger");
+export const ContributionsView = ({
+  githubProfileUrl,
+  username,
+}: {
+  githubProfileUrl: string;
+  username: string;
+}) => {
+  const contributions = getContributions(username);
 
   return (
     <Panel className="mx-auto w-full md:w-3xl">
@@ -25,7 +31,7 @@ export const ContributionsView = () => {
         <Suspense fallback={<GitHubContributionsFallback />}>
           <GitHubContributions
             contributions={contributions}
-            githubProfileUrl="https://github.com/levinbaenninger"
+            githubProfileUrl={githubProfileUrl}
           />
         </Suspense>
       </PanelContent>

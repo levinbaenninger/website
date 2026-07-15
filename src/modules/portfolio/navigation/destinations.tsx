@@ -8,14 +8,13 @@ import {
 } from "lucide-react";
 import type { ReactElement } from "react";
 
-export interface PortfolioNavigationItem {
+export interface PortfolioDestination {
   title: string;
   href: string;
   icon: ReactElement;
-  shortcut?: string;
 }
 
-export const PORTFOLIO_NAVIGATION_ITEMS: PortfolioNavigationItem[] = [
+export const PORTFOLIO_DESTINATIONS: PortfolioDestination[] = [
   {
     title: "About",
     href: "/#about",

@@ -8,13 +8,11 @@ import {
 } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
-const INTRODUCTIONS = [
-  "Building useful things for the web.",
-  "Writing down what I learn.",
-  "Collecting ideas worth keeping.",
-] as const;
-
-export const IntroductionDescription = () => {
+export const IntroductionDescription = ({
+  introductions,
+}: {
+  introductions: readonly string[];
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef);
@@ -24,7 +22,7 @@ export const IntroductionDescription = () => {
     const timer =
       isInView && shouldReduceMotion !== true
         ? window.setInterval(() => {
-            setCurrentIndex((index) => (index + 1) % INTRODUCTIONS.length);
+            setCurrentIndex((index) => (index + 1) % introductions.length);
           }, 3000)
         : null;
 
@@ -33,7 +31,7 @@ export const IntroductionDescription = () => {
         window.clearInterval(timer);
       }
     };
-  }, [isInView, shouldReduceMotion]);
+  }, [introductions.length, isInView, shouldReduceMotion]);
 
   return (
     <div
@@ -48,7 +46,7 @@ export const IntroductionDescription = () => {
           exit={{ opacity: 0, y: 6 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
         >
-          {INTRODUCTIONS[currentIndex]}
+          {introductions[currentIndex]}
         </motion.p>
       </AnimatePresence>
     </div>

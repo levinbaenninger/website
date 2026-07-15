@@ -3,7 +3,7 @@
 import {
   formatForDisplay,
   useHotkey,
-  useHotkeySequence,
+  useHotkeySequences,
 } from "@tanstack/react-hotkeys";
 import { MonitorIcon, MoonIcon, SearchIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -11,11 +11,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactElement } from "react";
 
-import { PRIMARY_NAVIGATION_ITEMS } from "@/app/_shell/navigation/items";
-import {
-  PORTFOLIO_NAVIGATION_ITEMS,
-  SOCIAL_PROFILES,
-} from "@/modules/portfolio";
+import { APP_DESTINATIONS } from "@/app/_shell/navigation/destinations";
+import type { AppDestination } from "@/app/_shell/navigation/destinations";
+import { PORTFOLIO_DESTINATIONS, SOCIAL_PROFILES } from "@/modules/portfolio";
 import { Button } from "@/shared/ui/button";
 import {
   Command,
@@ -46,7 +44,7 @@ interface NavigationCommandSource {
   title: string;
   href: string;
   icon: ReactElement;
-  shortcut?: string;
+  shortcut?: AppDestination["shortcut"];
 }
 
 const THEME_COMMAND_ITEMS: ThemeCommandItem[] = [
@@ -113,9 +111,11 @@ export const CommandMenu = () => {
 
   const createNavigationCommand = ({
     href,
+    shortcut,
     ...item
   }: NavigationCommandSource): CommandItemConfig => ({
     ...item,
+    shortcut: shortcut?.join(""),
     onSelect: () => {
       selectAndClose(() => {
         router.push(href);
@@ -150,11 +150,11 @@ export const CommandMenu = () => {
   const commandGroups = [
     {
       heading: "Pages",
-      items: PRIMARY_NAVIGATION_ITEMS.map(createNavigationCommand),
+      items: APP_DESTINATIONS.map(createNavigationCommand),
     },
     {
       heading: "Portfolio",
-      items: PORTFOLIO_NAVIGATION_ITEMS.map(createNavigationCommand),
+      items: PORTFOLIO_DESTINATIONS.map(createNavigationCommand),
     },
     {
       heading: "Social profiles",
@@ -166,15 +166,21 @@ export const CommandMenu = () => {
     },
   ];
 
-  useHotkeySequence(["G", "H"], () => {
-    router.push("/");
-    setOpen(false);
-  });
-
-  useHotkeySequence(["G", "B"], () => {
-    router.push("/blog");
-    setOpen(false);
-  });
+  useHotkeySequences(
+    APP_DESTINATIONS.flatMap((destination) =>
+      destination.shortcut
+        ? [
+            {
+              sequence: destination.shortcut,
+              callback: () => {
+                router.push(destination.href);
+                setOpen(false);
+              },
+            },
+          ]
+        : []
+    )
+  );
 
   return (
     <>

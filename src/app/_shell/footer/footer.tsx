@@ -1,10 +1,15 @@
 import { Fragment } from "react";
 
-import { FluidGradientText } from "@/shared/fluid-gradient-text";
+import { SOCIAL_PROFILES } from "@/modules/portfolio";
+import { FluidGradientText } from "@/shared/ui/fluid-gradient-text";
 import { Separator } from "@/shared/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 
-import { SOCIAL_PROFILES } from "./social/profiles";
+import { FOOTER_CONTENT } from "./content";
+
+const authorProfile = SOCIAL_PROFILES.find(
+  (profile) => profile.name === FOOTER_CONTENT.authorProfile
+);
 
 const FooterItem = (props: React.ComponentProps<"div">) => (
   <div className="grid grid-cols-2 gap-4" {...props} />
@@ -21,7 +26,7 @@ const FooterLink = ({ children, ...props }: React.ComponentProps<"a">) => (
   </a>
 );
 
-export const SiteFooter = () => (
+export const Footer = () => (
   <footer className="max-w-screen overflow-x-clip px-2">
     <div className="mx-auto w-full border-x border-line md:w-3xl">
       <div className="screen-line-top screen-line-bottom">
@@ -32,9 +37,11 @@ export const SiteFooter = () => (
         <FooterItem>
           <dt>Crafted by</dt>
           <dd>
-            <FooterLink href="https://github.com/levinbaenninger">
-              @levinbaenninger
-            </FooterLink>
+            {authorProfile ? (
+              <FooterLink href={authorProfile.href}>
+                @{authorProfile.handle}
+              </FooterLink>
+            ) : null}
           </dd>
         </FooterItem>
 
@@ -42,30 +49,30 @@ export const SiteFooter = () => (
           <dt>Built with</dt>
           <dd>
             <ul>
-              <li>Next.js</li>
-              <li>Tailwind CSS</li>
-              <li>shadcn/ui</li>
+              {FOOTER_CONTENT.builtWith.map((technology) => (
+                <li key={technology}>{technology}</li>
+              ))}
             </ul>
           </dd>
         </FooterItem>
 
         <FooterItem>
           <dt>Deployed on</dt>
-          <dd>Vercel</dd>
+          <dd>{FOOTER_CONTENT.deployedOn}</dd>
         </FooterItem>
 
         <FooterItem>
           <dt>Source code</dt>
           <dd>
-            <FooterLink href="https://github.com/levinbaenninger/website">
-              GitHub
+            <FooterLink href={FOOTER_CONTENT.source.href}>
+              {FOOTER_CONTENT.source.label}
             </FooterLink>
           </dd>
         </FooterItem>
 
         <FooterItem>
           <dt>License</dt>
-          <dd>MIT</dd>
+          <dd>{FOOTER_CONTENT.license}</dd>
         </FooterItem>
       </dl>
 

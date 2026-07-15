@@ -1,26 +1,27 @@
+import type { UseHotkeySequenceDefinition } from "@tanstack/react-hotkeys";
 import { NewspaperIcon } from "lucide-react";
 import type { ReactElement } from "react";
 
 import { BrandMark } from "@/app/_shell/branding/brand-mark";
 
-export interface PrimaryNavigationItem {
+export interface AppDestination {
   title: string;
   href: string;
   icon: ReactElement;
-  shortcut?: string;
+  shortcut?: UseHotkeySequenceDefinition["sequence"];
 }
 
-export const PRIMARY_NAVIGATION_ITEMS: PrimaryNavigationItem[] = [
+export const APP_DESTINATIONS: AppDestination[] = [
   {
     title: "Portfolio",
     href: "/",
     icon: <BrandMark />,
-    shortcut: "GH",
+    shortcut: ["G", "H"],
   },
   {
     title: "Blog",
     href: "/blog",
     icon: <NewspaperIcon />,
-    shortcut: "GB",
+    shortcut: ["G", "B"],
   },
 ];

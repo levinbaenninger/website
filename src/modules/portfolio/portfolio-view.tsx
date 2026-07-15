@@ -1,22 +1,39 @@
+import { Biography } from "./about/biography";
+import { ABOUT_CONTENT } from "./about/content";
+import { IntroductionView } from "./about/introduction/view";
+import { OverviewView } from "./about/overview/view";
+import { PORTFOLIO_NAME } from "./content";
 import { ContributionsView } from "./contributions/view";
-import { HelloView } from "./hello/view";
-import { IntroductionView } from "./introduction";
-import { OverviewView } from "./overview/view";
 import { SectionSeparator } from "./section-separator";
+import { GITHUB_PROFILE } from "./social/profiles";
 import { SocialView } from "./social/view";
 import { StackView } from "./stack/view";
 
 export const PortfolioView = () => (
   <>
-    <IntroductionView />
+    <IntroductionView
+      avatar={ABOUT_CONTENT.introduction.avatar}
+      descriptions={ABOUT_CONTENT.introduction.descriptions}
+      name={PORTFOLIO_NAME}
+    />
     <SectionSeparator />
-    <OverviewView />
+    <OverviewView
+      {...ABOUT_CONTENT.overview}
+      employment={ABOUT_CONTENT.employment}
+    />
     <SocialView />
-    <ContributionsView />
+    <ContributionsView
+      githubProfileUrl={GITHUB_PROFILE.href}
+      username={GITHUB_PROFILE.handle}
+    />
 
     <SectionSeparator />
 
-    <HelloView />
+    <Biography
+      {...ABOUT_CONTENT.biography}
+      {...ABOUT_CONTENT.employment}
+      name={PORTFOLIO_NAME}
+    />
 
     <SectionSeparator />
 

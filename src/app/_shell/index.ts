@@ -1,1 +1,1 @@
-export { Header } from "./header/header";
+export { AppShell } from "./app-shell";

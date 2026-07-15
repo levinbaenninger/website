@@ -1,7 +1,4 @@
-export {
-  PORTFOLIO_NAVIGATION_ITEMS,
-  type PortfolioNavigationItem,
-} from "./navigation/navigation-items";
+export { PORTFOLIO_NAME } from "./content";
+export { PORTFOLIO_DESTINATIONS } from "./navigation/destinations";
 export { PortfolioView } from "./portfolio-view";
-export { SiteFooter } from "./site-footer";
-export { SOCIAL_PROFILES, type SocialProfile } from "./social/profiles";
+export { SOCIAL_PROFILES } from "./social/profiles";
