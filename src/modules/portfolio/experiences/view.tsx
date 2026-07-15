@@ -6,6 +6,7 @@ import {
   PanelTitleCopy,
 } from "@/shared/ui/panel";
 
+import { EXPERIENCES } from "./content";
 import { ExperienceItem } from "./experience-item";
 
 export const ExperiencesView = () => (
@@ -18,7 +19,9 @@ export const ExperiencesView = () => (
     </PanelHeader>
 
     <PanelContent className="px-4 py-0">
-      <ExperienceItem />
+      {EXPERIENCES.map((experience) => (
+        <ExperienceItem experience={experience} key={experience.id} />
+      ))}
     </PanelContent>
   </Panel>
 );

@@ -4,17 +4,20 @@ import { differenceInMonths, parse } from "date-fns";
 import { BriefcaseBusinessIcon, InfinityIcon } from "lucide-react";
 import { Collapsible } from "radix-ui";
 import { useRef } from "react";
+import ReactMarkdown from "react-markdown";
 
 import { Badge } from "@/shared/ui/badge";
 import { ChevronsUpDownIcon } from "@/shared/ui/icons/chevrons-up-down-icon";
 import type { ChevronsUpDownIconHandle } from "@/shared/ui/icons/chevrons-up-down-icon";
 import { Separator } from "@/shared/ui/separator";
 
-import { EXPERIENCE_CONTENT } from "./content";
+import type { ExperiencePosition } from "./content";
 
-const formatDuration = (startDate: string) => {
+const formatDuration = (startDate: string, endDate: string | null) => {
   const start = parse(startDate, "MM.yyyy", new Date());
-  const totalMonths = differenceInMonths(new Date(), start) + 1;
+  const end =
+    endDate === null ? new Date() : parse(endDate, "MM.yyyy", new Date());
+  const totalMonths = differenceInMonths(end, start) + 1;
   const years = Math.floor(totalMonths / 12);
   const months = totalMonths % 12;
 
@@ -29,9 +32,13 @@ const formatDuration = (startDate: string) => {
   return `${years}y ${months}m`;
 };
 
-export const ExperiencePositionItem = () => {
+export const ExperiencePositionItem = ({
+  position,
+}: {
+  position: ExperiencePosition;
+}) => {
   const iconRef = useRef<ChevronsUpDownIconHandle>(null);
-  const duration = formatDuration(EXPERIENCE_CONTENT.startDate);
+  const duration = formatDuration(position.startDate, position.endDate);
 
   return (
     <Collapsible.Root
@@ -54,9 +61,7 @@ export const ExperiencePositionItem = () => {
             <BriefcaseBusinessIcon aria-hidden />
           </div>
 
-          <h4 className="flex-1 font-medium text-balance">
-            {EXPERIENCE_CONTENT.role}
-          </h4>
+          <h4 className="flex-1 font-medium text-balance">{position.title}</h4>
 
           <ChevronsUpDownIcon
             ref={iconRef}
@@ -68,7 +73,7 @@ export const ExperiencePositionItem = () => {
         <dl className="flex items-center gap-2 pl-9 text-sm text-muted-foreground">
           <div>
             <dt className="sr-only">Employment type</dt>
-            <dd>{EXPERIENCE_CONTENT.employmentType}</dd>
+            <dd>{position.employmentType}</dd>
           </div>
 
           <Separator className="h-4 self-center" orientation="vertical" />
@@ -76,9 +81,13 @@ export const ExperiencePositionItem = () => {
           <div>
             <dt className="sr-only">Employment period</dt>
             <dd className="flex items-center gap-0.5 tabular-nums [&_svg]:size-4.5">
-              <span>{EXPERIENCE_CONTENT.startDate}</span>
+              <span>{position.startDate}</span>
               <span className="font-mono">—</span>
-              <InfinityIcon aria-label="Present" strokeWidth={1.5} />
+              {position.endDate === null ? (
+                <InfinityIcon aria-label="Present" strokeWidth={1.5} />
+              ) : (
+                <span>{position.endDate}</span>
+              )}
             </dd>
           </div>
 
@@ -92,13 +101,13 @@ export const ExperiencePositionItem = () => {
       </Collapsible.Trigger>
 
       <Collapsible.Content className="overflow-hidden">
-        <p className="pt-2 pl-9 text-sm/6 text-muted-foreground">
-          {EXPERIENCE_CONTENT.description}
-        </p>
+        <div className="typeset pt-2 pl-9 [--color-foreground:var(--color-muted-foreground)] [--typeset-leading:1.5] [--typeset-size:0.875rem]">
+          <ReactMarkdown skipHtml>{position.description}</ReactMarkdown>
+        </div>
       </Collapsible.Content>
 
       <ul className="flex flex-wrap gap-1.5 pt-3 pl-9">
-        {EXPERIENCE_CONTENT.skills.map((skill) => (
+        {position.skills.map((skill) => (
           <li className="flex" key={skill}>
             <Badge variant="secondary">{skill}</Badge>
           </li>
