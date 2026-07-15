@@ -52,7 +52,7 @@ const PanelTitle = ({
     <Comp
       data-slot="panel-title"
       className={cn(
-        "group/panel-title font-heading text-3xl font-medium tracking-tight text-balance",
+        "group/panel-title flex items-center font-heading text-3xl font-medium tracking-tight text-balance",
         className
       )}
       {...props}

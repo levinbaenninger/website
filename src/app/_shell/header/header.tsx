@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/app/_theme/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
 
 export const Header = () => (
-  <header className="screen-line-bottom sticky mx-auto flex w-full items-center justify-between border-x border-line p-2 md:w-3xl">
+  <header className="screen-line-bottom sticky top-0 z-50 mx-auto flex w-full items-center justify-between border-x border-line bg-background p-2 md:w-3xl">
     <Link href="/" aria-label="Home">
       <BrandMark className="h-8" />
     </Link>

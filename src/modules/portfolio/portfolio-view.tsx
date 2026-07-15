@@ -4,6 +4,7 @@ import { IntroductionView } from "./introduction";
 import { OverviewView } from "./overview/view";
 import { SectionSeparator } from "./section-separator";
 import { SocialView } from "./social/view";
+import { StackView } from "./stack/view";
 
 export const PortfolioView = () => (
   <>
@@ -16,5 +17,11 @@ export const PortfolioView = () => (
     <SectionSeparator />
 
     <HelloView />
+
+    <SectionSeparator />
+
+    <StackView />
+
+    <SectionSeparator />
   </>
 );
