@@ -7,20 +7,22 @@ import { ThemeToggle } from "@/app/_theme/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
 
 export const Header = () => (
-  <header className="screen-line-bottom sticky top-0 z-50 mx-auto flex w-full items-center justify-between border-x border-line bg-background p-2 md:w-3xl">
-    <Link href="/" aria-label="Home">
-      <BrandMark className="h-8" />
-    </Link>
-    <div className="flex items-center gap-2">
-      <HeaderNavigation />
+  <header className="sticky top-0 z-50 w-full bg-background">
+    <div className="screen-line-bottom mx-auto flex w-full items-center justify-between border-x border-line p-2 md:w-3xl">
+      <Link href="/" aria-label="Home">
+        <BrandMark className="h-8" />
+      </Link>
+      <div className="flex items-center gap-2">
+        <HeaderNavigation />
 
-      <Separator orientation="vertical" />
+        <Separator orientation="vertical" />
 
-      <CommandMenu />
+        <CommandMenu />
 
-      <Separator orientation="vertical" />
+        <Separator orientation="vertical" />
 
-      <ThemeToggle />
+        <ThemeToggle />
+      </div>
     </div>
   </header>
 );

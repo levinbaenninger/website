@@ -14,7 +14,7 @@ export const IntroductionView = ({
 }) => (
   <section
     id="about"
-    className="screen-line-bottom mx-auto grid w-full scroll-mt-16 grid-cols-[auto_1fr] grid-rows-[1fr_auto] border-x border-line md:w-3xl"
+    className="screen-line-bottom mx-auto grid w-full grid-cols-[auto_1fr] grid-rows-[1fr_auto] border-x border-line md:w-3xl"
   >
     <figure className="relative col-span-2 p-4 sm:col-span-1 sm:col-start-2">
       <SpotlightLogo />
