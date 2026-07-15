@@ -1,4 +1,5 @@
 import { AboutView } from "./about/view";
+import { AchievementsView } from "./achievements/view";
 import { EducationView } from "./education/view";
 import { ExperiencesView } from "./experiences/view";
 import { ProjectsView } from "./projects/view";
@@ -16,5 +17,7 @@ export const PortfolioView = () => (
     <EducationView />
     <SectionSeparator />
     <ProjectsView />
+    <SectionSeparator />
+    <AchievementsView />
   </>
 );

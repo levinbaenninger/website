@@ -43,7 +43,7 @@ export const PORTFOLIO_DESTINATIONS: PortfolioDestination[] = [
   },
   {
     title: "Achievements",
-    href: "/achievements",
+    href: "/#achievements",
     icon: <AwardIcon />,
   },
   {

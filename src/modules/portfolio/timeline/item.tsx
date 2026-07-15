@@ -24,7 +24,7 @@ export const TimelineItem = ({
   description: string;
   heading: ReactNode;
   icon: ReactNode;
-  skills: readonly string[];
+  skills?: readonly string[];
 }) => {
   const iconRef = useRef<ChevronsUpDownIconHandle>(null);
 
@@ -67,13 +67,15 @@ export const TimelineItem = ({
         </div>
       </CollapsibleContent>
 
-      <ul className="flex flex-wrap gap-1.5 pt-3 pl-9">
-        {skills.map((skill) => (
-          <li className="flex" key={skill}>
-            <Badge variant="secondary">{skill}</Badge>
-          </li>
-        ))}
-      </ul>
+      {skills && skills.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5 pt-3 pl-9">
+          {skills.map((skill) => (
+            <li className="flex" key={skill}>
+              <Badge variant="secondary">{skill}</Badge>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </Collapsible>
   );
 };
