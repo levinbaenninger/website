@@ -1,5 +1,6 @@
 "use client";
 
+import { differenceInMonths, parse } from "date-fns";
 import { BriefcaseBusinessIcon, InfinityIcon } from "lucide-react";
 import { Collapsible } from "radix-ui";
 import { useRef } from "react";
@@ -11,8 +12,26 @@ import { Separator } from "@/shared/ui/separator";
 
 import { EXPERIENCE_CONTENT } from "./content";
 
+const formatDuration = (startDate: string) => {
+  const start = parse(startDate, "MM.yyyy", new Date());
+  const totalMonths = differenceInMonths(new Date(), start) + 1;
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  if (years === 0) {
+    return `${months}m`;
+  }
+
+  if (months === 0) {
+    return `${years}y`;
+  }
+
+  return `${years}y ${months}m`;
+};
+
 export const ExperiencePositionItem = () => {
   const iconRef = useRef<ChevronsUpDownIconHandle>(null);
+  const duration = formatDuration(EXPERIENCE_CONTENT.startDate);
 
   return (
     <Collapsible.Root
@@ -67,7 +86,7 @@ export const ExperiencePositionItem = () => {
 
           <div>
             <dt className="sr-only">Duration</dt>
-            <dd className="tabular-nums">{EXPERIENCE_CONTENT.duration}</dd>
+            <dd className="tabular-nums">{duration}</dd>
           </div>
         </dl>
       </Collapsible.Trigger>

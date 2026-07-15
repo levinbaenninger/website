@@ -9,7 +9,6 @@ export const EXPERIENCE_CONTENT = {
   location: "Uzwil, Switzerland",
   locationType: "Hybrid",
   role: "Software Engineer Apprentice",
-  duration: "Xy Xm",
   skills: ["Skill one", "Skill two", "Skill three"],
-  startDate: "MM.YYYY",
+  startDate: "08.2023",
 } as const;
