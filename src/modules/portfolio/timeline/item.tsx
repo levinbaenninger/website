@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { useRef } from "react";
 import ReactMarkdown from "react-markdown";
 
@@ -14,17 +14,19 @@ import { ChevronsUpDownIcon } from "@/shared/ui/icons/chevrons-up-down-icon";
 import type { ChevronsUpDownIconHandle } from "@/shared/ui/icons/chevrons-up-down-icon";
 
 export const TimelineItem = ({
+  actions,
   children,
   description,
   heading,
   icon,
-  skills,
+  tags,
 }: {
+  actions?: ReactElement;
   children: ReactNode;
   description: string;
   heading: ReactNode;
   icon: ReactNode;
-  skills?: readonly string[];
+  tags?: readonly string[];
 }) => {
   const iconRef = useRef<ChevronsUpDownIconHandle>(null);
 
@@ -67,14 +69,24 @@ export const TimelineItem = ({
         </div>
       </CollapsibleContent>
 
-      {skills && skills.length > 0 ? (
-        <ul className="flex flex-wrap gap-1.5 pt-3 pl-9">
-          {skills.map((skill) => (
-            <li className="flex" key={skill}>
-              <Badge variant="secondary">{skill}</Badge>
-            </li>
-          ))}
-        </ul>
+      {(tags && tags.length > 0) || actions !== undefined ? (
+        <div className="flex flex-wrap items-center gap-2 pt-3 pl-9">
+          {tags && tags.length > 0 ? (
+            <ul className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <li className="flex" key={tag}>
+                  <Badge variant="secondary">{tag}</Badge>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {actions === undefined ? null : (
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              {actions}
+            </div>
+          )}
+        </div>
       ) : null}
     </Collapsible>
   );

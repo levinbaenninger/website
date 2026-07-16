@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-const GitHub = (props: SVGProps<SVGSVGElement>) => (
+const GitHubIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg {...props} viewBox="0 0 1024 1024" fill="none">
     <path
       fillRule="evenodd"
@@ -12,4 +12,4 @@ const GitHub = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export { GitHub };
+export { GitHubIcon };

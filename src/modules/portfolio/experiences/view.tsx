@@ -24,7 +24,7 @@ export const ExperiencesView = () => (
             }
             icon={<BriefcaseBusinessIcon aria-hidden />}
             key={position.id}
-            skills={position.skills}
+            tags={position.skills}
           >
             <TimelineMetadata>
               <TimelineMetadataItem label="Employment type">

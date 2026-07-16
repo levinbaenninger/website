@@ -31,7 +31,7 @@ export const TimelineExternalLinkItem = ({
 
       <ArrowUpRightIcon
         aria-hidden
-        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/timeline-item:translate-x-0.5 group-hover/timeline-item:-translate-y-0.5"
+        className="size-4 shrink-0 text-muted-foreground"
       />
     </div>
 

@@ -28,7 +28,7 @@ export const EducationView = () => (
               </h3>
             }
             icon={<GraduationCapIcon aria-hidden />}
-            skills={education.skills}
+            tags={education.skills}
           >
             <TimelineMetadata>
               <TimelinePeriod

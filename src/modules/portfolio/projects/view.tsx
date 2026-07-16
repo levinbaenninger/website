@@ -1,5 +1,7 @@
-import { BoxIcon } from "lucide-react";
+import { BoxIcon, GlobeIcon } from "lucide-react";
 
+import { GitHubIcon } from "@/modules/portfolio/icons/github-icon";
+import { TimelineExternalAction } from "@/modules/portfolio/timeline/external-action";
 import { TimelineItem } from "@/modules/portfolio/timeline/item";
 import { TimelineList } from "@/modules/portfolio/timeline/list";
 import {
@@ -13,6 +15,24 @@ import { TimelineView } from "@/modules/portfolio/timeline/view";
 import { PROJECTS } from "./content";
 import type { Project } from "./content";
 
+const ProjectLinks = ({ links }: { links: NonNullable<Project["links"]> }) => (
+  <>
+    {typeof links.liveSite === "string" ? (
+      <TimelineExternalAction href={links.liveSite} label="Open live site">
+        <GlobeIcon aria-hidden />
+      </TimelineExternalAction>
+    ) : null}
+    {typeof links.githubRepository === "string" ? (
+      <TimelineExternalAction
+        href={links.githubRepository}
+        label="View GitHub repository"
+      >
+        <GitHubIcon aria-hidden />
+      </TimelineExternalAction>
+    ) : null}
+  </>
+);
+
 const ProjectItem = ({ project }: { project: Project }) => (
   <article
     id={`project-${project.id}`}
@@ -20,10 +40,13 @@ const ProjectItem = ({ project }: { project: Project }) => (
   >
     <TimelineTrack>
       <TimelineItem
+        actions={
+          project.links ? <ProjectLinks links={project.links} /> : undefined
+        }
         description={project.description}
         heading={<h3 className="font-medium text-balance">{project.title}</h3>}
         icon={<BoxIcon aria-hidden />}
-        skills={project.skills}
+        tags={project.skills}
       >
         <TimelineMetadata>
           <TimelinePeriod

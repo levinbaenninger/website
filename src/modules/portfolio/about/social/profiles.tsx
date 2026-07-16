@@ -1,4 +1,5 @@
-import { GitHub } from "./icons/github";
+import { GitHubIcon } from "@/modules/portfolio/icons/github-icon";
+
 import { LinkedIn } from "./icons/linkedin";
 import { X } from "./icons/x";
 
@@ -12,7 +13,7 @@ export interface SocialProfile {
 
 export const GITHUB_PROFILE = {
   name: "github",
-  icon: <GitHub />,
+  icon: <GitHubIcon />,
   title: "GitHub",
   handle: "levinbaenninger",
   href: "https://github.com/levinbaenninger",

@@ -1,5 +1,6 @@
-import { AwardIcon } from "lucide-react";
+import { AwardIcon, ExternalLinkIcon } from "lucide-react";
 
+import { TimelineExternalAction } from "@/modules/portfolio/timeline/external-action";
 import { TimelineItem } from "@/modules/portfolio/timeline/item";
 import {
   TimelineMetadata,
@@ -21,6 +22,16 @@ export const AchievementsView = () => (
         >
           <TimelineTrack>
             <TimelineItem
+              actions={
+                achievement.resource ? (
+                  <TimelineExternalAction
+                    href={achievement.resource.href}
+                    label={achievement.resource.label}
+                  >
+                    <ExternalLinkIcon aria-hidden />
+                  </TimelineExternalAction>
+                ) : undefined
+              }
               description={achievement.description}
               heading={
                 <h3 className="font-medium text-balance">
@@ -28,6 +39,7 @@ export const AchievementsView = () => (
                 </h3>
               }
               icon={<AwardIcon aria-hidden />}
+              tags={achievement.tags}
             >
               <TimelineMetadata>
                 <TimelineMetadataItem label="Achievement date">
