@@ -192,7 +192,8 @@ export const CommandMenu = () => {
       >
         <SearchIcon data-icon="inline-start" />
 
-        <KbdGroup>
+        <span className="md:hidden">Search…</span>
+        <KbdGroup className="hidden md:inline-flex">
           <Kbd>{formatForDisplay("mod")}</Kbd>
           <Kbd>{formatForDisplay("k")}</Kbd>
         </KbdGroup>
