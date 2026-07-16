@@ -1,3 +1,5 @@
+import ReactMarkdown from "react-markdown";
+
 import {
   Panel,
   PanelContent,
@@ -27,7 +29,9 @@ export const Biography = ({
         <strong>{role.toLocaleLowerCase("en-US")}</strong> @ {company}.
       </p>
       {paragraphs.map((paragraph) => (
-        <p key={paragraph}>{paragraph}</p>
+        <ReactMarkdown key={paragraph} skipHtml>
+          {paragraph}
+        </ReactMarkdown>
       ))}
     </PanelContent>
   </Panel>
