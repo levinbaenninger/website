@@ -1,10 +1,12 @@
 import type { Temporal } from "@js-temporal/polyfill";
 import type { MDXContent } from "mdx/types";
 
+import type { ArticleCompilationFacts } from "./article-facts";
 import { validateArticleMetadata } from "./metadata";
 import type { ArticleCover, ArticleDetail, ArticleSummary } from "./types";
 
 interface ArticleModule {
+  readonly __articleFacts: ArticleCompilationFacts;
   readonly default: MDXContent;
   readonly frontmatter: unknown;
 }
@@ -16,10 +18,17 @@ export interface ArticleManifestEntry {
 }
 
 type CanonicalArticle = ArticleDetail & {
+  readonly articleFacts: ArticleCompilationFacts;
   readonly redirectFrom: readonly string[];
 };
 
+export interface FixedArticleDestination {
+  readonly pathname: `/${string}`;
+  readonly fragments: readonly string[];
+}
+
 interface ArticleOperationsOptions {
+  readonly fixedDestinations?: readonly FixedArticleDestination[];
   readonly manifest: readonly ArticleManifestEntry[];
   readonly includeDrafts: boolean;
   readonly today: Temporal.PlainDate;
@@ -66,6 +75,7 @@ const compareArticles = (
 const toSummary = (article: CanonicalArticle): ArticleSummary => {
   const {
     Content: _Content,
+    articleFacts: _articleFacts,
     redirectFrom: _redirectFrom,
     ...summary
   } = article;
@@ -73,16 +83,95 @@ const toSummary = (article: CanonicalArticle): ArticleSummary => {
 };
 
 const toDetail = (article: CanonicalArticle): ArticleDetail => {
-  const { redirectFrom: _redirectFrom, ...detail } = article;
+  const {
+    articleFacts: _articleFacts,
+    redirectFrom: _redirectFrom,
+    ...detail
+  } = article;
   return detail;
 };
 
+const validateCollectionLinks = (
+  articles: readonly CanonicalArticle[],
+  fixedDestinations: readonly FixedArticleDestination[]
+): void => {
+  const articlesBySlug = new Map(
+    articles.map((article) => [article.slug, article])
+  );
+  const fixedByPathname = new Map<string, Set<string>>(
+    fixedDestinations.map(({ pathname, fragments }) => [
+      pathname,
+      new Set(fragments),
+    ])
+  );
+
+  for (const article of articles) {
+    for (const { href } of article.articleFacts.links) {
+      if (href.startsWith("#") || href.startsWith("https://")) {
+        continue;
+      }
+
+      const isArticleLink =
+        /^\/blog\/[a-z0-9]+(?:-[a-z0-9]+)*(?:#[^#]+)?$/u.test(href);
+      if (isArticleLink) {
+        const targetWithFragment = href.slice("/blog/".length);
+        const fragmentIndex = targetWithFragment.indexOf("#");
+        const targetSlug =
+          fragmentIndex === -1
+            ? targetWithFragment
+            : targetWithFragment.slice(0, fragmentIndex);
+        const fragment =
+          fragmentIndex === -1
+            ? undefined
+            : targetWithFragment.slice(fragmentIndex + 1);
+        const target = articlesBySlug.get(targetSlug);
+        if (target === undefined) {
+          throw new Error(
+            `Article ${JSON.stringify(article.slug)} links to unknown canonical Article ${JSON.stringify(targetSlug)}.`
+          );
+        }
+        if (article.status === "Published" && target.status === "Draft") {
+          throw new Error(
+            `Published Article ${JSON.stringify(article.slug)} cannot link to Draft Article ${JSON.stringify(targetSlug)}.`
+          );
+        }
+        if (
+          fragment !== undefined &&
+          !target.articleFacts.headings.some(({ id }) => id === fragment)
+        ) {
+          throw new Error(
+            `Article link fragment ${JSON.stringify(fragment)} does not exist in ${JSON.stringify(targetSlug)}.`
+          );
+        }
+        continue;
+      }
+
+      const hashIndex = href.indexOf("#");
+      const pathname = hashIndex === -1 ? href : href.slice(0, hashIndex);
+      const fragment = hashIndex === -1 ? undefined : href.slice(hashIndex + 1);
+      const allowedFragments = fixedByPathname.get(pathname);
+      if (allowedFragments === undefined) {
+        throw new Error(
+          `Article ${JSON.stringify(article.slug)} links to unknown fixed app destination ${JSON.stringify(pathname)}.`
+        );
+      }
+      if (fragment !== undefined && !allowedFragments.has(fragment)) {
+        throw new Error(
+          `Fixed app destination fragment ${JSON.stringify(fragment)} is not allowed for ${JSON.stringify(pathname)}.`
+        );
+      }
+    }
+  }
+};
+
 const buildCollection = async ({
+  fixedDestinations = [],
   manifest,
   today,
-}: Pick<ArticleOperationsOptions, "manifest" | "today">): Promise<
-  readonly CanonicalArticle[]
-> => {
+}: Pick<
+  ArticleOperationsOptions,
+  "fixedDestinations" | "manifest" | "today"
+>): Promise<readonly CanonicalArticle[]> => {
   const loadedArticles = await Promise.all(
     manifest.map(async ({ slug, cover, loadArticle }) => {
       const articleModule = await loadArticle();
@@ -92,6 +181,7 @@ const buildCollection = async ({
       });
 
       return {
+        articleFacts: articleModule.__articleFacts,
         slug,
         href: `/blog/${slug}` as const,
         cover,
@@ -114,6 +204,7 @@ const buildCollection = async ({
     }
   }
 
+  validateCollectionLinks(loadedArticles, fixedDestinations);
   return loadedArticles.toSorted(compareArticles);
 };
 

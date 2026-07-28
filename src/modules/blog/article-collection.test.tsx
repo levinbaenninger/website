@@ -4,6 +4,7 @@ import { describe, expect, expectTypeOf, test } from "vite-plus/test";
 
 import { createArticleOperations } from "./article-collection";
 import type { ArticleManifestEntry } from "./article-collection";
+import type { ArticleCompilationFacts } from "./article-facts";
 import type { ArticleCover, ArticleDetail, ArticleSummary } from "./types";
 
 const TODAY = Temporal.PlainDate.from("2026-07-28");
@@ -14,16 +15,23 @@ const COVER: ArticleCover = {
 };
 
 const Content: MDXContent = () => <p>Article content</p>;
+const EMPTY_ARTICLE_FACTS: ArticleCompilationFacts = {
+  headings: [],
+  links: [],
+  searchText: "",
+};
 
 const entry = (
   slug: string,
-  frontmatter: Readonly<Record<string, unknown>>
+  frontmatter: Readonly<Record<string, unknown>>,
+  articleFacts: ArticleCompilationFacts = EMPTY_ARTICLE_FACTS
 ): ArticleManifestEntry => ({
   slug,
   cover: COVER,
   loadArticle: async () => {
     await Promise.resolve();
     return {
+      __articleFacts: articleFacts,
       default: Content,
       frontmatter,
     };
@@ -129,6 +137,11 @@ describe("Article operations", () => {
       loadArticle: async () => {
         await Promise.resolve();
         return {
+          __articleFacts: {
+            headings: [],
+            links: [],
+            searchText: "",
+          },
           default: Content,
           frontmatter: {
             title: "Recoverable Draft",
@@ -206,5 +219,107 @@ describe("Article operations", () => {
 
     // @ts-expect-error Public projections are readonly.
     article.title = "Changed";
+  });
+
+  test("resolves Article fragments, publication rules, and fixed app destinations", async () => {
+    const operations = createArticleOperations({
+      fixedDestinations: [
+        { fragments: ["work"], pathname: "/about" },
+        { fragments: [], pathname: "/" },
+      ],
+      includeDrafts: true,
+      manifest: [
+        entry(
+          "source",
+          {
+            title: "Source",
+            description: "Published source.",
+            status: "Published",
+            publishedAt: "2026-07-20",
+            tags: ["nextjs"],
+          },
+          {
+            headings: [],
+            links: [
+              { href: "/blog/target#details" },
+              { href: "/about#work" },
+              { href: "/" },
+            ],
+            searchText: "Source",
+          }
+        ),
+        entry(
+          "target",
+          {
+            title: "Target",
+            description: "Published target.",
+            status: "Published",
+            publishedAt: "2026-07-19",
+            tags: ["nextjs"],
+          },
+          {
+            headings: [{ depth: 2, id: "details", text: "Details" }],
+            links: [],
+            searchText: "Details",
+          }
+        ),
+      ],
+      today: TODAY,
+    });
+
+    await expect(operations.listArticles()).resolves.toHaveLength(2);
+
+    const invalidFragment = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        entry(
+          "source",
+          {
+            title: "Source",
+            description: "Source with a broken fragment.",
+            status: "Draft",
+            tags: ["nextjs"],
+          },
+          {
+            headings: [],
+            links: [{ href: "/blog/target#missing" }],
+            searchText: "",
+          }
+        ),
+        draft("target"),
+      ],
+      today: TODAY,
+    });
+
+    await expect(invalidFragment.listArticles()).rejects.toThrow(
+      /Article link fragment.*missing/u
+    );
+
+    const publishedToDraft = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        entry(
+          "source",
+          {
+            title: "Source",
+            description: "Published source.",
+            status: "Published",
+            publishedAt: "2026-07-20",
+            tags: ["nextjs"],
+          },
+          {
+            headings: [],
+            links: [{ href: "/blog/draft-target" }],
+            searchText: "",
+          }
+        ),
+        draft("draft-target"),
+      ],
+      today: TODAY,
+    });
+
+    await expect(publishedToDraft.listArticles()).rejects.toThrow(
+      /Published Article.*Draft/u
+    );
   });
 });

@@ -251,6 +251,28 @@ export const frontmatter = {};
     );
   });
 
+  test("rejects orphaned and duplicate non-Cover asset imports", async () => {
+    const paths = await createRepository();
+    await createArticle(paths, "media-ownership", {
+      mdx: `import Diagram from "./assets/diagram.png"
+import Duplicate from "./assets/diagram.png"
+
+## Media
+`,
+      assets: {
+        "diagram.png": await png(),
+        "orphan.png": await png(),
+      },
+    });
+
+    await expect(generateArticleManifest(paths)).rejects.toMatchObject({
+      diagnostics: expect.arrayContaining([
+        expect.objectContaining({ ruleId: "blog/asset-orphan" }),
+        expect.objectContaining({ ruleId: "blog/import-duplicate" }),
+      ]),
+    });
+  });
+
   test("generates collision-free identifiers for every valid slug", async () => {
     const paths = await createRepository();
     await createArticle(paths, "a-1");

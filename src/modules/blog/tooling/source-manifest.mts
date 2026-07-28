@@ -253,6 +253,7 @@ const validateArticleImports = (
 ): readonly BlogDiagnostic[] => {
   const diagnostics: BlogDiagnostic[] = [];
   const knownAssets = new Set(assets.map(({ relativePath }) => relativePath));
+  const importedAssets = new Set<string>();
 
   for (const match of mdxSource.matchAll(IMPORT_PATTERN)) {
     const specifier = match[1] ?? "";
@@ -329,6 +330,41 @@ const validateArticleImports = (
         )
       );
       continue;
+    }
+
+    if (importedAssets.has(relativePath)) {
+      diagnostics.push(
+        createDiagnostic(
+          mdxSourcePath,
+          "blog/import-duplicate",
+          "An Article-local asset may be imported only once.",
+          "Reuse the first imported binding in every approved media position.",
+          options
+        )
+      );
+      continue;
+    }
+    importedAssets.add(relativePath);
+  }
+
+  for (const asset of assets) {
+    if (
+      !asset.isCover &&
+      SUPPORTED_EXTENSIONS.has(asset.extension) &&
+      !importedAssets.has(asset.relativePath)
+    ) {
+      diagnostics.push(
+        createDiagnostic(
+          mdxSourcePath,
+          "blog/asset-orphan",
+          "Every non-Cover Article asset must be imported by its owning Article.",
+          "Import and consume the asset in a Figure, or remove it from the source bundle.",
+          {
+            articleSlug: slug,
+            value: asset.relativePath,
+          }
+        )
+      );
     }
   }
   return diagnostics;

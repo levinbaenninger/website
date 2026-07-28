@@ -1,6 +1,9 @@
 declare module "*.mdx" {
   import type { MDXContent } from "mdx/types";
 
+  import type { ArticleCompilationFacts } from "@/modules/blog/article-facts";
+
+  export const __articleFacts: ArticleCompilationFacts;
   export const frontmatter: unknown;
 
   const Content: MDXContent;

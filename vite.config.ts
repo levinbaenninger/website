@@ -182,6 +182,18 @@ export default defineConfig({
           "typescript/no-unsafe-type-assertion": "off",
         },
       },
+      {
+        files: ["src/modules/blog/article-contract.test.ts"],
+        rules: {
+          "promise/avoid-new": "off",
+        },
+      },
+      {
+        files: ["src/modules/blog/article-contract.mts"],
+        rules: {
+          complexity: "off",
+        },
+      },
     ],
     rules: {
       "import/no-relative-parent-imports": "error",
