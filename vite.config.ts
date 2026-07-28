@@ -10,6 +10,10 @@ export default defineConfig({
   },
   fmt: {
     ...ultracite,
+    ignorePatterns: [
+      ...(ultracite.ignorePatterns ?? []),
+      ".claude/settings.local.json",
+    ],
     sortTailwindcss: {
       stylesheet: "src/app/globals.css",
       functions: ["clsx", "cn"],
@@ -138,6 +142,44 @@ export default defineConfig({
               ],
             },
           ],
+        },
+      },
+      {
+        files: [
+          "src/modules/blog/tooling/cli.mts",
+          "src/modules/blog/tooling/source-manifest.mts",
+        ],
+        rules: {
+          "no-await-in-loop": "off",
+          "prefer-destructuring": "off",
+          "prefer-named-capture-group": "off",
+          "unicorn/no-await-expression-member": "off",
+        },
+      },
+      {
+        files: ["src/modules/blog/tooling/cli.mts"],
+        rules: {
+          "promise/avoid-new": "off",
+        },
+      },
+      {
+        files: ["src/modules/blog/tooling/media.mts"],
+        rules: {
+          complexity: "off",
+          "no-negated-condition": "off",
+          "prefer-destructuring": "off",
+          "prefer-named-capture-group": "off",
+          "typescript/no-unsafe-type-assertion": "off",
+          "unicorn/no-negated-condition": "off",
+        },
+      },
+      {
+        files: ["src/modules/blog/tooling/source-manifest.test.ts"],
+        rules: {
+          "no-await-in-loop": "off",
+          "prefer-destructuring": "off",
+          "typescript/no-unsafe-assignment": "off",
+          "typescript/no-unsafe-type-assertion": "off",
         },
       },
     ],

@@ -313,6 +313,9 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.17)
+      '@xmldom/xmldom':
+        specifier: 0.9.10
+        version: 0.9.10
       babel-plugin-react-compiler:
         specifier: 1.0.0
         version: 1.0.0
@@ -322,6 +325,9 @@ importers:
       shadcn:
         specifier: 4.13.0
         version: 4.13.0(typescript@6.0.3)
+      sharp:
+        specifier: 0.34.5
+        version: 0.34.5
       tailwindcss:
         specifier: 4.3.2
         version: 4.3.2
@@ -2465,6 +2471,10 @@ packages:
     engines: {node: '>=20.0.0'}
     cpu: [x64]
     os: [win32]
+
+  '@xmldom/xmldom@0.9.10':
+    resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
+    engines: {node: '>=14.6'}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -4899,8 +4909,7 @@ snapshots:
     dependencies:
       hono: 4.12.27
 
-  '@img/colour@1.1.0':
-    optional: true
+  '@img/colour@1.1.0': {}
 
   '@img/sharp-darwin-arm64@0.34.5':
     optionalDependencies:
@@ -6692,6 +6701,8 @@ snapshots:
 
   '@voidzero-dev/vite-plus-win32-x64-msvc@0.2.4':
     optional: true
+
+  '@xmldom/xmldom@0.9.10': {}
 
   accepts@2.0.0:
     dependencies:
@@ -8591,7 +8602,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:

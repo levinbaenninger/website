@@ -394,7 +394,7 @@ export const ContributionGraphCalendar = ({
         {!hideMonthLabels && (
           <g
             data-slot="month-labels"
-            className="selection:fill-selection-foreground fill-current"
+            className="fill-current selection:fill-selection-foreground"
           >
             {monthLabels.map(({ label, weekIndex }) => (
               <text

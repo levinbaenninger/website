@@ -1,6 +1,6 @@
-// Generated deterministically. Do not add Article metadata to this file.
+// Generated deterministically. Do not edit by hand.
 
-import coverUnderstandingCacheComponents from "./articles/understanding-cache-components/assets/cover.png";
+import cover_understanding_cache_components from "./articles/understanding-cache-components/assets/cover.png";
 import type { ArticleManifestEntry } from "./article-collection";
 
 export const ARTICLE_MANIFEST = [
@@ -10,6 +10,6 @@ export const ARTICLE_MANIFEST = [
       import(
         "./articles/understanding-cache-components/understanding-cache-components.mdx"
       ),
-    cover: coverUnderstandingCacheComponents,
+    cover: cover_understanding_cache_components,
   },
 ] as const satisfies readonly ArticleManifestEntry[];
