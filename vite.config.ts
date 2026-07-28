@@ -192,6 +192,7 @@ export default defineConfig({
         files: ["src/modules/blog/article-contract.mts"],
         rules: {
           complexity: "off",
+          "no-loop-func": "off",
         },
       },
     ],

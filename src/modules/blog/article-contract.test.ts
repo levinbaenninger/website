@@ -187,6 +187,10 @@ Plain **strong** prose with \`inline code\`.
         "blog/figure-prop",
       ],
       ['import image from "./assets/image.png"', "blog/import-unused"],
+      [
+        'import image from "./assets/image.png"\n\n<Figure src={image} alt="Outer"><Figure src={image} alt="Inner" /></Figure>',
+        "blog/figure-caption",
+      ],
     ] as const;
 
     await Promise.all(
@@ -194,6 +198,21 @@ Plain **strong** prose with \`inline code\`.
         await expect(compileArticle(source)).rejects.toThrow(ruleId);
       })
     );
+  });
+
+  test("reports every independently invalid Figure attribute", async () => {
+    const failure = await compileArticle(
+      '<Figure src="missing.png" alt=" " className="wide" decorative={false} />'
+    ).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    if (!(failure instanceof Error)) {
+      throw new TypeError("Expected Figure compilation to fail.");
+    }
+    expect(failure.message).toMatch(/blog\/figure-source/u);
+    expect(failure.message).toMatch(/blog\/figure-alt/u);
+    expect(failure.message).toMatch(/blog\/figure-prop/u);
+    expect(failure.message).toMatch(/blog\/figure-alternative/u);
   });
 
   test("compiles approved GFM and excludes code bodies and URLs from search facts", async () => {

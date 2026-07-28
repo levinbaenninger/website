@@ -44,9 +44,13 @@ class ArticleDiagnostics {
     this.#slug = file.path.split(/[\\/]/u).at(-2) ?? "unknown";
   }
 
-  capture(node: { readonly position?: ArticlePosition }, action: () => void) {
+  capture(
+    node: { readonly position?: ArticlePosition },
+    action: () => void
+  ): boolean {
     try {
       action();
+      return true;
     } catch (error) {
       if (!(error instanceof Error)) {
         throw error;
@@ -62,6 +66,7 @@ class ArticleDiagnostics {
           source: "blog",
         })
       );
+      return false;
     }
   }
 
@@ -287,16 +292,17 @@ const captionNodeTypes = new Set([
   "text",
 ]);
 
-const validateFigureCaption = (root: Root): void => {
+const validateFigureCaption = (
+  root: Root,
+  diagnostics: ArticleDiagnostics
+): void => {
   visit(root, (node) => {
-    if (
-      node.type !== "root" &&
-      node.type !== "mdxJsxFlowElement" &&
-      !captionNodeTypes.has(node.type)
-    ) {
-      throw new Error(
-        `[blog/figure-caption] ${JSON.stringify(node.type)} is not inline Figure caption content.`
-      );
+    if (node.type !== "root" && !captionNodeTypes.has(node.type)) {
+      diagnostics.capture(node, () => {
+        throw new Error(
+          `[blog/figure-caption] ${JSON.stringify(node.type)} is not inline Figure caption content. Use only text, emphasis, strong text, inline code, and links.`
+        );
+      });
     }
   });
 };
@@ -309,12 +315,16 @@ type FigureNode = Extract<
 const validateFigure = (
   node: FigureNode,
   imports: ReadonlyMap<string, string>,
-  consumedImports: Set<string>
+  consumedImports: Set<string>,
+  diagnostics: ArticleDiagnostics
 ): void => {
   if (node.type === "mdxJsxTextElement") {
-    throw new Error(
-      "[blog/figure-position] Figure is a body-level element and cannot appear inline."
-    );
+    diagnostics.capture(node, () => {
+      throw new Error(
+        '[blog/figure-position] "Figure" is inline, but Figure is a body-level element. Move it outside the paragraph.'
+      );
+    });
+    return;
   }
 
   let alternativeCount = 0;
@@ -322,92 +332,102 @@ const validateFigure = (
   const seenAttributes = new Set<string>();
 
   for (const attribute of node.attributes) {
-    if (
-      attribute.type !== "mdxJsxAttribute" ||
-      typeof attribute.name !== "string"
-    ) {
-      throw new Error(
-        "[blog/figure-prop] Figure does not accept spread or expression attributes."
-      );
-    }
-
-    if (
-      attribute.name !== "src" &&
-      attribute.name !== "alt" &&
-      attribute.name !== "decorative"
-    ) {
-      throw new Error(
-        `[blog/figure-prop] Figure does not accept ${JSON.stringify(attribute.name)}.`
-      );
-    }
-    if (seenAttributes.has(attribute.name)) {
-      throw new Error(
-        `[blog/figure-prop] Figure prop ${JSON.stringify(attribute.name)} may appear only once.`
-      );
-    }
-    seenAttributes.add(attribute.name);
-
-    if (attribute.name === "src") {
+    diagnostics.capture(attribute, () => {
       if (
-        attribute.value === null ||
-        attribute.value === undefined ||
-        typeof attribute.value === "string" ||
-        attribute.value.value === "" ||
-        !/^[A-Za-z_$][\w$]*$/u.test(attribute.value.value)
+        attribute.type !== "mdxJsxAttribute" ||
+        typeof attribute.name !== "string"
       ) {
         throw new Error(
-          "[blog/figure-source] Figure src must reference one imported Article-local image."
+          "[blog/figure-prop] Figure received a spread or expression attribute. Use only src, alt, or decorative."
         );
       }
-      sourceName = attribute.value.value;
-      continue;
-    }
-
-    if (attribute.name === "alt") {
       if (
-        typeof attribute.value !== "string" ||
-        attribute.value.length === 0 ||
-        attribute.value !== attribute.value.trim() ||
-        !attribute.value.isWellFormed() ||
-        attribute.value.normalize("NFC") !== attribute.value ||
-        [
-          ...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(
-            attribute.value
-          ),
-        ].length > 500
+        attribute.name !== "src" &&
+        attribute.name !== "alt" &&
+        attribute.name !== "decorative"
       ) {
         throw new Error(
-          "[blog/figure-alt] Figure alt must be informative, trimmed NFC text of 1–500 characters."
+          `[blog/figure-prop] Figure does not accept ${JSON.stringify(attribute.name)}. Use only src, alt, or decorative.`
+        );
+      }
+      if (seenAttributes.has(attribute.name)) {
+        throw new Error(
+          `[blog/figure-prop] Figure prop ${JSON.stringify(attribute.name)} appears more than once. Keep one value.`
+        );
+      }
+      seenAttributes.add(attribute.name);
+
+      if (attribute.name === "src") {
+        if (
+          attribute.value === null ||
+          attribute.value === undefined ||
+          typeof attribute.value === "string" ||
+          attribute.value.value === "" ||
+          !/^[A-Za-z_$][\w$]*$/u.test(attribute.value.value)
+        ) {
+          throw new Error(
+            `[blog/figure-source] Figure src ${JSON.stringify(attribute.value)} is not an imported image binding. Pass an Article-local import identifier.`
+          );
+        }
+        sourceName = attribute.value.value;
+        return;
+      }
+
+      if (attribute.name === "alt") {
+        if (
+          typeof attribute.value !== "string" ||
+          attribute.value.length === 0 ||
+          attribute.value !== attribute.value.trim() ||
+          !attribute.value.isWellFormed() ||
+          attribute.value.normalize("NFC") !== attribute.value ||
+          [
+            ...new Intl.Segmenter(undefined, {
+              granularity: "grapheme",
+            }).segment(attribute.value),
+          ].length > 500
+        ) {
+          throw new Error(
+            `[blog/figure-alt] Figure alt ${JSON.stringify(attribute.value)} is invalid. Use informative, trimmed NFC text of 1–500 characters.`
+          );
+        }
+        alternativeCount += 1;
+        return;
+      }
+
+      if (attribute.value !== null) {
+        throw new Error(
+          `[blog/figure-alternative] Figure decorative received ${JSON.stringify(attribute.value)}. Declare decorative as a bare boolean prop.`
         );
       }
       alternativeCount += 1;
-      continue;
-    }
+    });
+  }
 
-    if (attribute.value !== null) {
+  diagnostics.capture(node, () => {
+    if (alternativeCount !== 1) {
       throw new Error(
-        "[blog/figure-alternative] Figure decorative is a boolean declaration."
+        `[blog/figure-alternative] Figure has ${alternativeCount} valid alternatives. Provide exactly one informative alt or decorative declaration.`
       );
     }
-    alternativeCount += 1;
-  }
-
-  if (alternativeCount !== 1) {
-    throw new Error(
-      "[blog/figure-alternative] Figure requires exactly one informative alt or decorative declaration."
-    );
-  }
-  if (sourceName === undefined || !imports.has(sourceName)) {
-    throw new Error(
-      "[blog/figure-source] Figure src must reference one imported Article-local image."
-    );
-  }
-
-  consumedImports.add(sourceName);
-  validateFigureCaption({
-    type: "root",
-    children: node.children,
   });
+  const validSource = diagnostics.capture(node, () => {
+    if (sourceName === undefined || !imports.has(sourceName)) {
+      throw new Error(
+        `[blog/figure-source] Figure src ${JSON.stringify(sourceName)} is not an imported Article-local image. Pass one imported image binding.`
+      );
+    }
+  });
+
+  if (validSource && sourceName !== undefined) {
+    consumedImports.add(sourceName);
+  }
+  validateFigureCaption(
+    {
+      type: "root",
+      children: node.children,
+    },
+    diagnostics
+  );
 };
 
 const validateClosedLanguage = (
@@ -446,7 +466,7 @@ const validateClosedLanguage = (
             `[${ruleId}] ${JSON.stringify(node.name)} is not an approved Article element. Use Figure or approved Markdown.`
           );
         }
-        validateFigure(node, imports, consumedImports);
+        validateFigure(node, imports, consumedImports, diagnostics);
         return;
       }
       if (node.type === "image" || node.type === "imageReference") {
@@ -488,7 +508,7 @@ const validateClosedLanguage = (
 const validateHref = (href: string, headingIds: ReadonlySet<string>): void => {
   if (!href.startsWith("https://") && href.includes("?")) {
     throw new Error(
-      "[blog/link-query] Authored internal links cannot contain query strings."
+      `[blog/link-query] Internal link ${JSON.stringify(href)} contains a query string. Remove the query.`
     );
   }
   if (href.startsWith("#")) {
@@ -503,7 +523,7 @@ const validateHref = (href: string, headingIds: ReadonlySet<string>): void => {
   if (href.startsWith("/")) {
     if (href.startsWith("//")) {
       throw new Error(
-        "[blog/link-internal] Protocol-relative links are not internal Article links."
+        `[blog/link-internal] Protocol-relative link ${JSON.stringify(href)} is not internal. Use a root-relative path or absolute HTTPS URL.`
       );
     }
     return;
