@@ -1,5 +1,5 @@
 import GithubSlugger from "github-slugger";
-import type { Heading, Link, Root } from "mdast";
+import type { Definition, Heading, Root } from "mdast";
 import { toString } from "mdast-util-to-string";
 import { visit } from "unist-util-visit";
 
@@ -8,6 +8,85 @@ import type {
   ArticleHeadingFact,
   ArticleLinkFact,
 } from "./article-facts.ts";
+
+interface ArticlePosition {
+  readonly start: {
+    readonly line: number;
+    readonly column: number;
+  };
+}
+
+interface ArticleFile {
+  readonly path: string;
+  readonly message: (
+    reason: string,
+    options: {
+      readonly place?: ArticlePosition;
+      readonly ruleId: string;
+      readonly source: "blog";
+    }
+  ) => ArticleDiagnostic;
+}
+
+interface ArticleDiagnostic extends Error {
+  readonly column?: number;
+  readonly line?: number;
+  readonly ruleId?: string;
+}
+
+class ArticleDiagnostics {
+  readonly #diagnostics: ArticleDiagnostic[] = [];
+  readonly #file: ArticleFile;
+  readonly #slug: string;
+
+  constructor(file: ArticleFile) {
+    this.#file = file;
+    this.#slug = file.path.split(/[\\/]/u).at(-2) ?? "unknown";
+  }
+
+  capture(node: { readonly position?: ArticlePosition }, action: () => void) {
+    try {
+      action();
+    } catch (error) {
+      if (!(error instanceof Error)) {
+        throw error;
+      }
+      const matchedRule = /^\[blog\/[^\]]+\]\s*/u.exec(error.message);
+      const ruleId =
+        matchedRule?.[0].trim().slice(1, -1) ?? "blog/article-contract";
+      const reason = error.message.replace(/^\[blog\/[^\]]+\]\s*/u, "");
+      this.#diagnostics.push(
+        this.#file.message(`Article ${JSON.stringify(this.#slug)}: ${reason}`, {
+          place: node.position,
+          ruleId,
+          source: "blog",
+        })
+      );
+    }
+  }
+
+  throwIfAny(): void {
+    if (this.#diagnostics.length > 0) {
+      const sorted = this.#diagnostics.toSorted((left, right) => {
+        const positionOrder =
+          (left.line ?? 0) - (right.line ?? 0) ||
+          (left.column ?? 0) - (right.column ?? 0);
+        if (positionOrder !== 0) {
+          return positionOrder;
+        }
+        const leftRule = left.ruleId ?? "";
+        const rightRule = right.ruleId ?? "";
+        if (leftRule === rightRule) {
+          return 0;
+        }
+        return leftRule < rightRule ? -1 : 1;
+      });
+      throw new Error(
+        `Article compilation failed with ${sorted.length} contract violation${sorted.length === 1 ? "" : "s"}:\n${sorted.map((diagnostic) => `${diagnostic.name} [${diagnostic.ruleId ?? "blog/article-contract"}]: ${diagnostic.message}`).join("\n")}`
+      );
+    }
+  }
+}
 
 const normalizeSearchText = (value: string): string =>
   value.replaceAll(/\s+/gu, " ").trim();
@@ -115,73 +194,85 @@ const factsExport = (
   };
 };
 
-const assignHeadingIds = (root: Root): readonly ArticleHeadingFact[] => {
+const assignHeadingIds = (
+  root: Root,
+  diagnostics: ArticleDiagnostics
+): readonly ArticleHeadingFact[] => {
   const headings: ArticleHeadingFact[] = [];
   const slugger = new GithubSlugger();
 
   visit(root, "heading", (heading: Heading) => {
-    if (heading.depth === 1) {
-      throw new Error(
-        "[blog/heading-h1] Article bodies begin at h2; the Article title supplies the only h1."
-      );
-    }
+    diagnostics.capture(heading, () => {
+      if (heading.depth === 1) {
+        throw new Error(
+          "[blog/heading-h1] Article bodies begin at h2; the Article title supplies the only h1. Use h2–h6."
+        );
+      }
 
-    const text = toString(heading);
-    const id = slugger.slug(text);
-    heading.data ??= {};
-    heading.data.hProperties = {
-      ...heading.data.hProperties,
-      id,
-    };
-    headings.push({
-      depth: heading.depth,
-      id,
-      text,
+      const text = toString(heading);
+      const id = slugger.slug(text);
+      heading.data ??= {};
+      heading.data.hProperties = {
+        ...heading.data.hProperties,
+        id,
+      };
+      headings.push({
+        depth: heading.depth,
+        id,
+        text,
+      });
     });
   });
 
   return headings;
 };
 
-const collectAssetImports = (root: Root): ReadonlyMap<string, string> => {
+const collectAssetImports = (
+  root: Root,
+  diagnostics: ArticleDiagnostics
+): ReadonlyMap<string, string> => {
   const imports = new Map<string, string>();
   const importedSpecifiers = new Set<string>();
 
   visit(root, "mdxjsEsm", (node) => {
-    if (node.value === "") {
-      return;
-    }
+    diagnostics.capture(node, () => {
+      if (node.value === "") {
+        return;
+      }
 
-    const match = ASSET_IMPORT_PATTERN.exec(node.value);
-    if (match === null) {
-      const ruleId = node.value.trimStart().startsWith("import")
-        ? "blog/import"
-        : "blog/export";
-      throw new Error(
-        `[${ruleId}] Article-authored modules are limited to default local image imports.`
-      );
-    }
+      const match = ASSET_IMPORT_PATTERN.exec(node.value);
+      if (match === null) {
+        const ruleId = node.value.trimStart().startsWith("import")
+          ? "blog/import"
+          : "blog/export";
+        throw new Error(
+          `[${ruleId}] Article-authored modules are limited to default local image imports. Use a default import from "./assets/...".`
+        );
+      }
 
-    const normalizedImport = node.value.trim().replace(/;$/u, "");
-    const fromIndex = normalizedImport.indexOf(" from ");
-    const localName = normalizedImport
-      .slice("import ".length, fromIndex)
-      .trim();
-    const quotedSpecifier = normalizedImport.slice(fromIndex + " from ".length);
-    const specifier = quotedSpecifier.slice(1, -1);
-    if (!SUPPORTED_ASSET_PATTERN.test(specifier)) {
-      throw new Error(
-        `[blog/import] ${JSON.stringify(specifier)} is not an approved Article-local still-image import.`
+      const normalizedImport = node.value.trim().replace(/;$/u, "");
+      const fromIndex = normalizedImport.indexOf(" from ");
+      const localName = normalizedImport
+        .slice("import ".length, fromIndex)
+        .trim();
+      const quotedSpecifier = normalizedImport.slice(
+        fromIndex + " from ".length
       );
-    }
-    if (imports.has(localName) || importedSpecifiers.has(specifier)) {
-      throw new Error(
-        `[blog/import-duplicate] ${JSON.stringify(specifier)} is imported more than once.`
-      );
-    }
+      const specifier = quotedSpecifier.slice(1, -1);
+      if (!SUPPORTED_ASSET_PATTERN.test(specifier)) {
+        throw new Error(
+          `[blog/import] ${JSON.stringify(specifier)} is not an approved Article-local still-image import. Use AVIF, WebP, PNG, JPEG, or SVG.`
+        );
+      }
+      if (imports.has(localName) || importedSpecifiers.has(specifier)) {
+        throw new Error(
+          `[blog/import-duplicate] ${JSON.stringify(specifier)} is imported more than once. Reuse one binding.`
+        );
+      }
 
-    imports.set(localName, specifier);
-    importedSpecifiers.add(specifier);
+      imports.set(localName, specifier);
+      importedSpecifiers.add(specifier);
+    });
   });
 
   return imports;
@@ -321,130 +412,169 @@ const validateFigure = (
 
 const validateClosedLanguage = (
   root: Root,
-  imports: ReadonlyMap<string, string>
+  imports: ReadonlyMap<string, string>,
+  diagnostics: ArticleDiagnostics
 ): void => {
   const consumedImports = new Set<string>();
 
   visit(root, (node) => {
-    if (node.type === "html") {
-      throw new Error(
-        "[blog/raw-html] Raw HTML is outside the closed Article language."
-      );
-    }
-    if (
-      node.type === "mdxFlowExpression" ||
-      node.type === "mdxTextExpression"
-    ) {
-      throw new Error(
-        "[blog/expression] Arbitrary JavaScript expressions are outside the closed Article language."
-      );
-    }
-    if (
-      node.type === "mdxJsxFlowElement" ||
-      node.type === "mdxJsxTextElement"
-    ) {
-      if (node.name !== "Figure") {
-        const ruleId =
-          typeof node.name === "string" && node.name === node.name.toLowerCase()
-            ? "blog/raw-html"
-            : "blog/element";
+    diagnostics.capture(node, () => {
+      if (node.type === "html") {
         throw new Error(
-          `[${ruleId}] ${JSON.stringify(node.name)} is not an approved Article element.`
+          "[blog/raw-html] Raw HTML is outside the closed Article language. Use approved Markdown."
         );
       }
-      validateFigure(node, imports, consumedImports);
-      return;
-    }
-    if (node.type === "image" || node.type === "imageReference") {
-      throw new Error(
-        "[blog/image] Figure is the only supported body-image primitive."
-      );
-    }
-    if (
-      node.type === "footnoteDefinition" ||
-      node.type === "footnoteReference"
-    ) {
-      throw new Error(
-        "[blog/footnote] Footnotes are outside the closed Article language."
-      );
-    }
+      if (
+        node.type === "mdxFlowExpression" ||
+        node.type === "mdxTextExpression"
+      ) {
+        throw new Error(
+          "[blog/expression] Arbitrary JavaScript expressions are outside the closed Article language. Use literal Markdown."
+        );
+      }
+      if (
+        node.type === "mdxJsxFlowElement" ||
+        node.type === "mdxJsxTextElement"
+      ) {
+        if (node.name !== "Figure") {
+          const ruleId =
+            typeof node.name === "string" &&
+            node.name === node.name.toLowerCase()
+              ? "blog/raw-html"
+              : "blog/element";
+          throw new Error(
+            `[${ruleId}] ${JSON.stringify(node.name)} is not an approved Article element. Use Figure or approved Markdown.`
+          );
+        }
+        validateFigure(node, imports, consumedImports);
+        return;
+      }
+      if (node.type === "image" || node.type === "imageReference") {
+        throw new Error(
+          "[blog/image] Figure is the only supported body-image primitive. Import the image and render Figure."
+        );
+      }
+      if (
+        node.type === "footnoteDefinition" ||
+        node.type === "footnoteReference"
+      ) {
+        throw new Error(
+          "[blog/footnote] Footnotes are outside the closed Article language. Use ordinary prose."
+        );
+      }
+      if (
+        node.type === "text" &&
+        (!node.value.isWellFormed() ||
+          node.value.normalize("NFC") !== node.value)
+      ) {
+        throw new Error(
+          `[blog/text-normalization] ${JSON.stringify(node.value)} is not NFC-normalized Article prose. Normalize the authored text to NFC.`
+        );
+      }
+    });
   });
 
   for (const localName of imports.keys()) {
     if (!consumedImports.has(localName)) {
-      throw new Error(
-        `[blog/import-unused] Imported Article asset ${JSON.stringify(localName)} is not consumed by a Figure.`
-      );
+      diagnostics.capture(root, () => {
+        throw new Error(
+          `[blog/import-unused] Imported Article asset ${JSON.stringify(localName)} is not consumed by a Figure. Add a Figure or remove the import.`
+        );
+      });
     }
   }
 };
 
-const validateLinks = (
-  root: Root,
-  headings: readonly ArticleHeadingFact[]
-): readonly ArticleLinkFact[] => {
-  const headingIds = new Set(headings.map(({ id }) => id));
-  const links: ArticleLinkFact[] = [];
-
-  visit(root, "link", (link: Link) => {
-    const href = link.url;
-
-    if (href.startsWith("#")) {
-      const fragment = href.slice(1);
-      if (fragment.length === 0 || !headingIds.has(fragment)) {
-        throw new Error(
-          `[blog/link-fragment] Same-Article fragment ${JSON.stringify(fragment)} does not match a heading.`
-        );
-      }
-    } else if (href.startsWith("/")) {
-      if (href.startsWith("//")) {
-        throw new Error(
-          "[blog/link-internal] Protocol-relative links are not internal Article links."
-        );
-      }
-      if (href.includes("?")) {
-        throw new Error(
-          "[blog/link-query] Authored internal links cannot contain query strings."
-        );
-      }
-    } else if (href.startsWith("https://")) {
-      try {
-        const parsed = new URL(href);
-        if (parsed.protocol !== "https:") {
-          throw new Error("Unexpected parsed protocol.");
-        }
-      } catch {
-        throw new Error(
-          `[blog/link-external] ${JSON.stringify(href)} is not a valid absolute HTTPS URL.`
-        );
-      }
-    } else if (/^[a-z][a-z0-9+.-]*:/iu.test(href)) {
+const validateHref = (href: string, headingIds: ReadonlySet<string>): void => {
+  if (!href.startsWith("https://") && href.includes("?")) {
+    throw new Error(
+      "[blog/link-query] Authored internal links cannot contain query strings."
+    );
+  }
+  if (href.startsWith("#")) {
+    const fragment = href.slice(1);
+    if (fragment.length === 0 || !headingIds.has(fragment)) {
       throw new Error(
-        `[blog/link-scheme] ${JSON.stringify(href)} does not use the required HTTPS scheme.`
-      );
-    } else {
-      throw new Error(
-        `[blog/link-relative] ${JSON.stringify(href)} is not an approved root-relative Article link.`
+        `[blog/link-fragment] Same-Article fragment ${JSON.stringify(fragment)} does not match a heading.`
       );
     }
+    return;
+  }
+  if (href.startsWith("/")) {
+    if (href.startsWith("//")) {
+      throw new Error(
+        "[blog/link-internal] Protocol-relative links are not internal Article links."
+      );
+    }
+    return;
+  }
+  if (href.startsWith("https://")) {
+    if (!URL.canParse(href)) {
+      throw new Error(
+        `[blog/link-external] ${JSON.stringify(href)} is not a valid absolute HTTPS URL.`
+      );
+    }
+    return;
+  }
+  if (/^[a-z][a-z0-9+.-]*:/iu.test(href)) {
+    throw new Error(
+      `[blog/link-scheme] ${JSON.stringify(href)} does not use the required HTTPS scheme.`
+    );
+  }
+  throw new Error(
+    `[blog/link-relative] ${JSON.stringify(href)} is not an approved root-relative Article link.`
+  );
+};
 
-    links.push({ href });
+const validateLinks = (
+  root: Root,
+  headings: readonly ArticleHeadingFact[],
+  diagnostics: ArticleDiagnostics
+): readonly ArticleLinkFact[] => {
+  const definitions = new Map<string, string>();
+  visit(root, "definition", (definition: Definition) => {
+    definitions.set(definition.identifier, definition.url);
+  });
+
+  const headingIds = new Set(headings.map(({ id }) => id));
+  const links: ArticleLinkFact[] = [];
+  visit(root, (node) => {
+    diagnostics.capture(node, () => {
+      let href: string | undefined;
+      if (node.type === "link") {
+        href = node.url;
+      } else if (node.type === "linkReference") {
+        href = definitions.get(node.identifier);
+        if (href === undefined) {
+          throw new Error(
+            `[blog/link-reference] Link reference ${JSON.stringify(node.identifier)} has no definition. Add its definition.`
+          );
+        }
+      }
+
+      if (href !== undefined) {
+        validateHref(href, headingIds);
+        links.push({ href });
+      }
+    });
   });
 
   return links;
 };
 
 export default function articleContract() {
-  return (root: Root): void => {
-    const imports = collectAssetImports(root);
-    validateClosedLanguage(root, imports);
-    const headings = assignHeadingIds(root);
+  return (root: Root, file: ArticleFile): void => {
+    const diagnostics = new ArticleDiagnostics(file);
+    const imports = collectAssetImports(root, diagnostics);
+    validateClosedLanguage(root, imports, diagnostics);
+    const headings = assignHeadingIds(root, diagnostics);
     const facts: ArticleCompilationFacts = {
       headings,
-      links: validateLinks(root, headings),
+      links: validateLinks(root, headings, diagnostics),
       searchText: collectSearchText(root),
     };
 
+    diagnostics.throwIfAny();
     root.children.push(factsExport(facts));
   };
 }

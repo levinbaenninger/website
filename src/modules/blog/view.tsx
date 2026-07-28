@@ -1,23 +1,23 @@
-import { listArticles } from "./server";
+import type { ArticleSummary } from "./types";
 
-export const BlogView = async () => {
-  const articles = await listArticles();
+interface BlogViewProps {
+  readonly articles: readonly ArticleSummary[];
+}
 
-  return (
-    <main>
-      <h1>Blog</h1>
-      {articles.length === 0 ? (
-        <p>No published Articles yet.</p>
-      ) : (
-        <ul>
-          {articles.map((article) => (
-            <li key={article.slug}>
-              {article.title}
-              {article.status === "Draft" ? " — Draft" : null}
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
-  );
-};
+export const BlogView = ({ articles }: BlogViewProps) => (
+  <main>
+    <h1>Blog</h1>
+    {articles.length === 0 ? (
+      <p>No published Articles yet.</p>
+    ) : (
+      <ul>
+        {articles.map((article) => (
+          <li key={article.slug}>
+            {article.title}
+            {article.status === "Draft" ? " — Draft" : null}
+          </li>
+        ))}
+      </ul>
+    )}
+  </main>
+);

@@ -89,6 +89,12 @@ Plain **strong** prose with \`inline code\`.
     );
   });
 
+  test("aggregates positional Article diagnostics in source order", async () => {
+    await expect(compileArticle("# Bad title\n\n{unsafe}")).rejects.toThrow(
+      /Article compilation failed with 2 contract violations:[\s\S]*1:1.*blog\/heading-h1[\s\S]*3:1.*blog\/expression[\s\S]*Article "example"/u
+    );
+  });
+
   test("rejects executable and unsupported Markdown output", async () => {
     const invalidSources = [
       ["raw HTML", "<div>unsafe</div>", "blog/raw-html"],
@@ -117,10 +123,13 @@ Plain **strong** prose with \`inline code\`.
 [Article](/blog/another#intro)
 [App](/)
 [External](https://example.com/search?q=mdx#result)
+[Reference][guide]
+
+[guide]: /blog/another#intro
 `);
 
     expect(compiled).toContain(
-      '\\"links\\":[{\\"href\\":\\"#section\\"},{\\"href\\":\\"/blog/another#intro\\"},{\\"href\\":\\"/\\"},{\\"href\\":\\"https://example.com/search?q=mdx#result\\"}]'
+      '\\"links\\":[{\\"href\\":\\"#section\\"},{\\"href\\":\\"/blog/another#intro\\"},{\\"href\\":\\"/\\"},{\\"href\\":\\"https://example.com/search?q=mdx#result\\"},{\\"href\\":\\"/blog/another#intro\\"}]'
     );
 
     const invalidLinks = [
@@ -130,6 +139,7 @@ Plain **strong** prose with \`inline code\`.
       ["[HTTP](http://example.com)", "blog/link-scheme"],
       ["[Email](mailto:hello@example.com)", "blog/link-scheme"],
       ["[Relative](../another)", "blog/link-relative"],
+      ["[Unsafe][target]\n\n[target]: javascript:alert(1)", "blog/link-scheme"],
     ] as const;
 
     await Promise.all(

@@ -1,5 +1,6 @@
+import { listArticles } from "@/app/_blog/server";
 import { BlogView } from "@/modules/blog";
 
-export default function BlogPage() {
-  return <BlogView />;
+export default async function BlogPage() {
+  return <BlogView articles={await listArticles()} />;
 }

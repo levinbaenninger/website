@@ -1,7 +1,14 @@
 import { expectTypeOf, test } from "vite-plus/test";
 
-import type { ArticleSummary } from "@/modules/blog/server";
+import type {
+  ArticleSummary,
+  FixedArticleDestination,
+  createArticleServer,
+} from "@/modules/blog/server";
 
-test("app adapters can consume the explicit Blog server entrypoint", () => {
+test("app adapters configure the explicit Blog server entrypoint", () => {
   expectTypeOf<ArticleSummary["slug"]>().toEqualTypeOf<string>();
+  expectTypeOf<typeof createArticleServer>()
+    .parameter(0)
+    .toEqualTypeOf<readonly FixedArticleDestination[]>();
 });

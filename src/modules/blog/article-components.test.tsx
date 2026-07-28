@@ -6,8 +6,30 @@ import {
   ArticleLink,
   ArticleTaskInput,
 } from "./article-components";
+import { getArticleMdxComponents } from "./index";
 
 describe("semantic Article components", () => {
+  test("owns every approved semantic Markdown mapping", () => {
+    expect(Object.keys(getArticleMdxComponents()).toSorted()).toEqual([
+      "Figure",
+      "a",
+      "blockquote",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "hr",
+      "input",
+      "table",
+      "tbody",
+      "td",
+      "th",
+      "thead",
+      "tr",
+    ]);
+  });
+
   test("renders links with destination-specific browser behavior", () => {
     const internal = renderToStaticMarkup(
       <ArticleLink href="/blog/another#details">Internal</ArticleLink>
