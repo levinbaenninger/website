@@ -1,5 +1,6 @@
 import type { MDXComponents } from "mdx/types";
 
+import { ArticleCodeTabs } from "./article-code-tabs";
 import {
   ArticleCallout,
   ArticleCard,
@@ -8,6 +9,7 @@ import {
   ArticleFiles,
   ArticleFolder,
   ArticleFigure,
+  ArticleCodeBlock,
   ArticleHeading2,
   ArticleHeading3,
   ArticleHeading4,
@@ -40,6 +42,7 @@ const articleMdxComponents: MDXComponents = Object.freeze({
   Callout: ArticleCallout,
   Card: ArticleCard,
   Cards: ArticleCards,
+  CodeTabs: ArticleCodeTabs,
   File: ArticleFile,
   Files: ArticleFiles,
   Folder: ArticleFolder,
@@ -58,6 +61,7 @@ const articleMdxComponents: MDXComponents = Object.freeze({
   h6: ArticleHeading6,
   hr: ArticleThematicBreak,
   input: ArticleTaskInput,
+  pre: ArticleCodeBlock,
   table: ArticleTable,
   tbody: ArticleTableBody,
   td: ArticleTableCell,

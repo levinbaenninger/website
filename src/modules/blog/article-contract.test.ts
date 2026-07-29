@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vite-plus/test";
 
+import type { ArticleCodeThemes } from "./article-code-theme-contract.mts";
+
 const require = createRequire(import.meta.url);
 const nextMdxEntry = require.resolve("@next/mdx");
 const loadedNextMdxLoader: unknown = require(
@@ -11,6 +13,9 @@ const loadedNextMdxLoader: unknown = require(
 );
 const articleContractPlugin = fileURLToPath(
   new URL("article-contract.mts", import.meta.url)
+);
+const articleCodePlugin = fileURLToPath(
+  new URL("article-code.mts", import.meta.url)
 );
 
 interface MdxLoaderContext {
@@ -20,6 +25,14 @@ interface MdxLoaderContext {
   readonly resourcePath: string;
   readonly sourceMap: false;
   readonly getOptions: () => {
+    readonly rehypePlugins: readonly [
+      readonly [
+        string,
+        {
+          readonly themes: ArticleCodeThemes;
+        },
+      ],
+    ];
     readonly remarkPlugins: readonly string[];
   };
   readonly async: () => (error?: Error, result?: Uint8Array) => void;
@@ -36,7 +49,15 @@ if (!isNextMdxLoader(loadedNextMdxLoader)) {
 
 const nextMdxLoader = loadedNextMdxLoader;
 
-const compileArticle = async (source: string): Promise<string> =>
+const FIXTURE_CODE_THEMES: ArticleCodeThemes = {
+  dark: "github-dark",
+  light: "github-light",
+};
+
+const compileArticle = async (
+  source: string,
+  themes: ArticleCodeThemes = FIXTURE_CODE_THEMES
+): Promise<string> =>
   await new Promise((resolve, reject) => {
     const context: MdxLoaderContext = {
       _compiler: {},
@@ -48,6 +69,14 @@ const compileArticle = async (source: string): Promise<string> =>
       ),
       sourceMap: false,
       getOptions: () => ({
+        rehypePlugins: [
+          [
+            articleCodePlugin,
+            {
+              themes,
+            },
+          ],
+        ],
         remarkPlugins: ["remark-gfm", articleContractPlugin],
       }),
       async: () => (error, result) => {
@@ -596,6 +625,196 @@ app/
 
     expect(compiled).toContain(
       '\\"searchText\\":\\"app components button.tsx page.tsx\\"'
+    );
+  });
+
+  test("highlights the closed language allowlist with a dual-theme output", async () => {
+    const languages = [
+      "",
+      "text",
+      "bash",
+      "css",
+      "html",
+      "js",
+      "jsx",
+      "json",
+      "md",
+      "mdx",
+      "ts",
+      "tsx",
+      "yaml",
+      "diff",
+    ] as const;
+
+    await Promise.all(
+      languages.map(async (language) => {
+        const compiled = await compileArticle(
+          `\`\`\`${language}\nconst answer = 42\n\`\`\``
+        );
+        expect(compiled).toContain("data-copy-source");
+        if (language !== "" && language !== "text") {
+          expect(compiled).toContain("--shiki-dark");
+        }
+      })
+    );
+
+    await expect(compileArticle("```python\nprint('no')\n```")).rejects.toThrow(
+      /blog\/code-language.*python/u
+    );
+
+    const alternateThemes = await compileArticle(
+      "```ts\nconst themed = true\n```",
+      {
+        dark: "vitesse-dark",
+        light: "vitesse-light",
+      }
+    );
+    expect(alternateThemes).toContain(
+      "shiki-themes vitesse-light vitesse-dark"
+    );
+  });
+
+  test("validates fence metadata and rendering annotations", async () => {
+    const compiled =
+      await compileArticle(`\`\`\`ts title="Example" lineNumbers=3
+const answer = 42 // [!code highlight]
+const focused = answer // [!code focus]
+const changed = focused // [!code ++]
+console.log(changed) // [!code word:changed]
+\`\`\``);
+
+    expect(compiled).toContain("data-code-title");
+    expect(compiled).toContain("data-line-numbers-start");
+    expect(compiled).toContain("highlighted");
+    expect(compiled).toContain("focused");
+    expect(compiled).toContain("diff add");
+    expect(compiled).toContain("highlighted-word");
+    expect(compiled).not.toContain("[!code");
+
+    const invalid = [
+      ["```ts mystery\nvalue\n```", "blog/code-meta"],
+      ['```ts title="unterminated\nvalue\n```', "blog/code-meta"],
+      ["```ts lineNumbers=0\nvalue\n```", "blog/code-line-numbers"],
+      ["```ts twoslash=false\nvalue\n```", "blog/code-meta"],
+      ["```js twoslash\nvalue\n```", "blog/code-twoslash-language"],
+      ["```ts\nvalue // [!code unknown]\n```", "blog/code-annotation"],
+      ["```ts\nvalue // [!code word:]\n```", "blog/code-annotation"],
+    ] as const;
+
+    await Promise.all(
+      invalid.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("groups only valid consecutive tabbed fences", async () => {
+    const compiled =
+      await compileArticle(`\`\`\`ts tab="TypeScript" tab-group="runtime"
+const language = "ts"
+\`\`\`
+
+\`\`\`js tab="JavaScript"
+const language = "js"
+\`\`\`
+
+Paragraph.
+
+\`\`\`bash tab="Shell"
+echo first
+\`\`\`
+\`\`\`text tab="Text"
+first
+\`\`\``);
+
+    expect(compiled).toContain("{CodeTabs} = _components");
+    expect(compiled).toContain('groupId: "runtime"');
+    expect(compiled).toContain('labels: "[\\"TypeScript\\",\\"JavaScript\\"]"');
+
+    const invalid = [
+      ['```ts tab="Only"\nvalue\n```', "blog/code-tabs-size"],
+      [
+        '```ts tab="Same"\na\n```\n```js tab="Same"\nb\n```',
+        "blog/code-tabs-label",
+      ],
+      [
+        '```ts tab="First"\na\n```\n```js tab="Second" tab-group="late"\nb\n```',
+        "blog/code-tabs-group",
+      ],
+      ['```ts tab="Tabbed"\na\n```\n```js\nb\n```', "blog/code-tabs-boundary"],
+    ] as const;
+
+    await Promise.all(
+      invalid.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("produces clean copy source and deterministic offline Twoslash output", async () => {
+    const source = `\`\`\`ts twoslash
+const ordinary = "kept" // ordinary comment${"  "}
+const highlighted = ordinary // [!code highlight]
+const answer: number = 42
+//    ^?
+\`\`\``;
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = () => {
+      throw new Error("Article compilation attempted network access.");
+    };
+
+    try {
+      const first = await compileArticle(source);
+      const second = await compileArticle(source);
+      expect(first).toBe(second);
+      expect(first).toContain("twoslash");
+      expect(first).toContain("ordinary comment");
+      expect(first).not.toContain("[!code");
+      expect(first).not.toContain("^?");
+      expect(first).toContain(
+        '"data-copy-source": "const ordinary = \\"kept\\" // ordinary comment  \\n'
+      );
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+
+    await expect(
+      compileArticle("```ts twoslash\nconst value: string = 42\n```")
+    ).rejects.toThrow();
+    await expect(
+      compileArticle(
+        "```ts twoslash\n// @noErrors\nconst value: string = 42\n```"
+      )
+    ).rejects.toThrow(/blog\/twoslash-directive/u);
+    await expect(
+      compileArticle(
+        '```ts twoslash\nimport value from "./relative"\nconsole.log(value)\n```'
+      )
+    ).rejects.toThrow(/blog\/twoslash-import/u);
+    await expect(
+      compileArticle('```ts twoslash\nconst value = import("./relative")\n```')
+    ).rejects.toThrow(/blog\/twoslash-import/u);
+
+    const teachingError = await compileArticle(`\`\`\`ts twoslash
+// @errors: 2322
+const teaching: string = 42
+\`\`\``);
+    expect(teachingError).toContain("twoslash");
+    expect(teachingError).not.toContain("@errors");
+
+    const tsx = await compileArticle(`\`\`\`tsx twoslash
+const view = <div>Hello</div>
+\`\`\``);
+    expect(tsx).toContain("twoslash");
+    expect(tsx).toContain("Hello");
+
+    const diffWithFinalNewline = await compileArticle(`\`\`\`diff
+-old
++new
+
+\`\`\``);
+    expect(diffWithFinalNewline).toContain(
+      '"data-copy-source": "-old\\n+new\\n"'
     );
   });
 });

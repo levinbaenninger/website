@@ -24,6 +24,8 @@ import {
 } from "@/shared/ui/collapsible";
 import { Kbd } from "@/shared/ui/kbd";
 
+import { ArticleCopyButton } from "./article-copy-button";
+
 interface FigureProps {
   readonly alt?: string;
   readonly children?: ReactNode;
@@ -211,6 +213,40 @@ export const ArticleStep = ({ children, title }: ArticleStepProps) => (
 
 export const ArticleKbd = ({ children }: { readonly children: string }) => (
   <Kbd>{children}</Kbd>
+);
+
+type ArticleCodeBlockProps = ComponentPropsWithoutRef<"pre"> & {
+  readonly "data-code-tab-label"?: string;
+  readonly "data-code-title"?: string;
+  readonly "data-copy-source"?: string;
+  readonly "data-line-numbers-start"?: number;
+  readonly "data-twoslash"?: string;
+};
+
+export const ArticleCodeBlock = ({
+  "data-code-tab-label": _tabLabel,
+  "data-code-title": title,
+  "data-copy-source": copySource,
+  "data-line-numbers-start": lineNumbersStart,
+  "data-twoslash": twoslash,
+  children,
+  ...props
+}: ArticleCodeBlockProps) => (
+  <figure
+    data-code-block=""
+    data-line-numbers-start={lineNumbersStart}
+    data-twoslash={twoslash}
+  >
+    {title === undefined && copySource === undefined ? null : (
+      <figcaption>
+        {title === undefined ? null : <span>{title}</span>}
+        {copySource === undefined ? null : (
+          <ArticleCopyButton source={copySource} />
+        )}
+      </figcaption>
+    )}
+    <pre {...props}>{children}</pre>
+  </figure>
 );
 
 export const ArticleHeading2 = ({

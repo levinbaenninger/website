@@ -1,9 +1,10 @@
 import GithubSlugger from "github-slugger";
 import { icons as lucideIcons } from "lucide-react";
-import type { Code, Definition, Heading, Root } from "mdast";
+import type { Code, Definition, Heading, Root, RootContent } from "mdast";
 import { toString } from "mdast-util-to-string";
 import { visit } from "unist-util-visit";
 
+import { serializeCodeTabLabels } from "./article-code-tabs-contract.mts";
 import type {
   ArticleCompilationFacts,
   ArticleHeadingFact,
@@ -216,6 +217,415 @@ const searchableText = (node: ArticleNode): string => {
 
 const collectSearchText = (root: Root): string =>
   normalizeSearchText(searchableText(root));
+
+const CODE_LANGUAGES = new Set([
+  "bash",
+  "css",
+  "diff",
+  "html",
+  "js",
+  "json",
+  "jsx",
+  "md",
+  "mdx",
+  "text",
+  "ts",
+  "tsx",
+  "yaml",
+]);
+const CODE_TEXT_PATTERN = /^[^\r\n]+$/u;
+const CODE_TAB_GROUP_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const CODE_ANNOTATION_PATTERN =
+  /\[!code (?:(?:\+\+|--|focus|highlight)(?::[1-9]\d*)?|word:(?:\\.|[^:\]])+(?::[1-9]\d*)?)\]/gu;
+const CODE_ANNOTATION_CANDIDATE_PATTERN = /\[!code[^\]]*(?:\]|$)/gu;
+const TWOSLASH_IMPORT_PATTERN =
+  /^\s*(?:import|export)\s+(?:[^"']*\s+from\s+)?["']([^"']+)["']/gmu;
+const TWOSLASH_DYNAMIC_IMPORT_PATTERN =
+  /\b(?:import|require)\(\s*["']([^"']+)["']\s*\)/gu;
+const TWOSLASH_DIRECTIVE_PATTERN = /^\s*\/\/\s*@([A-Za-z][\w-]*)/gmu;
+const TWOSLASH_DIRECTIVE_NAMES = ["errors", "ts-expect-error"] as const;
+const ALLOWED_TWOSLASH_DIRECTIVES = new Set<string>(TWOSLASH_DIRECTIVE_NAMES);
+const TWOSLASH_COPY_DIRECTIVE_PATTERN = new RegExp(
+  String.raw`^\s*\/\/\s*(?:\^+\??|@(?:${TWOSLASH_DIRECTIVE_NAMES.join("|")})\b)`,
+  "u"
+);
+
+interface CodeFenceMetadata {
+  readonly lineNumbers?: number;
+  readonly tab?: string;
+  readonly tabGroup?: string;
+  readonly title?: string;
+  readonly twoslash: boolean;
+}
+
+const readMetadataValue = (
+  metadata: string,
+  start: number
+): { readonly end: number; readonly value: string } => {
+  if (metadata[start] === '"') {
+    const end = metadata.indexOf('"', start + 1);
+    if (end === -1) {
+      throw new Error(
+        `[blog/code-meta] Fence metadata ${JSON.stringify(metadata)} contains an unterminated quoted value. Close the double quote.`
+      );
+    }
+    return {
+      end: end + 1,
+      value: metadata.slice(start + 1, end),
+    };
+  }
+
+  const matched = /^[^\s]+/u.exec(metadata.slice(start));
+  if (matched === null) {
+    throw new Error(
+      `[blog/code-meta] Fence metadata ${JSON.stringify(metadata)} is missing a value after "=".`
+    );
+  }
+  return {
+    end: start + matched[0].length,
+    value: matched[0],
+  };
+};
+
+const validateCodeText = (
+  key: "tab" | "title",
+  value: string,
+  maximum: number
+): void => {
+  if (
+    !CODE_TEXT_PATTERN.test(value) ||
+    value !== value.trim() ||
+    !value.isWellFormed() ||
+    value.normalize("NFC") !== value ||
+    [
+      ...new Intl.Segmenter(undefined, {
+        granularity: "grapheme",
+      }).segment(value),
+    ].length > maximum
+  ) {
+    throw new Error(
+      `[blog/code-${key}] Code ${key} ${JSON.stringify(value)} must be trimmed, single-line NFC text of 1–${maximum} characters.`
+    );
+  }
+};
+
+const parseCodeMetadata = (metadata: string): CodeFenceMetadata => {
+  const values = new Map<string, string | true>();
+  let index = 0;
+  while (index < metadata.length) {
+    while (metadata[index] === " ") {
+      index += 1;
+    }
+    if (index === metadata.length) {
+      break;
+    }
+
+    const keyMatch = /^[A-Za-z][A-Za-z-]*/u.exec(metadata.slice(index));
+    if (keyMatch === null) {
+      throw new Error(
+        `[blog/code-meta] Fence metadata ${JSON.stringify(metadata)} is malformed. Use only the approved keys and literal values.`
+      );
+    }
+    const [key] = keyMatch;
+    index += key.length;
+    let value: string | true = true;
+    if (metadata[index] === "=") {
+      const parsed = readMetadataValue(metadata, index + 1);
+      ({ end: index, value } = parsed);
+    }
+    if (index < metadata.length && metadata[index] !== " ") {
+      throw new Error(
+        `[blog/code-meta] Fence metadata ${JSON.stringify(metadata)} is malformed near ${JSON.stringify(metadata.slice(index))}. Separate keys with spaces.`
+      );
+    }
+    if (values.has(key)) {
+      throw new Error(
+        `[blog/code-meta] Fence metadata key ${JSON.stringify(key)} appears more than once. Keep one value.`
+      );
+    }
+    values.set(key, value);
+  }
+
+  for (const key of values.keys()) {
+    if (
+      key !== "lineNumbers" &&
+      key !== "tab" &&
+      key !== "tab-group" &&
+      key !== "title" &&
+      key !== "twoslash"
+    ) {
+      throw new Error(
+        `[blog/code-meta] Unknown fence metadata key ${JSON.stringify(key)}. Use title, lineNumbers, tab, tab-group, or twoslash.`
+      );
+    }
+  }
+
+  const title = values.get("title");
+  if (title !== undefined && typeof title !== "string") {
+    throw new Error(
+      '[blog/code-title] Code title requires a quoted value such as title="Example".'
+    );
+  }
+  if (typeof title === "string") {
+    validateCodeText("title", title, 120);
+  }
+
+  const tab = values.get("tab");
+  if (tab !== undefined && typeof tab !== "string") {
+    throw new Error(
+      '[blog/code-tab] Code tab requires a quoted value such as tab="TypeScript".'
+    );
+  }
+  if (typeof tab === "string") {
+    validateCodeText("tab", tab, 40);
+  }
+
+  const tabGroup = values.get("tab-group");
+  if (
+    tabGroup !== undefined &&
+    (typeof tabGroup !== "string" ||
+      tabGroup.length > 80 ||
+      !CODE_TAB_GROUP_PATTERN.test(tabGroup))
+  ) {
+    throw new Error(
+      `[blog/code-tabs-group] Code tab-group ${JSON.stringify(tabGroup)} must be a lowercase kebab-case ID of 1–80 characters.`
+    );
+  }
+
+  const rawLineNumbers = values.get("lineNumbers");
+  let lineNumbers: number | undefined;
+  if (rawLineNumbers !== undefined) {
+    if (rawLineNumbers === true) {
+      lineNumbers = 1;
+    } else if (/^[1-9]\d*$/u.test(rawLineNumbers)) {
+      lineNumbers = Number(rawLineNumbers);
+      if (!Number.isSafeInteger(lineNumbers)) {
+        throw new TypeError(
+          `[blog/code-line-numbers] Code lineNumbers start ${JSON.stringify(rawLineNumbers)} exceeds the safe integer range.`
+        );
+      }
+    } else {
+      throw new Error(
+        `[blog/code-line-numbers] Code lineNumbers start ${JSON.stringify(rawLineNumbers)} must be a positive integer.`
+      );
+    }
+  }
+
+  const rawTwoslash = values.get("twoslash");
+  if (rawTwoslash !== undefined && rawTwoslash !== true) {
+    throw new Error(
+      "[blog/code-meta] twoslash is a bare flag and does not accept a value."
+    );
+  }
+
+  return {
+    lineNumbers,
+    tab: typeof tab === "string" ? tab : undefined,
+    tabGroup: typeof tabGroup === "string" ? tabGroup : undefined,
+    title: typeof title === "string" ? title : undefined,
+    twoslash: rawTwoslash === true,
+  };
+};
+
+const cleanCopySource = (source: string): string => {
+  const lines = source.split("\n");
+  const cleaned = lines.flatMap((line) => {
+    if (TWOSLASH_COPY_DIRECTIVE_PATTERN.test(line)) {
+      return [];
+    }
+    const withoutAnnotation = line.replace(
+      /\s*(?:\/\/|\/\*|<!--|#)\s*\[!code[^\]]+\]\s*(?:\*\/|-->)?\s*$/u,
+      ""
+    );
+    return [withoutAnnotation === line ? line : withoutAnnotation.trimEnd()];
+  });
+  return cleaned.join("\n");
+};
+
+const validateCodeAnnotations = (node: Code): void => {
+  const candidates = node.value.match(CODE_ANNOTATION_CANDIDATE_PATTERN) ?? [];
+  const valid = node.value.match(CODE_ANNOTATION_PATTERN) ?? [];
+  if (
+    candidates.length !== valid.length ||
+    candidates.some((candidate, index) => candidate !== valid[index])
+  ) {
+    throw new Error(
+      "[blog/code-annotation] Code contains a malformed or unsupported [!code ...] annotation. Use ++, --, highlight, focus, or word:<text>."
+    );
+  }
+};
+
+const validateTwoslashSource = (node: Code): void => {
+  for (const pattern of [
+    TWOSLASH_IMPORT_PATTERN,
+    TWOSLASH_DYNAMIC_IMPORT_PATTERN,
+  ]) {
+    pattern.lastIndex = 0;
+    for (const matched of node.value.matchAll(pattern)) {
+      const [, specifier] = matched;
+      throw new Error(
+        `[blog/twoslash-import] Twoslash import ${JSON.stringify(specifier)} is outside the isolated type allowlist. Use pinned TypeScript library declarations only.`
+      );
+    }
+  }
+
+  TWOSLASH_DIRECTIVE_PATTERN.lastIndex = 0;
+  for (const matched of node.value.matchAll(TWOSLASH_DIRECTIVE_PATTERN)) {
+    const [, directive] = matched;
+    if (
+      directive !== undefined &&
+      !ALLOWED_TWOSLASH_DIRECTIVES.has(directive)
+    ) {
+      throw new Error(
+        `[blog/twoslash-directive] Twoslash directive ${JSON.stringify(directive)} is not approved. Use only explicit expected-error directives.`
+      );
+    }
+  }
+};
+
+const annotateCodeNode = (
+  node: Code,
+  diagnostics: ArticleDiagnostics
+): CodeFenceMetadata | undefined => {
+  let parsed: CodeFenceMetadata | undefined;
+  diagnostics.capture(node, () => {
+    const language = node.lang ?? "text";
+    if (!CODE_LANGUAGES.has(language)) {
+      throw new Error(
+        `[blog/code-language] Code language ${JSON.stringify(language)} is not approved. Use text, bash, css, html, js, jsx, json, md, mdx, ts, tsx, yaml, or diff.`
+      );
+    }
+    parsed = parseCodeMetadata(node.meta ?? "");
+    validateCodeAnnotations(node);
+    if (parsed.twoslash && language !== "ts" && language !== "tsx") {
+      throw new Error(
+        `[blog/code-twoslash-language] Twoslash requires ts or tsx, not ${JSON.stringify(language)}.`
+      );
+    }
+    if (parsed.twoslash) {
+      validateTwoslashSource(node);
+    }
+    if (parsed.tabGroup !== undefined && parsed.tab === undefined) {
+      throw new Error(
+        "[blog/code-tabs-group] tab-group requires a tab label on the same first fence."
+      );
+    }
+
+    node.data ??= {};
+    node.data.hProperties = {
+      ...node.data.hProperties,
+      "data-code-title": parsed.title,
+      "data-code-tab-label": parsed.tab,
+      "data-copy-source": cleanCopySource(node.value),
+      "data-line-numbers-start": parsed.lineNumbers,
+      "data-twoslash": parsed.twoslash ? "" : undefined,
+    };
+  });
+  return parsed;
+};
+
+const codeTabsNode = (
+  children: readonly Code[],
+  labels: readonly string[],
+  groupId: string | undefined
+): RootContent =>
+  ({
+    type: "mdxJsxFlowElement",
+    name: "CodeTabs",
+    attributes: [
+      {
+        type: "mdxJsxAttribute",
+        name: "labels",
+        value: serializeCodeTabLabels(labels),
+      },
+      ...(groupId === undefined
+        ? []
+        : [
+            {
+              type: "mdxJsxAttribute" as const,
+              name: "groupId",
+              value: groupId,
+            },
+          ]),
+    ],
+    children,
+  }) as RootContent;
+
+const validateAndGroupCode = (
+  root: Root,
+  diagnostics: ArticleDiagnostics
+): void => {
+  const metadata = new Map<Code, CodeFenceMetadata>();
+  visit(root, "code", (node: Code) => {
+    const parsed = annotateCodeNode(node, diagnostics);
+    if (parsed !== undefined) {
+      metadata.set(node, parsed);
+    }
+  });
+
+  const grouped: RootContent[] = [];
+  for (let index = 0; index < root.children.length; ) {
+    const child = root.children[index];
+    if (child.type !== "code") {
+      grouped.push(child);
+      index += 1;
+      continue;
+    }
+
+    const run: Code[] = [];
+    while (root.children[index]?.type === "code") {
+      run.push(root.children[index] as Code);
+      index += 1;
+    }
+    const runMetadata = run.map((node) => metadata.get(node));
+    const tabbedCount = runMetadata.filter(
+      (entry) => entry?.tab !== undefined
+    ).length;
+    if (tabbedCount === 0) {
+      grouped.push(...run);
+      continue;
+    }
+    if (tabbedCount !== run.length) {
+      diagnostics.capture(run[0], () => {
+        throw new Error(
+          "[blog/code-tabs-boundary] Consecutive code fences cannot mix tabbed and independent blocks. Add tab labels to the complete run or separate it with content."
+        );
+      });
+      grouped.push(...run);
+      continue;
+    }
+    if (run.length < 2) {
+      diagnostics.capture(run[0], () => {
+        throw new Error(
+          "[blog/code-tabs-size] A tabbed code fence must be immediately followed by at least one more tabbed fence."
+        );
+      });
+      grouped.push(...run);
+      continue;
+    }
+
+    const labels = runMetadata.map((entry) => entry?.tab ?? "");
+    if (new Set(labels).size !== labels.length) {
+      diagnostics.capture(run[0], () => {
+        throw new Error(
+          "[blog/code-tabs-label] Code tab labels must be unique within their consecutive group."
+        );
+      });
+    }
+    const laterGroup = runMetadata
+      .slice(1)
+      .find((entry) => entry?.tabGroup !== undefined);
+    if (laterGroup !== undefined) {
+      diagnostics.capture(run[1], () => {
+        throw new Error(
+          "[blog/code-tabs-group] tab-group may appear only on the first fence in a CodeTabs group."
+        );
+      });
+    }
+    grouped.push(codeTabsNode(run, labels, runMetadata[0]?.tabGroup));
+  }
+  root.children = grouped;
+};
 
 const factsExport = (
   facts: ArticleCompilationFacts
@@ -1594,6 +2004,7 @@ export default function articleContract() {
     transformFileFences(root, diagnostics);
     const imports = collectImports(root, diagnostics);
     validateClosedLanguage(root, imports, diagnostics);
+    validateAndGroupCode(root, diagnostics);
     const headings = assignHeadingIds(root, diagnostics);
     const facts: ArticleCompilationFacts = {
       headings,
