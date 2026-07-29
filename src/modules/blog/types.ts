@@ -79,3 +79,10 @@ export interface ArticleSearchDocument {
   readonly body: string;
   readonly status: "published" | "draft";
 }
+
+export interface ArticleSocialImage {
+  readonly alt: string;
+  readonly label: "Article";
+  readonly slug: string;
+  readonly title: string;
+}

@@ -21,6 +21,7 @@ export type {
   ArticleDiscoveryEntry,
   ArticleRedirect,
   ArticleSearchDocument,
+  ArticleSocialImage,
   ArticleSummary,
   ArticleTagFacet,
 } from "./types";

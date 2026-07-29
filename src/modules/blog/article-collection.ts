@@ -10,6 +10,7 @@ import type {
   ArticleDiscoveryEntry,
   ArticleRedirect,
   ArticleSearchDocument,
+  ArticleSocialImage,
   ArticleSummary,
   ArticleTagFacet,
 } from "./types";
@@ -80,6 +81,12 @@ export interface ArticleOperations {
   readonly listArticleSearchDocuments: () => Promise<
     readonly ArticleSearchDocument[]
   >;
+  readonly listArticleSocialImages: () => Promise<
+    readonly ArticleSocialImage[]
+  >;
+  readonly findArticleSocialImage: (
+    slug: string
+  ) => Promise<ArticleSocialImage | null>;
 }
 
 const compareSlugs = (left: string, right: string): number => {
@@ -187,6 +194,13 @@ const toSearchDocument = (
   headings: article.articleFacts.headings.map(({ text }) => text),
   body: article.articleFacts.searchText,
   status: article.status === "Published" ? "published" : "draft",
+});
+
+const toSocialImage = (article: CanonicalArticle): ArticleSocialImage => ({
+  alt: `${article.title} — Levin Bänninger`,
+  label: "Article",
+  slug: article.slug,
+  title: article.title,
 });
 
 const validateCollectionLinks = (
@@ -412,6 +426,15 @@ export const createArticleOperations = (
       return articles
         .toSorted((left, right) => compareSlugs(left.slug, right.slug))
         .map(toSearchDocument);
+    },
+    async listArticleSocialImages() {
+      const articles = await getVisibleArticles();
+      return articles.map(toSocialImage);
+    },
+    async findArticleSocialImage(slug) {
+      const articles = await getVisibleArticles();
+      const article = articles.find((candidate) => candidate.slug === slug);
+      return article === undefined ? null : toSocialImage(article);
     },
   };
 };

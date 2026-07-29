@@ -1,16 +1,16 @@
 # Choose the MDX and content-processing stack
 
-Research for [Choose the MDX and content-processing stack](https://github.com/levinbaenninger/website/issues/4), captured on 2026-07-18.
+Research for [Choose the MDX and content-processing stack](https://github.com/levinbaenninger/website/issues/4), captured on 2026-07-18 and amended on 2026-07-29 after production-build verification.
 
 ## Decision
 
-Use Next.js's first-party local-file integration, `@next/mdx`, on its default JavaScript MDX compiler. Pin `@next/mdx` to the **same exact prerelease** as `next` (`16.3.0-preview.6`) and use MDX 3's official loader and React integration. Parse YAML frontmatter into a named MDX export with the focused `remark-frontmatter` + `remark-mdx-frontmatter` pair, then validate the exported value with Zod at the Blog's content-loading boundary. Configure remark/rehype plugins by package-name strings so the configuration is serializable by Turbopack. Do not enable the experimental Rust MDX compiler.
+Use Next.js's first-party local-file integration, `@next/mdx`, on its default JavaScript MDX compiler. Pin `@next/mdx` to the **same exact version** as `next` (`16.2.12`) and use MDX 3's official loader and React integration. Parse YAML frontmatter into a named MDX export with the focused `remark-frontmatter` + `remark-mdx-frontmatter` pair, then validate the exported value with Zod at the Blog's content-loading boundary. Configure remark/rehype plugins by package-name strings so the configuration is serializable by Turbopack. Do not enable the experimental Rust MDX compiler.
 
 Add these direct production dependencies at the researched versions:
 
 | Package | Version | Why it is direct |
 | --- | --- | --- |
-| `@next/mdx` | `16.3.0-preview.6` | First-party Next.js configuration and local `.mdx` compilation. It must move in lockstep with `next`; do not accept a range or a stable `@next/mdx` beside the preview. |
+| `@next/mdx` | `16.2.12` | First-party Next.js configuration and local `.mdx` compilation. It must move in lockstep with `next`; do not accept a range or mismatched Next.js release. |
 | `@mdx-js/loader` | `3.1.1` | The JavaScript compiler path used by `@next/mdx`; the installed Next.js guide explicitly includes it. |
 | `@mdx-js/react` | `3.1.1` | The official React/provider integration and fallback component source used by `@next/mdx`; declaring it directly prevents an incidental peer/transitive version from defining behavior. |
 | `remark-frontmatter` | `5.0.0` | Adds YAML frontmatter nodes to the Markdown AST. It recognizes frontmatter but does not create an importable metadata value. |
@@ -29,7 +29,7 @@ The versions above are the current compatible releases verified for this reposit
 
 ### Repository-local Articles and static compilation
 
-The installed Next.js 16.3 preview guide says `@next/mdx` sources local files, permits `.mdx` files to be imported from outside the route tree, compiles them to React/HTML, and supports Server Components in the App Router. The same guide demonstrates dynamic imports for slug-based routes plus `generateStaticParams` and `dynamicParams = false`. This is the shortest supported path from repository-owned Article source to statically generated routes, without introducing a second content framework or evaluating serialized MDX at request time. [Installed Next.js MDX guide](../../node_modules/next/dist/docs/01-app/02-guides/mdx.md) (sections “Install dependencies”, “Using imports”, and “Using dynamic imports”); [official Next.js MDX guide](https://nextjs.org/docs/app/guides/mdx).
+The installed Next.js 16.2 guide says `@next/mdx` sources local files, permits `.mdx` files to be imported from outside the route tree, compiles them to React/HTML, and supports Server Components in the App Router. The same guide demonstrates dynamic imports for slug-based routes plus `generateStaticParams` and `dynamicParams = false`. This is the shortest supported path from repository-owned Article source to statically generated routes, without introducing a second content framework or evaluating serialized MDX at request time. [Installed Next.js MDX guide](../../node_modules/next/dist/docs/01-app/02-guides/mdx.md) (sections “Install dependencies”, “Using imports”, and “Using dynamic imports”); [official Next.js MDX guide](https://nextjs.org/docs/app/guides/mdx).
 
 The default JavaScript compiler is deliberate. The installed guide labels `mdxRs` experimental. The matching `@next/mdx` implementation selects `mdx-js-loader` unless `experimental.mdxRs` is enabled and installs an equivalent Turbopack rule when `TURBOPACK` is present. [`@next/mdx` implementation](https://github.com/vercel/next.js/tree/canary/packages/next-mdx); installed `mdxRs` reference at `node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/mdxRs.md`.
 
@@ -57,7 +57,7 @@ Future transforms should follow the same string/serializable-options form. Add a
 
 ## Compatibility and maintenance evidence
 
-- The npm registry publishes `@next/mdx@16.3.0-preview.6`, from the Next.js monorepo, with optional peer ranges accepting both MDX packages. It was published 2026-07-13, matching the project's installed `next@16.3.0-preview.6`; `@next/mdx` is not installed yet, so selecting the exact matching preview avoids introducing version skew. [npm registry metadata](https://registry.npmjs.org/@next%2fmdx/16.3.0-preview.6); [`@next/mdx` source](https://github.com/vercel/next.js/tree/canary/packages/next-mdx).
+- The npm registry publishes matching `next@16.2.12` and `@next/mdx@16.2.12` stable packages from the Next.js monorepo. The pair passed the repository's complete Article, MDX, static-generation, metadata-image, and production-build verification. The former `16.3.0-preview.6` pair compiled Articles but misclassified statically parameterized Article image Route Handlers as request-rendered. [npm registry metadata](https://registry.npmjs.org/@next%2fmdx/16.2.12); [`@next/mdx` source](https://github.com/vercel/next.js/tree/canary/packages/next-mdx).
 - `@mdx-js/loader@3.1.1` and `@mdx-js/react@3.1.1` are the matching current MDX 3 releases, published 2025-08-29. Their package metadata points to the actively maintained MDX monorepo, whose repository activity continued in 2026. [MDX repository and releases](https://github.com/mdx-js/mdx); [loader package metadata](https://registry.npmjs.org/@mdx-js%2floader/3.1.1); [React package metadata](https://registry.npmjs.org/@mdx-js%2freact/3.1.1).
 - `remark-mdx-frontmatter@5.2.0` was published 2025-06-04, targets `@mdx-js/mdx ^3` in its own tests, requires Node 18+, and documents the exact two-plugin composition selected here. That is compatible with this repository's Node 24 runtime and MDX 3. [package repository](https://github.com/remcohaszing/remark-mdx-frontmatter); [npm metadata](https://registry.npmjs.org/remark-mdx-frontmatter/5.2.0).
 - `remark-frontmatter@5.0.0` is older (published 2023-09-18) but remains the latest stable release, is maintained under the unified/remark collective, and is the explicit upstream contract of the current `remark-mdx-frontmatter`. Its lack of releases reflects a small, stable syntax plugin rather than a superseded release line. [package repository](https://github.com/remarkjs/remark-frontmatter); [npm metadata](https://registry.npmjs.org/remark-frontmatter/5.0.0).
@@ -73,7 +73,7 @@ Future transforms should follow the same string/serializable-options form. Add a
 | `next-mdx-remote` | Designed for serialized/remote strings and runtime evaluation. Canonical content here is repository-local and deployment-coupled, so it adds an unnecessary execution and compatibility layer. |
 | Contentlayer, Velite, or another content framework | These add a parallel schema/build/cache abstraction before the Article contracts are even specified, increase dependency and upgrade surface, and are not needed to satisfy any standing decision. |
 | `react-markdown` | Renders Markdown as React but is not an MDX module compiler: it does not provide the required MDX component/export model or native Next.js local-module integration. Its presence elsewhere in the current dependency graph does not make it part of the Blog stack. |
-| Experimental `mdxRs` | The installed Next.js preview documentation explicitly labels it experimental. The default JavaScript compiler supports the required plugin seam without taking on that extra experimental surface. |
+| Experimental `mdxRs` | The installed Next.js documentation explicitly labels it experimental. The default JavaScript compiler supports the required plugin seam without taking on that extra experimental surface. |
 | Eager transform bundle (`remark-gfm`, heading slugs, code highlighting, sanitizing, etc.) | The exact Article syntax and output have not been specified. Every transform adds semantics and maintenance cost; the chosen stack leaves both plugin seams open and adds focused packages only when a resolved contract requires them. |
 
 ## Boundary for follow-up tickets
