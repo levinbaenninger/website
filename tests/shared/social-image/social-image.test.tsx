@@ -7,8 +7,8 @@ import {
   SOCIAL_IMAGE_CONTENT_TYPE,
   SOCIAL_IMAGE_SIZE,
   renderSocialImage,
-} from ".";
-import type { SocialImageInput } from ".";
+} from "@/shared/social-image";
+import type { SocialImageInput } from "@/shared/social-image";
 
 const PORTFOLIO_INPUT = {
   alt: "Levin Bänninger — Portfolio",

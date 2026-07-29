@@ -3,19 +3,22 @@ import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vite-plus/test";
 
 const interactionSource = readFileSync(
-  new URL("../rendering/interactions.tsx", import.meta.url),
+  new URL(
+    "../../../../src/modules/blog/rendering/interactions.tsx",
+    import.meta.url
+  ),
   "utf-8"
 );
 const registrySource = readFileSync(
-  new URL("../index.ts", import.meta.url),
+  new URL("../../../../src/modules/blog/index.ts", import.meta.url),
   "utf-8"
 );
 const articlesSource = readFileSync(
-  new URL("index.ts", import.meta.url),
+  new URL("../../../../src/modules/blog/articles/index.ts", import.meta.url),
   "utf-8"
 );
 const searchSource = readFileSync(
-  new URL("../search/index.ts", import.meta.url),
+  new URL("../../../../src/modules/blog/search/index.ts", import.meta.url),
   "utf-8"
 );
 

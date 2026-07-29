@@ -55,7 +55,7 @@ export default defineConfig({
       },
       "update:social-image-snapshots": {
         command:
-          "SOCIAL_IMAGE_GOLDENS=review vp test src/shared/social-image/social-image.test.tsx",
+          "SOCIAL_IMAGE_GOLDENS=review vp test tests/shared/social-image/social-image.test.tsx",
         cache: false,
       },
     },
@@ -297,7 +297,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/blog/tooling/source-manifest.test.ts"],
+        files: ["tests/modules/blog/tooling/source-manifest.test.ts"],
         rules: {
           "no-await-in-loop": "off",
           "prefer-destructuring": "off",
@@ -306,7 +306,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/blog/rendering/contract.test.ts"],
+        files: ["tests/modules/blog/rendering/contract.test.ts"],
         rules: {
           "promise/avoid-new": "off",
         },

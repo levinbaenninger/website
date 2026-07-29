@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vite-plus/test";
 
-import type { ArticleCodeThemes } from "./code-theme-contract.ts";
+import type { ArticleCodeThemes } from "@/modules/blog/rendering/code-theme-contract.ts";
 
 const require = createRequire(import.meta.url);
 const nextMdxEntry = require.resolve("@next/mdx");
@@ -12,9 +12,11 @@ const loadedNextMdxLoader: unknown = require(
   path.join(path.dirname(nextMdxEntry), "mdx-js-loader.js")
 );
 const articleContractPlugin = fileURLToPath(
-  new URL("contract.ts", import.meta.url)
+  new URL("../../../../src/modules/blog/rendering/contract.ts", import.meta.url)
 );
-const articleCodePlugin = fileURLToPath(new URL("code.ts", import.meta.url));
+const articleCodePlugin = fileURLToPath(
+  new URL("../../../../src/modules/blog/rendering/code.ts", import.meta.url)
+);
 
 interface MdxLoaderContext {
   readonly _compiler: object;

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import { PORTFOLIO_SOCIAL_IMAGE } from "./social-image";
+import { PORTFOLIO_SOCIAL_IMAGE } from "@/modules/portfolio/social-image";
 
 describe("Portfolio social-image input", () => {
   test("exposes the exact renderer-neutral Portfolio identity", () => {
