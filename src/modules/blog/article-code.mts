@@ -58,10 +58,12 @@ const csstypeEntry = path.resolve(
   "csstype",
   "index.d.ts"
 );
+const TWOSLASH_LIBRARIES = ["lib.es2022.d.ts", "lib.dom.d.ts"];
+const TWOSLASH_TARGET = ts.ScriptTarget.ES2022;
 const twoslashFileSystem = createDefaultMapFromNodeModules(
   {
-    lib: ["lib.es2022.d.ts", "lib.dom.d.ts"],
-    target: ts.ScriptTarget.ES2022,
+    lib: TWOSLASH_LIBRARIES,
+    target: TWOSLASH_TARGET,
   },
   ts
 );
@@ -85,12 +87,12 @@ const twoslasher = createTwoslasher({
   cache: true,
   compilerOptions: {
     jsx: ts.JsxEmit.ReactJSX,
-    lib: ["lib.es2022.d.ts", "lib.dom.d.ts"],
+    lib: TWOSLASH_LIBRARIES,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
     skipLibCheck: true,
     strict: true,
-    target: ts.ScriptTarget.ES2022,
+    target: TWOSLASH_TARGET,
     types: ["react"],
   },
   fsMap: twoslashFileSystem,
@@ -122,9 +124,6 @@ const themeLoaders = {
   },
 } satisfies Record<ArticleCodeTheme, () => Promise<ThemeRegistration>>;
 
-const loadArticleCodeTheme = async (theme: ArticleCodeTheme) =>
-  await themeLoaders[theme]();
-
 const highlighterPromises = new Map<
   string,
   ReturnType<typeof createHighlighterCore>
@@ -132,8 +131,8 @@ const highlighterPromises = new Map<
 
 const createArticleHighlighter = async (themes: ArticleCodeThemes) => {
   const registrations = await Promise.all([
-    loadArticleCodeTheme(themes.light),
-    loadArticleCodeTheme(themes.dark),
+    themeLoaders[themes.light](),
+    themeLoaders[themes.dark](),
   ]);
   return await createHighlighterCore({
     engine: createOnigurumaEngine(import("shiki/wasm")),
