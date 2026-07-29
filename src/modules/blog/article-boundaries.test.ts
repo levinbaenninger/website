@@ -10,6 +10,10 @@ const registrySource = readFileSync(
   new URL("index.ts", import.meta.url),
   "utf-8"
 );
+const articlesSource = readFileSync(
+  new URL("articles.ts", import.meta.url),
+  "utf-8"
+);
 
 describe("Article server and client boundaries", () => {
   test("keeps the Article registry server-first", () => {
@@ -17,12 +21,17 @@ describe("Article server and client boundaries", () => {
     expect(interactionSource.startsWith('"use client";')).toBe(true);
   });
 
+  test("guards Article operations at their dedicated server-only entrypoint", () => {
+    expect(articlesSource.startsWith('import "server-only";')).toBe(true);
+    expect(registrySource).not.toContain('"./articles"');
+  });
+
   test("keeps server capabilities out of the interaction entrypoint", () => {
     const forbiddenSpecifiers = [
       '"./article-collection"',
       '"./article-manifest.generated"',
       '"./compiler"',
-      '"./server"',
+      '"./articles"',
       '"./today"',
       '"./tooling/',
       '"server-only"',

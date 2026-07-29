@@ -3,7 +3,16 @@ import type { MDXContent } from "mdx/types";
 
 import type { ArticleCompilationFacts } from "./article-facts";
 import { validateArticleMetadata } from "./metadata";
-import type { ArticleCover, ArticleDetail, ArticleSummary } from "./types";
+import type { Tag } from "./tags";
+import type {
+  ArticleCover,
+  ArticleDetail,
+  ArticleDiscoveryEntry,
+  ArticleRedirect,
+  ArticleSearchDocument,
+  ArticleSummary,
+  ArticleTagFacet,
+} from "./types";
 
 interface ArticleModule {
   readonly __articleFacts: ArticleCompilationFacts;
@@ -17,10 +26,31 @@ export interface ArticleManifestEntry {
   readonly loadArticle: () => Promise<ArticleModule>;
 }
 
-type CanonicalArticle = ArticleDetail & {
+interface CanonicalArticleBase {
+  readonly slug: string;
+  readonly href: `/blog/${string}`;
+  readonly title: string;
+  readonly description: string;
+  readonly cover: ArticleCover;
+  readonly tags: readonly Tag[];
+  readonly Content: MDXContent;
   readonly articleFacts: ArticleCompilationFacts;
   readonly redirectFrom: readonly string[];
-};
+}
+
+type CanonicalArticle = CanonicalArticleBase &
+  (
+    | {
+        readonly status: "Draft";
+        readonly publishedAt?: string;
+        readonly updatedAt?: string;
+      }
+    | {
+        readonly status: "Published";
+        readonly publishedAt: string;
+        readonly updatedAt?: string;
+      }
+  );
 
 export interface FixedArticleDestination {
   readonly pathname: `/${string}`;
@@ -35,8 +65,21 @@ interface ArticleOperationsOptions {
 }
 
 export interface ArticleOperations {
-  readonly listArticles: () => Promise<readonly ArticleSummary[]>;
-  readonly findArticleBySlug: (slug: string) => Promise<ArticleDetail | null>;
+  readonly listArticles: (options?: {
+    readonly tag?: string;
+  }) => Promise<readonly ArticleSummary[]>;
+  readonly findArticle: (slug: string) => Promise<ArticleDetail | null>;
+  readonly listArticleTags: () => Promise<readonly ArticleTagFacet[]>;
+  readonly findArticleRedirect: (
+    slug: string
+  ) => Promise<`/blog/${string}` | null>;
+  readonly listArticleRedirects: () => Promise<readonly ArticleRedirect[]>;
+  readonly listPublishedArticleDiscoveryEntries: () => Promise<
+    readonly ArticleDiscoveryEntry[]
+  >;
+  readonly listArticleSearchDocuments: () => Promise<
+    readonly ArticleSearchDocument[]
+  >;
 }
 
 const compareSlugs = (left: string, right: string): number => {
@@ -73,23 +116,78 @@ const compareArticles = (
 };
 
 const toSummary = (article: CanonicalArticle): ArticleSummary => {
-  const {
-    Content: _Content,
-    articleFacts: _articleFacts,
-    redirectFrom: _redirectFrom,
-    ...summary
-  } = article;
-  return summary;
+  const shared = {
+    slug: article.slug,
+    href: article.href,
+    title: article.title,
+    description: article.description,
+    cover: article.cover,
+    tags: article.tags,
+  };
+
+  if (article.status === "Published") {
+    return {
+      ...shared,
+      status: "published",
+      publishedAt: article.publishedAt,
+      updatedAt: article.updatedAt ?? null,
+    };
+  }
+
+  return {
+    ...shared,
+    status: "draft",
+    publishedAt: article.publishedAt ?? null,
+    updatedAt: article.updatedAt ?? null,
+  };
 };
 
+const toDiscoveryEntry = (
+  article: CanonicalArticle & { readonly status: "Published" }
+): ArticleDiscoveryEntry => ({
+  href: article.href,
+  title: article.title,
+  description: article.description,
+  cover: article.cover,
+  tags: article.tags,
+  publishedAt: article.publishedAt,
+  updatedAt: article.updatedAt ?? null,
+});
+
 const toDetail = (article: CanonicalArticle): ArticleDetail => {
-  const {
-    articleFacts: _articleFacts,
-    redirectFrom: _redirectFrom,
-    ...detail
-  } = article;
-  return detail;
+  const summary = toSummary(article);
+
+  if (article.status === "Published" && summary.status === "published") {
+    return {
+      ...summary,
+      Content: article.Content,
+      discovery: toDiscoveryEntry(article),
+    };
+  }
+
+  if (summary.status !== "draft") {
+    throw new Error("Draft Article projection has an invalid status.");
+  }
+
+  return {
+    ...summary,
+    Content: article.Content,
+    discovery: null,
+  };
 };
+
+const toSearchDocument = (
+  article: CanonicalArticle
+): ArticleSearchDocument => ({
+  id: article.slug,
+  href: article.href,
+  title: article.title,
+  description: article.description,
+  tags: article.tags,
+  headings: article.articleFacts.headings.map(({ text }) => text),
+  body: article.articleFacts.searchText,
+  status: article.status === "Published" ? "published" : "draft",
+});
 
 const validateCollectionLinks = (
   articles: readonly CanonicalArticle[],
@@ -107,7 +205,17 @@ const validateCollectionLinks = (
 
   for (const article of articles) {
     for (const { href } of article.articleFacts.links) {
-      if (href.startsWith("#") || href.startsWith("https://")) {
+      if (href.startsWith("#")) {
+        const fragment = href.slice(1);
+        if (!article.articleFacts.headings.some(({ id }) => id === fragment)) {
+          throw new Error(
+            `Article link fragment ${JSON.stringify(fragment)} does not exist in ${JSON.stringify(article.slug)}.`
+          );
+        }
+        continue;
+      }
+
+      if (href.startsWith("https://")) {
         continue;
       }
 
@@ -237,14 +345,73 @@ export const createArticleOperations = (
   };
 
   return {
-    async listArticles() {
+    async listArticles(listOptions = {}) {
       const articles = await getVisibleArticles();
-      return articles.map(toSummary);
+      const filteredArticles =
+        listOptions.tag === undefined
+          ? articles
+          : articles.filter((article) =>
+              article.tags.some(({ id }) => id === listOptions.tag)
+            );
+      return filteredArticles.map(toSummary);
     },
-    async findArticleBySlug(slug) {
+    async findArticle(slug) {
       const articles = await getVisibleArticles();
       const article = articles.find((candidate) => candidate.slug === slug);
       return article === undefined ? null : toDetail(article);
+    },
+    async listArticleTags() {
+      const articles = await getVisibleArticles();
+      const facetsById = new Map<string, ArticleTagFacet>();
+
+      for (const article of articles) {
+        for (const tag of article.tags) {
+          const existing = facetsById.get(tag.id);
+          facetsById.set(tag.id, {
+            ...tag,
+            articleCount: (existing?.articleCount ?? 0) + 1,
+          });
+        }
+      }
+
+      return [...facetsById.values()].toSorted((left, right) =>
+        compareSlugs(left.label, right.label)
+      );
+    },
+    async findArticleRedirect(slug) {
+      const articles = await getVisibleArticles();
+      const article = articles.find((candidate) =>
+        candidate.redirectFrom.includes(slug)
+      );
+      return article?.href ?? null;
+    },
+    async listArticleRedirects() {
+      const articles = await getVisibleArticles();
+      return articles
+        .flatMap((article) =>
+          article.redirectFrom.map((slug) => ({
+            slug,
+            href: article.href,
+          }))
+        )
+        .toSorted((left, right) => compareSlugs(left.slug, right.slug));
+    },
+    async listPublishedArticleDiscoveryEntries() {
+      const collection = await getCollection();
+      return collection
+        .filter(
+          (
+            article
+          ): article is CanonicalArticle & { readonly status: "Published" } =>
+            article.status === "Published"
+        )
+        .map(toDiscoveryEntry);
+    },
+    async listArticleSearchDocuments() {
+      const articles = await getVisibleArticles();
+      return articles
+        .toSorted((left, right) => compareSlugs(left.slug, right.slug))
+        .map(toSearchDocument);
     },
   };
 };

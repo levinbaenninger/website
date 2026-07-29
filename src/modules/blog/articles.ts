@@ -15,4 +15,11 @@ export const createArticleServer = (
   });
 
 export type { FixedArticleDestination } from "./article-collection";
-export type { ArticleDetail, ArticleSummary } from "./types";
+export type {
+  ArticleDetail,
+  ArticleDiscoveryEntry,
+  ArticleRedirect,
+  ArticleSearchDocument,
+  ArticleSummary,
+  ArticleTagFacet,
+} from "./types";

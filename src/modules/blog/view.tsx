@@ -14,7 +14,7 @@ export const BlogView = ({ articles }: BlogViewProps) => (
         {articles.map((article) => (
           <li key={article.slug}>
             {article.title}
-            {article.status === "Draft" ? " — Draft" : null}
+            {article.status === "draft" ? " — Draft" : null}
           </li>
         ))}
       </ul>

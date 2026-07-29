@@ -1,7 +1,13 @@
-import { createArticleServer } from "@/modules/blog/server";
+import { createArticleServer } from "@/modules/blog/articles";
 
 import { ARTICLE_FIXED_DESTINATIONS } from "./article-destinations";
 
-export const { findArticleBySlug, listArticles } = createArticleServer(
-  ARTICLE_FIXED_DESTINATIONS
-);
+export const {
+  findArticle,
+  findArticleRedirect,
+  listArticleRedirects,
+  listArticleSearchDocuments,
+  listArticleTags,
+  listArticles,
+  listPublishedArticleDiscoveryEntries,
+} = createArticleServer(ARTICLE_FIXED_DESTINATIONS);

@@ -4,9 +4,9 @@ import type {
   ArticleSummary,
   FixedArticleDestination,
   createArticleServer,
-} from "@/modules/blog/server";
+} from "@/modules/blog/articles";
 
-test("app adapters configure the explicit Blog server entrypoint", () => {
+test("app adapters configure the server-only Article entrypoint", () => {
   expectTypeOf<ArticleSummary["slug"]>().toEqualTypeOf<string>();
   expectTypeOf<typeof createArticleServer>()
     .parameter(0)

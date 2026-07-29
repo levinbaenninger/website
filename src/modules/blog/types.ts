@@ -21,19 +21,61 @@ interface ArticleSummaryBase {
 }
 
 export type DraftArticleSummary = ArticleSummaryBase & {
-  readonly status: "Draft";
-  readonly publishedAt?: string;
-  readonly updatedAt?: string;
+  readonly status: "draft";
+  readonly publishedAt: string | null;
+  readonly updatedAt: string | null;
 };
 
 export type PublishedArticleSummary = ArticleSummaryBase & {
-  readonly status: "Published";
+  readonly status: "published";
   readonly publishedAt: string;
-  readonly updatedAt?: string;
+  readonly updatedAt: string | null;
 };
 
 export type ArticleSummary = DraftArticleSummary | PublishedArticleSummary;
 
-export type ArticleDetail = ArticleSummary & {
+export interface ArticleTagFacet extends Tag {
+  readonly articleCount: number;
+}
+
+export interface ArticleRedirect {
+  readonly slug: string;
+  readonly href: `/blog/${string}`;
+}
+
+export interface ArticleDiscoveryEntry {
+  readonly href: `/blog/${string}`;
+  readonly title: string;
+  readonly description: string;
+  readonly cover: ArticleCover;
+  readonly tags: readonly Tag[];
+  readonly publishedAt: string;
+  readonly updatedAt: string | null;
+}
+
+interface ArticleDetailBase {
   readonly Content: MDXContent;
-};
+}
+
+export type DraftArticleDetail = DraftArticleSummary &
+  ArticleDetailBase & {
+    readonly discovery: null;
+  };
+
+export type PublishedArticleDetail = PublishedArticleSummary &
+  ArticleDetailBase & {
+    readonly discovery: ArticleDiscoveryEntry;
+  };
+
+export type ArticleDetail = DraftArticleDetail | PublishedArticleDetail;
+
+export interface ArticleSearchDocument {
+  readonly id: string;
+  readonly href: `/blog/${string}`;
+  readonly title: string;
+  readonly description: string;
+  readonly tags: readonly Tag[];
+  readonly headings: readonly string[];
+  readonly body: string;
+  readonly status: "published" | "draft";
+}

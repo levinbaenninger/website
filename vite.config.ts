@@ -142,7 +142,7 @@ export default defineConfig({
               ],
               patterns: [
                 {
-                  group: ["@/modules/*/**", "!@/modules/blog/server"],
+                  group: ["@/modules/*/**", "!@/modules/blog/articles"],
                   message:
                     "App code must consume a product module through its public entrypoint.",
                 },

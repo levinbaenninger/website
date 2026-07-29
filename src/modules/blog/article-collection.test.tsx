@@ -3,7 +3,10 @@ import type { MDXContent } from "mdx/types";
 import { describe, expect, expectTypeOf, test } from "vite-plus/test";
 
 import { createArticleOperations } from "./article-collection";
-import type { ArticleManifestEntry } from "./article-collection";
+import type {
+  ArticleManifestEntry,
+  ArticleOperations,
+} from "./article-collection";
 import type { ArticleCompilationFacts } from "./article-facts";
 import type { ArticleCover, ArticleDetail, ArticleSummary } from "./types";
 
@@ -55,6 +58,23 @@ const published = (slug: string, publishedAt: string) =>
     tags: ["web-performance", "nextjs"],
   });
 
+const callEveryArticleOperation = (
+  operations: ArticleOperations,
+  {
+    currentSlug,
+    formerSlug,
+  }: { readonly currentSlug: string; readonly formerSlug: string }
+) =>
+  [
+    operations.listArticles(),
+    operations.findArticle(currentSlug),
+    operations.listArticleTags(),
+    operations.findArticleRedirect(formerSlug),
+    operations.listArticleRedirects(),
+    operations.listPublishedArticleDiscoveryEntries(),
+    operations.listArticleSearchDocuments(),
+  ] as const;
+
 describe("Article operations", () => {
   test("lists local Drafts first, then Published Articles deterministically", async () => {
     const articles = createArticleOperations({
@@ -105,10 +125,57 @@ describe("Article operations", () => {
       today: TODAY,
     });
 
-    expect(await articles.findArticleBySlug("hidden")).toBeNull();
+    expect(await articles.findArticle("hidden")).toBeNull();
     const listedArticles = await articles.listArticles();
 
     expect(listedArticles.map(({ slug }) => slug)).toEqual(["visible"]);
+  });
+
+  test("production excludes Drafts from every environment-visible projection", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: false,
+      manifest: [
+        entry(
+          "draft-sentinel",
+          {
+            title: "Draft sentinel",
+            description: "A unique production leakage sentinel.",
+            status: "Draft",
+            tags: ["web-performance"],
+            redirectFrom: ["draft-sentinel-former"],
+          },
+          {
+            headings: [
+              { depth: 2, id: "sentinel", text: "Draft sentinel heading" },
+            ],
+            links: [],
+            searchText: "Draft sentinel body",
+          }
+        ),
+        entry("published", {
+          title: "Published",
+          description: "The only production-visible Article.",
+          status: "Published",
+          publishedAt: "2026-07-20",
+          tags: ["nextjs"],
+          redirectFrom: ["published-former"],
+        }),
+      ],
+      today: TODAY,
+    });
+
+    const projections = await Promise.all(
+      callEveryArticleOperation(articles, {
+        currentSlug: "draft-sentinel",
+        formerSlug: "draft-sentinel-former",
+      })
+    );
+    const serialized = JSON.stringify(projections);
+
+    expect(serialized).not.toContain("draft-sentinel");
+    expect(serialized).not.toContain("web-performance");
+    expect(projections[1]).toBeNull();
+    expect(projections[3]).toBeNull();
   });
 
   test("rejects collisions in the shared current and former slug namespace", async () => {
@@ -164,6 +231,30 @@ describe("Article operations", () => {
     await expect(articles.listArticles()).resolves.toHaveLength(1);
   });
 
+  test("rejects every operation when canonical collection construction fails", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: false,
+      manifest: [
+        entry("invalid", {
+          title: "Invalid",
+          description: "An invalid production-hidden Draft.",
+          status: "Draft",
+          tags: ["unknown"],
+        }),
+      ],
+      today: TODAY,
+    });
+
+    const results = await Promise.allSettled(
+      callEveryArticleOperation(articles, {
+        currentSlug: "invalid",
+        formerSlug: "invalid-former",
+      })
+    );
+
+    expect(results.every(({ status }) => status === "rejected")).toBe(true);
+  });
+
   test("looks up the current slug without exposing compiled module metadata", async () => {
     const articles = createArticleOperations({
       includeDrafts: true,
@@ -178,7 +269,7 @@ describe("Article operations", () => {
       today: TODAY,
     });
 
-    const article = await articles.findArticleBySlug("current-slug");
+    const article = await articles.findArticle("current-slug");
 
     expect(article).toMatchObject({
       slug: "current-slug",
@@ -204,7 +295,7 @@ describe("Article operations", () => {
       readonly ArticleSummary[]
     >();
     expectTypeOf(
-      articles.findArticleBySlug
+      articles.findArticle
     ).returns.resolves.toEqualTypeOf<ArticleDetail | null>();
 
     const [article] = await articles.listArticles();
@@ -219,6 +310,244 @@ describe("Article operations", () => {
 
     // @ts-expect-error Public projections are readonly.
     article.title = "Changed";
+  });
+
+  test("exposes the narrow Article operation surface", () => {
+    const articles = createArticleOperations({
+      includeDrafts: true,
+      manifest: [],
+      today: TODAY,
+    });
+
+    expect(Object.keys(articles).toSorted()).toEqual([
+      "findArticle",
+      "findArticleRedirect",
+      "listArticleRedirects",
+      "listArticleSearchDocuments",
+      "listArticleTags",
+      "listArticles",
+      "listPublishedArticleDiscoveryEntries",
+    ]);
+  });
+
+  test("projects explicit public dates without leaking compiled facts", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        entry(
+          "draft-article",
+          {
+            title: "Draft article",
+            description: "A Draft without publication dates.",
+            status: "Draft",
+            tags: ["nextjs"],
+          },
+          {
+            headings: [{ depth: 2, id: "private", text: "Private heading" }],
+            links: [],
+            searchText: "Private body",
+          }
+        ),
+        entry("published-article", {
+          title: "Published article",
+          description: "A Published Article with an update.",
+          status: "Published",
+          publishedAt: "2026-07-20",
+          updatedAt: "2026-07-21",
+          tags: ["nextjs"],
+        }),
+      ],
+      today: TODAY,
+    });
+
+    const summaries = await articles.listArticles();
+    const detail = await articles.findArticle("draft-article");
+
+    expect(summaries).toMatchObject([
+      {
+        slug: "draft-article",
+        status: "draft",
+        publishedAt: null,
+        updatedAt: null,
+      },
+      {
+        slug: "published-article",
+        status: "published",
+        publishedAt: "2026-07-20",
+        updatedAt: "2026-07-21",
+      },
+    ]);
+    expect(JSON.stringify(summaries)).not.toContain("Private");
+    expect(detail).toMatchObject({
+      Content,
+      discovery: null,
+      status: "draft",
+    });
+    expect(detail).not.toHaveProperty("articleFacts");
+  });
+
+  test("filters listings by one exact Tag and counts visible Tag facets", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        draft("draft-nextjs"),
+        published("published-both", "2026-07-20"),
+      ],
+      today: TODAY,
+    });
+
+    const nextjsArticles = await articles.listArticles({ tag: "nextjs" });
+
+    expect(nextjsArticles.map(({ slug }) => slug)).toEqual([
+      "draft-nextjs",
+      "published-both",
+    ]);
+    await expect(articles.listArticles({ tag: "unknown" })).resolves.toEqual(
+      []
+    );
+    await expect(articles.listArticleTags()).resolves.toEqual([
+      { articleCount: 2, id: "nextjs", label: "Next.js" },
+      { articleCount: 1, id: "web-performance", label: "Web performance" },
+    ]);
+  });
+
+  test("resolves and orders only visible direct former-slug redirects", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: false,
+      manifest: [
+        entry("visible", {
+          title: "Visible",
+          description: "A Published Article with former slugs.",
+          status: "Published",
+          publishedAt: "2026-07-20",
+          tags: ["nextjs"],
+          redirectFrom: ["z-former", "a-former"],
+        }),
+        entry("hidden", {
+          title: "Hidden",
+          description: "A production-hidden Draft with a former slug.",
+          status: "Draft",
+          tags: ["nextjs"],
+          redirectFrom: ["hidden-former"],
+        }),
+      ],
+      today: TODAY,
+    });
+
+    await expect(articles.findArticleRedirect("a-former")).resolves.toBe(
+      "/blog/visible"
+    );
+    await expect(
+      Promise.all(
+        ["visible", "hidden", "hidden-former", "not a slug"].map(
+          async (slug) => await articles.findArticleRedirect(slug)
+        )
+      )
+    ).resolves.toEqual([null, null, null, null]);
+    await expect(articles.listArticleRedirects()).resolves.toEqual([
+      { href: "/blog/visible", slug: "a-former" },
+      { href: "/blog/visible", slug: "z-former" },
+    ]);
+  });
+
+  test("keeps discovery Published-only and search documents environment-visible", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        entry(
+          "z-draft",
+          {
+            title: "Draft",
+            description: "A locally searchable Draft.",
+            status: "Draft",
+            tags: ["nextjs"],
+          },
+          {
+            headings: [{ depth: 2, id: "draft", text: "Draft heading" }],
+            links: [],
+            searchText: "Draft body",
+          }
+        ),
+        entry(
+          "a-published",
+          {
+            title: "Published",
+            description: "A discoverable Published Article.",
+            status: "Published",
+            publishedAt: "2026-07-20",
+            tags: ["web-performance", "nextjs"],
+          },
+          {
+            headings: [{ depth: 2, id: "intro", text: "Introduction" }],
+            links: [],
+            searchText: "Published body",
+          }
+        ),
+      ],
+      today: TODAY,
+    });
+
+    await expect(
+      articles.listPublishedArticleDiscoveryEntries()
+    ).resolves.toMatchObject([
+      {
+        href: "/blog/a-published",
+        publishedAt: "2026-07-20",
+        updatedAt: null,
+      },
+    ]);
+    await expect(articles.listArticleSearchDocuments()).resolves.toEqual([
+      {
+        body: "Published body",
+        description: "A discoverable Published Article.",
+        headings: ["Introduction"],
+        href: "/blog/a-published",
+        id: "a-published",
+        status: "published",
+        tags: [
+          { id: "nextjs", label: "Next.js" },
+          { id: "web-performance", label: "Web performance" },
+        ],
+        title: "Published",
+      },
+      {
+        body: "Draft body",
+        description: "A locally searchable Draft.",
+        headings: ["Draft heading"],
+        href: "/blog/z-draft",
+        id: "z-draft",
+        status: "draft",
+        tags: [{ id: "nextjs", label: "Next.js" }],
+        title: "Draft",
+      },
+    ]);
+  });
+
+  test("memoizes in-flight collection construction across every operation", async () => {
+    let loadCount = 0;
+    const loaded = draft("loaded-once");
+    const operations = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        {
+          ...loaded,
+          loadArticle: async () => {
+            loadCount += 1;
+            return await loaded.loadArticle();
+          },
+        },
+      ],
+      today: TODAY,
+    });
+
+    await Promise.all(
+      callEveryArticleOperation(operations, {
+        currentSlug: "loaded-once",
+        formerSlug: "former",
+      })
+    );
+
+    expect(loadCount).toBe(1);
   });
 
   test("resolves Article fragments, publication rules, and fixed app destinations", async () => {
@@ -320,6 +649,33 @@ describe("Article operations", () => {
 
     await expect(publishedToDraft.listArticles()).rejects.toThrow(
       /Published Article.*Draft/u
+    );
+  });
+
+  test("rejects missing same-Article fragments", async () => {
+    const operations = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        entry(
+          "source",
+          {
+            title: "Source",
+            description: "A source with a missing local fragment.",
+            status: "Draft",
+            tags: ["nextjs"],
+          },
+          {
+            headings: [],
+            links: [{ href: "#missing" }],
+            searchText: "",
+          }
+        ),
+      ],
+      today: TODAY,
+    });
+
+    await expect(operations.listArticles()).rejects.toThrow(
+      /Article link fragment.*missing/u
     );
   });
 });
