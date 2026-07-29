@@ -1,11 +1,11 @@
 import { fileURLToPath } from "node:url";
 
-import type { ArticleCodeThemes } from "./code-theme-contract.mts";
+import type { ArticleCodeThemes } from "./code-theme-contract.ts";
 
 const articleContractPlugin = fileURLToPath(
-  new URL("contract.mts", import.meta.url)
+  new URL("contract.ts", import.meta.url)
 );
-const articleCodePlugin = fileURLToPath(new URL("code.mts", import.meta.url));
+const articleCodePlugin = fileURLToPath(new URL("code.ts", import.meta.url));
 
 export const createArticleMdxOptions = (themes: ArticleCodeThemes) => ({
   rehypePlugins: [

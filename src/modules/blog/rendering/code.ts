@@ -31,11 +31,11 @@ import { createTwoslasher } from "twoslash/core";
 import ts from "typescript";
 import { visit } from "unist-util-visit";
 
-import { isArticleCodeTheme } from "./code-theme-contract.mts";
+import { isArticleCodeTheme } from "./code-theme-contract.ts";
 import type {
   ArticleCodeTheme,
   ArticleCodeThemes,
-} from "./code-theme-contract.mts";
+} from "./code-theme-contract.ts";
 
 interface ArticleCodePluginOptions {
   readonly themes: ArticleCodeThemes;

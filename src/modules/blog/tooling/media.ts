@@ -6,7 +6,7 @@ import type {
 } from "@xmldom/xmldom";
 import sharp from "sharp";
 
-import type { BlogDiagnostic } from "./diagnostics.mts";
+import type { BlogDiagnostic } from "./diagnostics.ts";
 
 const RASTER_BYTE_LIMIT = 10 * 1024 * 1024;
 const SVG_BYTE_LIMIT = 1024 * 1024;

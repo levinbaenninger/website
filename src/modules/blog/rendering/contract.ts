@@ -10,7 +10,7 @@ import type {
   ArticleLinkFact,
 } from "@/modules/blog/articles/facts.ts";
 
-import { serializeCodeTabLabels } from "./code-tabs-contract.mts";
+import { serializeCodeTabLabels } from "./code-tabs-contract.ts";
 
 interface ArticlePosition {
   readonly start: {

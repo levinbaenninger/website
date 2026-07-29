@@ -3,7 +3,7 @@
 import { Children, useEffect, useId, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-import { parseCodeTabLabels } from "./code-tabs-contract.mts";
+import { parseCodeTabLabels } from "./code-tabs-contract.ts";
 
 const CODE_TAB_STORAGE_PREFIX = "blog:code-tabs:";
 const CODE_TAB_EVENT = "blog:code-tabs-change";

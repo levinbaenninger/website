@@ -10,9 +10,9 @@ import {
 import path from "node:path";
 import { setTimeout as wait } from "node:timers/promises";
 
-import { BlogValidationError, compareLexically } from "./diagnostics.mts";
-import type { BlogDiagnostic } from "./diagnostics.mts";
-import { validateMedia } from "./media.mts";
+import { BlogValidationError, compareLexically } from "./diagnostics.ts";
+import type { BlogDiagnostic } from "./diagnostics.ts";
+import { validateMedia } from "./media.ts";
 
 const SUPPORTED_EXTENSIONS = new Set([
   ".avif",

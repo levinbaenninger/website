@@ -227,8 +227,8 @@ export default defineConfig({
       },
       {
         files: [
-          "src/modules/blog/tooling/cli.mts",
-          "src/modules/blog/tooling/source-manifest.mts",
+          "src/modules/blog/tooling/cli.ts",
+          "src/modules/blog/tooling/source-manifest.ts",
         ],
         rules: {
           "no-await-in-loop": "off",
@@ -238,13 +238,13 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/blog/tooling/cli.mts"],
+        files: ["src/modules/blog/tooling/cli.ts"],
         rules: {
           "promise/avoid-new": "off",
         },
       },
       {
-        files: ["src/modules/blog/tooling/media.mts"],
+        files: ["src/modules/blog/tooling/media.ts"],
         rules: {
           complexity: "off",
           "no-negated-condition": "off",
@@ -270,7 +270,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/blog/rendering/contract.mts"],
+        files: ["src/modules/blog/rendering/contract.ts"],
         rules: {
           complexity: "off",
           "no-loop-func": "off",

@@ -17,13 +17,13 @@ import {
   BlogValidationError,
   renderBlogDiagnostics,
   sortBlogDiagnostics,
-} from "./diagnostics.mts";
+} from "./diagnostics.ts";
 import {
   checkArticleManifest,
   generateArticleManifest,
   watchArticleSource,
-} from "./source-manifest.mts";
-import type { BlogToolPaths } from "./source-manifest.mts";
+} from "./source-manifest.ts";
+import type { BlogToolPaths } from "./source-manifest.ts";
 
 const temporaryRepositories: string[] = [];
 

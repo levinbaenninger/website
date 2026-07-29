@@ -2,13 +2,13 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import process from "node:process";
 
-import { BlogValidationError } from "./diagnostics.mts";
+import { BlogValidationError } from "./diagnostics.ts";
 import {
   checkArticleManifest,
   generateArticleManifest,
   watchArticleSource,
-} from "./source-manifest.mts";
-import type { BlogToolPaths } from "./source-manifest.mts";
+} from "./source-manifest.ts";
+import type { BlogToolPaths } from "./source-manifest.ts";
 
 const repositoryRoot = process.cwd();
 const paths: BlogToolPaths = {
