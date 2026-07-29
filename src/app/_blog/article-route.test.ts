@@ -1,0 +1,160 @@
+import { describe, expect, test, vi } from "vite-plus/test";
+
+import type {
+  ArticleDetail,
+  ArticleRedirect,
+  ArticleSummary,
+} from "@/modules/blog/articles";
+
+import {
+  createArticleRouteContract,
+  requireCurrentArticle,
+} from "./article-route";
+
+const Content = () => null;
+const cover = { height: 1, src: "/cover.png", width: 1 };
+const currentArticle = {
+  Content,
+  cover,
+  description: "Current Article description.",
+  discovery: {
+    cover,
+    description: "Current Article description.",
+    href: "/blog/current-article",
+    publishedAt: "2026-07-20",
+    tags: [{ id: "nextjs", label: "Next.js" }],
+    title: "Current Article",
+    updatedAt: null,
+  },
+  href: "/blog/current-article",
+  publishedAt: "2026-07-20",
+  slug: "current-article",
+  status: "published",
+  tags: [{ id: "nextjs", label: "Next.js" }],
+  title: "Current Article",
+  updatedAt: null,
+} as const satisfies ArticleDetail;
+
+const createOperations = ({
+  articles = [currentArticle],
+  redirects = [{ href: currentArticle.href, slug: "former-article" }],
+}: {
+  articles?: readonly ArticleSummary[];
+  redirects?: readonly ArticleRedirect[];
+} = {}) => ({
+  findArticle: vi.fn(async (slug: string) => {
+    await Promise.resolve();
+    return slug === currentArticle.slug ? currentArticle : null;
+  }),
+  findArticleRedirect: vi.fn(async (slug: string) => {
+    await Promise.resolve();
+    return redirects.find((redirect) => redirect.slug === slug)?.href ?? null;
+  }),
+  listArticleRedirects: vi.fn(async () => {
+    await Promise.resolve();
+    return redirects;
+  }),
+  listArticles: vi.fn(async () => {
+    await Promise.resolve();
+    return articles;
+  }),
+});
+
+describe("Article route contract", () => {
+  test("generates every visible current and former slug deterministically", async () => {
+    const operations = createOperations({
+      articles: [currentArticle],
+      redirects: [
+        { href: currentArticle.href, slug: "z-former" },
+        { href: currentArticle.href, slug: "a-former" },
+      ],
+    });
+    const route = createArticleRouteContract(operations);
+
+    await expect(route.generateStaticParams()).resolves.toEqual([
+      { slug: "a-former" },
+      { slug: "current-article" },
+      { slug: "z-former" },
+    ]);
+  });
+
+  test("accepts a valid empty visible corpus", async () => {
+    const route = createArticleRouteContract(
+      createOperations({ articles: [], redirects: [] })
+    );
+
+    await expect(route.generateStaticParams()).resolves.toEqual([]);
+  });
+
+  test("distinguishes current, direct redirect, and unknown outcomes", async () => {
+    const route = createArticleRouteContract(createOperations());
+
+    await expect(route.resolve("current-article")).resolves.toEqual({
+      article: currentArticle,
+      kind: "current",
+    });
+    await expect(route.resolve("former-article")).resolves.toEqual({
+      destination: "/blog/current-article",
+      kind: "redirect",
+    });
+    await expect(route.resolve("unknown")).resolves.toEqual({
+      kind: "not-found",
+    });
+  });
+
+  test("rejects malformed slugs without querying Blog operations", async () => {
+    const operations = createOperations();
+    const route = createArticleRouteContract(operations);
+
+    await expect(route.resolve("Bad/Slug")).resolves.toEqual({
+      kind: "not-found",
+    });
+    expect(operations.findArticle).not.toHaveBeenCalled();
+    expect(operations.findArticleRedirect).not.toHaveBeenCalled();
+  });
+
+  test("treats production-hidden current and former Draft slugs as not found", async () => {
+    const operations = createOperations();
+    operations.findArticle.mockResolvedValue(null);
+    operations.findArticleRedirect.mockResolvedValue(null);
+    const route = createArticleRouteContract(operations);
+
+    await expect(route.resolve("draft-sentinel")).resolves.toEqual({
+      kind: "not-found",
+    });
+    await expect(route.resolve("draft-sentinel-former")).resolves.toEqual({
+      kind: "not-found",
+    });
+  });
+
+  test("maps former slugs to an exact permanent redirect and absence to not-found", () => {
+    const permanentRedirect = vi.fn((): never => {
+      throw new Error("redirected");
+    });
+    const notFound = vi.fn((): never => {
+      throw new Error("not found");
+    });
+
+    expect(() =>
+      requireCurrentArticle(
+        {
+          destination: "/blog/current-article",
+          kind: "redirect",
+        },
+        { notFound, permanentRedirect }
+      )
+    ).toThrow("redirected");
+    expect(permanentRedirect).toHaveBeenCalledWith(
+      "/blog/current-article",
+      "replace"
+    );
+
+    expect(() =>
+      requireCurrentArticle(
+        { kind: "not-found" },
+        { notFound, permanentRedirect }
+      )
+    ).toThrow("not found");
+    expect(notFound).toHaveBeenCalledOnce();
+  });
+});

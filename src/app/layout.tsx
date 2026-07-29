@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { DevTools } from "@/app/_devtools/devtools";
-import { AppShell, SITE_CONTENT } from "@/app/_shell";
+import { createRootMetadata } from "@/app/_metadata";
+import { AppShell } from "@/app/_shell";
 import { ThemeProvider } from "@/app/_theme/theme-provider";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 
@@ -16,10 +17,7 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-export const metadata: Metadata = {
-  title: SITE_CONTENT.metadata.title,
-  description: SITE_CONTENT.metadata.description,
-};
+export const metadata: Metadata = createRootMetadata();
 
 export default function RootLayout({
   children,

@@ -14,6 +14,7 @@ export const createArticleServer = (
     today: getZurichToday(),
   });
 
+export { ArticleView } from "./view";
 export type { FixedArticleDestination } from "./article-collection";
 export type {
   ArticleDetail,
