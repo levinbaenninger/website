@@ -402,7 +402,7 @@ first
 
   test("produces clean copy source and deterministic offline Twoslash output", async () => {
     const source = `\`\`\`ts twoslash
-const ordinary = "kept" // ordinary comment  
+const ordinary = "kept" // ordinary comment${"  "}
 const highlighted = ordinary // [!code highlight]
 const answer: number = 42
 //    ^?
