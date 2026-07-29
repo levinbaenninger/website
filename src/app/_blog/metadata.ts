@@ -8,6 +8,10 @@ import {
   toCanonicalUrl,
 } from "@/app/_identity";
 import type { ArticleDetail } from "@/modules/blog/articles";
+import {
+  SOCIAL_IMAGE_CONTENT_TYPE,
+  SOCIAL_IMAGE_SIZE,
+} from "@/shared/social-image";
 
 const authorMetadata = {
   name: AUTHOR_IDENTITY.name,
@@ -57,6 +61,9 @@ export const createBlogMetadata = (): Metadata => {
 export const createArticleMetadata = (article: ArticleDetail): Metadata => {
   const canonicalUrl = toCanonicalUrl(article.href);
   const title = toArticleTitle(article.title);
+  const socialImageAlt = `${article.title} — ${SITE_IDENTITY.name}`;
+  const openGraphImageUrl = toCanonicalUrl(`${article.href}/open-graph.png`);
+  const twitterImageUrl = toCanonicalUrl(`${article.href}/twitter-card.png`);
   const tagLabels = article.tags.map(({ label }) => label);
   const publishedTime =
     article.publishedAt === null
@@ -90,6 +97,15 @@ export const createArticleMetadata = (article: ArticleDetail): Metadata => {
       siteName: SITE_IDENTITY.name,
       authors: [toCanonicalUrl("/")],
       tags: tagLabels,
+      images: [
+        {
+          alt: socialImageAlt,
+          height: SOCIAL_IMAGE_SIZE.height,
+          type: SOCIAL_IMAGE_CONTENT_TYPE,
+          url: openGraphImageUrl,
+          width: SOCIAL_IMAGE_SIZE.width,
+        },
+      ],
       ...(publishedTime === undefined ? {} : { publishedTime }),
       ...(modifiedTime === undefined ? {} : { modifiedTime }),
     },
@@ -97,6 +113,14 @@ export const createArticleMetadata = (article: ArticleDetail): Metadata => {
       ...twitterIdentity,
       title,
       description: article.description,
+      images: [
+        {
+          alt: socialImageAlt,
+          height: SOCIAL_IMAGE_SIZE.height,
+          url: twitterImageUrl,
+          width: SOCIAL_IMAGE_SIZE.width,
+        },
+      ],
     },
   };
 };

@@ -73,4 +73,5 @@ const articleMdxComponents: MDXComponents = Object.freeze({
 export const getArticleMdxComponents = (): MDXComponents =>
   articleMdxComponents;
 
+export { BLOG_SOCIAL_IMAGE } from "./social-image";
 export { BlogView } from "./view";

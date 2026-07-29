@@ -120,6 +120,15 @@ describe("app metadata adapters", () => {
       openGraph: {
         authors: ["https://levin.baenninger.me/"],
         description: "A precise description.",
+        images: [
+          {
+            alt: "Canonical Article — Levin Bänninger",
+            height: 630,
+            type: "image/png",
+            url: "https://levin.baenninger.me/blog/canonical-article/open-graph.png",
+            width: 1200,
+          },
+        ],
         modifiedTime: "2026-07-15T00:00:00+02:00",
         publishedTime: "2026-01-15T00:00:00+01:00",
         siteName: "Levin Bänninger",
@@ -133,6 +142,14 @@ describe("app metadata adapters", () => {
         card: "summary_large_image",
         creator: "@levinbaenninger",
         description: "A precise description.",
+        images: [
+          {
+            alt: "Canonical Article — Levin Bänninger",
+            height: 630,
+            url: "https://levin.baenninger.me/blog/canonical-article/twitter-card.png",
+            width: 1200,
+          },
+        ],
         site: "@levinbaenninger",
         title: "Canonical Article | Levin Bänninger",
       },

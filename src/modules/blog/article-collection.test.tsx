@@ -73,6 +73,8 @@ const callEveryArticleOperation = (
     operations.listArticleRedirects(),
     operations.listPublishedArticleDiscoveryEntries(),
     operations.listArticleSearchDocuments(),
+    operations.listArticleSocialImages(),
+    operations.findArticleSocialImage(currentSlug),
   ] as const;
 
 describe("Article operations", () => {
@@ -176,6 +178,57 @@ describe("Article operations", () => {
     expect(serialized).not.toContain("web-performance");
     expect(projections[1]).toBeNull();
     expect(projections[3]).toBeNull();
+  });
+
+  test("exposes renderer-neutral social-image inputs for visible current Articles only", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: false,
+      manifest: [
+        entry("draft-article", {
+          title: "Hidden Draft",
+          description: "This Draft must not own a production image.",
+          status: "Draft",
+          tags: ["nextjs"],
+          redirectFrom: ["draft-article-former"],
+        }),
+        entry("published-article", {
+          title: "Visible Article",
+          description: "This Published Article owns a social image.",
+          status: "Published",
+          publishedAt: "2026-07-20",
+          tags: ["nextjs"],
+          redirectFrom: ["published-article-former"],
+        }),
+      ],
+      today: TODAY,
+    });
+
+    await expect(articles.listArticleSocialImages()).resolves.toEqual([
+      {
+        alt: "Visible Article — Levin Bänninger",
+        label: "Article",
+        slug: "published-article",
+        title: "Visible Article",
+      },
+    ]);
+    await expect(
+      articles.findArticleSocialImage("published-article")
+    ).resolves.toEqual({
+      alt: "Visible Article — Levin Bänninger",
+      label: "Article",
+      slug: "published-article",
+      title: "Visible Article",
+    });
+    await expect(
+      articles.findArticleSocialImage("draft-article")
+    ).resolves.toBeNull();
+    await expect(
+      articles.findArticleSocialImage("published-article-former")
+    ).resolves.toBeNull();
+
+    expect(
+      JSON.stringify(await articles.listArticleSocialImages())
+    ).not.toContain("cover");
   });
 
   test("rejects collisions in the shared current and former slug namespace", async () => {
@@ -322,8 +375,10 @@ describe("Article operations", () => {
     expect(Object.keys(articles).toSorted()).toEqual([
       "findArticle",
       "findArticleRedirect",
+      "findArticleSocialImage",
       "listArticleRedirects",
       "listArticleSearchDocuments",
+      "listArticleSocialImages",
       "listArticleTags",
       "listArticles",
       "listPublishedArticleDiscoveryEntries",

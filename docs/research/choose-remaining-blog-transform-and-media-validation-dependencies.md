@@ -29,7 +29,7 @@ Add these exact direct development dependencies:
 
 | Package | Version | Direct responsibility |
 | --- | --- | --- |
-| `sharp` | `0.34.5` | Inspect metadata and force a bounded decode of supported raster assets in the development/build-only generator. This exact version reuses Next.js 16.3 preview's existing locked Sharp and platform-binary tree. |
+| `sharp` | `0.34.5` | Inspect metadata and force a bounded decode of supported raster assets in the development/build-only generator. This exact version reuses Next.js 16.2.12's existing locked Sharp and platform-binary tree. |
 | `@xmldom/xmldom` | `0.9.10` | Parse bounded SVG source into a namespace-aware, location-bearing DOM for fail-closed Blog policy validation. |
 | `@types/mdast` | `4.0.4` | Type the Blog-owned MDAST plugin without relying on transitive declarations. |
 | `@types/hast` | `3.0.5` | Type the Blog-owned highlighted HAST boundary without relying on transitive declarations. |
@@ -94,7 +94,7 @@ Line numbers, positive start values, titles, tabs, copy text, and the final Reac
 
 ## Turbopack serialization
 
-The installed Next.js 16.3 preview guide requires plugin names plus JSON-serializable options because JavaScript functions cannot cross Turbopack's Rust configuration boundary. The matching `@next/mdx` loader resolves each string with `require.resolve` from the project root and dynamically imports it before calling the MDX loader. Therefore Next config contains only:
+The installed Next.js 16.2 guide requires plugin names plus JSON-serializable options because JavaScript functions cannot cross Turbopack's Rust configuration boundary. The matching `@next/mdx` loader resolves each string with `require.resolve` from the project root and dynamically imports it before calling the MDX loader. Therefore Next config contains only:
 
 ```js
 remarkPlugins: [
@@ -106,7 +106,7 @@ remarkPlugins: [
 rehypePlugins: [resolvedArticleCodePluginPath],
 ```
 
-Both local paths are absolute strings resolved while evaluating Next config. The local modules construct every visitor function, highlighter, transformer, and Twoslash runner internally. No function or class instance appears in `next.config`. [Installed Next.js guide](../../node_modules/next/dist/docs/01-app/02-guides/mdx.md#using-plugins-with-turbopack); [matching `@next/mdx` loader source](https://github.com/vercel/next.js/blob/v16.3.0-preview.6/packages/next-mdx/mdx-js-loader.js).
+Both local paths are absolute strings resolved while evaluating Next config. The local modules construct every visitor function, highlighter, transformer, and Twoslash runner internally. No function or class instance appears in `next.config`. [Installed Next.js guide](../../node_modules/next/dist/docs/01-app/02-guides/mdx.md#using-plugins-with-turbopack); [matching `@next/mdx` loader source](https://github.com/vercel/next.js/blob/v16.2.12/packages/next-mdx/mdx-js-loader.js).
 
 ## GFM is syntax, not permission
 
@@ -143,7 +143,7 @@ This toolchain has no build-time network path: grammars, themes, Wasm, compiler 
 
 ## Raster validation
 
-Keep raster policy in the Blog's development/build-only source-manifest generator. `sharp@0.34.5` is intentionally selected instead of the current `0.35.3`: Next.js 16.3.0-preview.6 already locks `0.34.5`, so a direct exact pin exposes the API under pnpm while reusing one native/libvips platform tree. Its engine range accepts Node 24.
+Keep raster policy in the Blog's development/build-only source-manifest generator. `sharp@0.34.5` is intentionally selected instead of the current `0.35.3`: Next.js 16.2.12 already locks `0.34.5`, so a direct exact pin exposes the API under pnpm while reusing one native/libvips platform tree. Its engine range accepts Node 24.
 
 For each `.avif`, `.webp`, `.png`, `.jpg`, or `.jpeg`:
 

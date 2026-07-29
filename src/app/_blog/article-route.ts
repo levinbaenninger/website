@@ -6,6 +6,9 @@ import type {
 
 const ARTICLE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
+export const isArticleSlug = (slug: string): boolean =>
+  slug.length <= 80 && ARTICLE_SLUG_PATTERN.test(slug);
+
 interface ArticleRouteOperations {
   readonly findArticle: (slug: string) => Promise<ArticleDetail | null>;
   readonly findArticleRedirect: (
@@ -37,7 +40,7 @@ export const createArticleRouteContract = (
       .map((slug) => ({ slug }));
   },
   async resolve(slug: string): Promise<ArticleRouteResolution> {
-    if (slug.length > 80 || !ARTICLE_SLUG_PATTERN.test(slug)) {
+    if (!isArticleSlug(slug)) {
       return { kind: "not-found" };
     }
 
