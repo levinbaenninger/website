@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vite-plus/test";
+import { describe, expect, test, vi } from "vite-plus/test";
 
 import {
   ARTICLE_SEARCH_SCHEMA_VERSION,
@@ -34,25 +34,31 @@ describe("Article search artifact contract", () => {
   });
 
   test("serializes deterministic UTF-8 JSON with a trailing newline", () => {
-    const first = serializeArticleSearchArtifact([
-      document("zebra"),
-      document("alpha"),
-    ]);
-    const second = serializeArticleSearchArtifact([
-      document("zebra"),
-      document("alpha"),
-    ]);
+    const alpha = document("alpha", { title: "Café ☕" });
+    const dateNow = vi.spyOn(Date, "now").mockImplementation(() => {
+      throw new Error("Search artifact serialization read the clock.");
+    });
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      throw new Error("Search artifact serialization used randomness.");
+    });
+    const first = serializeArticleSearchArtifact([document("zebra"), alpha]);
+    const second = serializeArticleSearchArtifact([document("zebra"), alpha]);
+    dateNow.mockRestore();
+    random.mockRestore();
 
     expect(first).toBe(second);
     expect(first).toBe(
       `${JSON.stringify({
         schemaVersion: 1,
-        documents: [document("alpha"), document("zebra")],
+        documents: [alpha, document("zebra")],
       })}\n`
     );
-    expect(new TextEncoder().encode(first)).toEqual(
-      new TextEncoder().encode(second)
+    const bytes = new TextEncoder().encode(first);
+    expect(bytes).toEqual(new TextEncoder().encode(second));
+    expect([...bytes]).toEqual(
+      expect.arrayContaining([0xc3, 0xa9, 0xe2, 0x98, 0x95])
     );
+    expect(first).not.toContain("\r");
   });
 
   test("rejects malformed, mismatched, duplicated, and unsupported envelopes", () => {

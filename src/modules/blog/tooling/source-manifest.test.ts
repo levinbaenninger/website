@@ -105,20 +105,56 @@ describe("Article source-manifest tooling", () => {
     const paths = await createRepository();
     await createArticle(paths, "zebra");
     await createArticle(paths, "alpha");
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = () => {
+      throw new Error("Article artifact generation attempted network access.");
+    };
 
-    const first = await generateArticleManifest(paths);
-    const firstBytes = await readFile(paths.manifestPath, "utf-8");
-    const second = await generateArticleManifest(paths);
-    const secondBytes = await readFile(paths.manifestPath, "utf-8");
+    try {
+      const first = await generateArticleManifest(paths);
+      const firstBytes = await readFile(paths.manifestPath, "utf-8");
+      const second = await generateArticleManifest(paths);
+      const secondBytes = await readFile(paths.manifestPath, "utf-8");
 
-    expect(first.changed).toBe(true);
-    expect(second.changed).toBe(false);
-    expect(secondBytes).toBe(firstBytes);
-    expect(first.bundles.map(({ slug }) => slug)).toEqual(["alpha", "zebra"]);
-    expect(firstBytes.indexOf('"alpha"')).toBeLessThan(
-      firstBytes.indexOf('"zebra"')
-    );
-    expect(firstBytes).not.toContain(paths.repositoryRoot);
+      expect(first.changed).toBe(true);
+      expect(second.changed).toBe(false);
+      expect(secondBytes).toBe(firstBytes);
+      expect(new TextEncoder().encode(secondBytes)).toEqual(
+        new TextEncoder().encode(firstBytes)
+      );
+      expect(first.bundles.map(({ slug }) => slug)).toEqual(["alpha", "zebra"]);
+      expect(firstBytes.indexOf('"alpha"')).toBeLessThan(
+        firstBytes.indexOf('"zebra"')
+      );
+      expect(firstBytes)
+        .toBe(`// Generated deterministically. Do not edit by hand.
+
+import cover_alpha from "./articles/alpha/assets/cover.png";
+import cover_zebra from "./articles/zebra/assets/cover.png";
+import type { ArticleManifestEntry } from "./article-collection";
+
+export const ARTICLE_MANIFEST = [
+  {
+    slug: "alpha",
+    loadArticle: () =>
+      import(
+        "./articles/alpha/alpha.mdx"
+      ),
+    cover: cover_alpha,
+  },
+  {
+    slug: "zebra",
+    loadArticle: () =>
+      import(
+        "./articles/zebra/zebra.mdx"
+      ),
+    cover: cover_zebra,
+  },
+] as const satisfies readonly ArticleManifestEntry[];
+`);
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
   });
 
   test("supports a literally empty Article corpus", async () => {
@@ -209,6 +245,16 @@ describe("Article source-manifest tooling", () => {
 
     expect(failure).toBeInstanceOf(BlogValidationError);
     const diagnostics = (failure as BlogValidationError).diagnostics;
+    expect(diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          explanation: expect.any(String),
+          guidance: expect.any(String),
+          ruleId: expect.stringMatching(/^blog\//u),
+          source: expect.any(String),
+        }),
+      ])
+    );
     expect(diagnostics.map(({ ruleId }) => ruleId)).toEqual(
       expect.arrayContaining([
         "blog/bundle-assets",

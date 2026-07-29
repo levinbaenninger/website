@@ -23,6 +23,9 @@ const EMPTY_ARTICLE_FACTS: ArticleCompilationFacts = {
   links: [],
   searchText: "",
 };
+const DRAFT_CANARY_SENTINEL = "web-performance";
+const DRAFT_CANARY_FORMER_SLUG = `${DRAFT_CANARY_SENTINEL}-former`;
+const DRAFT_CANARY_ASSET = `/_next/static/media/${DRAFT_CANARY_SENTINEL}-asset.png`;
 
 const entry = (
   slug: string,
@@ -48,6 +51,39 @@ const draft = (slug: string) =>
     status: "Draft",
     tags: ["nextjs"],
   });
+
+const draftCanary = (onLoad?: () => void): ArticleManifestEntry => {
+  const canary = entry(
+    DRAFT_CANARY_SENTINEL,
+    {
+      title: `${DRAFT_CANARY_SENTINEL} title`,
+      description: `${DRAFT_CANARY_SENTINEL} description.`,
+      status: "Draft",
+      tags: [DRAFT_CANARY_SENTINEL],
+      redirectFrom: [DRAFT_CANARY_FORMER_SLUG],
+    },
+    {
+      headings: [
+        {
+          depth: 2,
+          id: DRAFT_CANARY_SENTINEL,
+          text: `${DRAFT_CANARY_SENTINEL} heading`,
+        },
+      ],
+      links: [],
+      searchText: `${DRAFT_CANARY_SENTINEL} searchable body`,
+    }
+  );
+
+  return {
+    ...canary,
+    cover: { ...COVER, src: DRAFT_CANARY_ASSET },
+    loadArticle: async () => {
+      onLoad?.();
+      return await canary.loadArticle();
+    },
+  };
+};
 
 const published = (slug: string, publishedAt: string) =>
   entry(slug, {
@@ -133,27 +169,14 @@ describe("Article operations", () => {
     expect(listedArticles.map(({ slug }) => slug)).toEqual(["visible"]);
   });
 
-  test("production excludes Drafts from every environment-visible projection", async () => {
+  test("loads the Draft canary but excludes its sentinel from every production projection", async () => {
+    let draftLoadCount = 0;
     const articles = createArticleOperations({
       includeDrafts: false,
       manifest: [
-        entry(
-          "draft-sentinel",
-          {
-            title: "Draft sentinel",
-            description: "A unique production leakage sentinel.",
-            status: "Draft",
-            tags: ["web-performance"],
-            redirectFrom: ["draft-sentinel-former"],
-          },
-          {
-            headings: [
-              { depth: 2, id: "sentinel", text: "Draft sentinel heading" },
-            ],
-            links: [],
-            searchText: "Draft sentinel body",
-          }
-        ),
+        draftCanary(() => {
+          draftLoadCount += 1;
+        }),
         entry("published", {
           title: "Published",
           description: "The only production-visible Article.",
@@ -166,18 +189,100 @@ describe("Article operations", () => {
       today: TODAY,
     });
 
-    const projections = await Promise.all(
+    const operationOutput = await Promise.all(
       callEveryArticleOperation(articles, {
-        currentSlug: "draft-sentinel",
-        formerSlug: "draft-sentinel-former",
+        currentSlug: DRAFT_CANARY_SENTINEL,
+        formerSlug: DRAFT_CANARY_FORMER_SLUG,
       })
     );
-    const serialized = JSON.stringify(projections);
+    const [, currentArticle, , formerSlugRedirect] = operationOutput;
+    const serialized = JSON.stringify(operationOutput);
 
-    expect(serialized).not.toContain("draft-sentinel");
-    expect(serialized).not.toContain("web-performance");
-    expect(projections[1]).toBeNull();
-    expect(projections[3]).toBeNull();
+    expect(draftLoadCount).toBe(1);
+    expect(serialized).not.toContain(DRAFT_CANARY_SENTINEL);
+    expect(serialized).not.toContain(DRAFT_CANARY_FORMER_SLUG);
+    expect(serialized).not.toContain(DRAFT_CANARY_ASSET);
+    expect(currentArticle).toBeNull();
+    expect(formerSlugRedirect).toBeNull();
+  });
+
+  test("exposes the same Draft canary only through intended local projections", async () => {
+    let draftLoadCount = 0;
+    const articles = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        draftCanary(() => {
+          draftLoadCount += 1;
+        }),
+        entry("published", {
+          title: "Published",
+          description: "Published description.",
+          status: "Published",
+          publishedAt: "2026-07-20",
+          tags: ["nextjs"],
+        }),
+      ],
+      today: TODAY,
+    });
+
+    const [
+      articleSummaries,
+      articleDetail,
+      tagFacets,
+      formerSlugRedirect,
+      redirects,
+      discoveryEntries,
+      searchDocuments,
+      socialImages,
+      socialImage,
+    ] = await Promise.all(
+      callEveryArticleOperation(articles, {
+        currentSlug: DRAFT_CANARY_SENTINEL,
+        formerSlug: DRAFT_CANARY_FORMER_SLUG,
+      })
+    );
+
+    expect(draftLoadCount).toBe(1);
+    expect(JSON.stringify(articleSummaries)).toContain(DRAFT_CANARY_SENTINEL);
+    expect(JSON.stringify(articleDetail)).toContain(DRAFT_CANARY_ASSET);
+    expect(tagFacets).toContainEqual({
+      articleCount: 1,
+      id: DRAFT_CANARY_SENTINEL,
+      label: "Web performance",
+    });
+    expect(formerSlugRedirect).toBe(`/blog/${DRAFT_CANARY_SENTINEL}`);
+    expect(JSON.stringify(redirects)).toContain(DRAFT_CANARY_FORMER_SLUG);
+    expect(JSON.stringify(discoveryEntries)).not.toContain(
+      DRAFT_CANARY_SENTINEL
+    );
+    expect(JSON.stringify(searchDocuments)).toContain(
+      `${DRAFT_CANARY_SENTINEL} searchable body`
+    );
+    expect(JSON.stringify(socialImages)).toContain(DRAFT_CANARY_SENTINEL);
+    expect(JSON.stringify(socialImage)).toContain(DRAFT_CANARY_SENTINEL);
+  });
+
+  test("gives Draft-only and empty collections identical empty production projections", async () => {
+    const draftOnly = createArticleOperations({
+      includeDrafts: false,
+      manifest: [draftCanary()],
+      today: TODAY,
+    });
+    const empty = createArticleOperations({
+      includeDrafts: false,
+      manifest: [],
+      today: TODAY,
+    });
+    const operationArguments = {
+      currentSlug: DRAFT_CANARY_SENTINEL,
+      formerSlug: DRAFT_CANARY_FORMER_SLUG,
+    };
+
+    await expect(
+      Promise.all(callEveryArticleOperation(draftOnly, operationArguments))
+    ).resolves.toEqual(
+      await Promise.all(callEveryArticleOperation(empty, operationArguments))
+    );
   });
 
   test("exposes renderer-neutral social-image inputs for visible current Articles only", async () => {
