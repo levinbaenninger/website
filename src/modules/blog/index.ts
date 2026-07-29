@@ -2,6 +2,8 @@ import type { MDXComponents } from "mdx/types";
 
 import {
   ArticleFigure,
+  ArticleCodeBlock,
+  ArticleCodeTabs,
   ArticleHeading2,
   ArticleHeading3,
   ArticleHeading4,
@@ -20,6 +22,7 @@ import {
 } from "./article-components";
 
 const articleMdxComponents: MDXComponents = {
+  CodeTabs: ArticleCodeTabs,
   Figure: ArticleFigure,
   a: ArticleLink,
   blockquote: ArticleQuote,
@@ -30,6 +33,7 @@ const articleMdxComponents: MDXComponents = {
   h6: ArticleHeading6,
   hr: ArticleThematicBreak,
   input: ArticleTaskInput,
+  pre: ArticleCodeBlock,
   table: ArticleTable,
   tbody: ArticleTableBody,
   td: ArticleTableCell,

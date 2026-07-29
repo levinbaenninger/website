@@ -2,6 +2,9 @@ import Image from "next/image";
 import type { StaticImageData } from "next/image";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
+import { ArticleCodeTabs } from "./article-code-tabs";
+import { ArticleCopyButton } from "./article-copy-button";
+
 interface FigureProps {
   readonly alt?: string;
   readonly children?: ReactNode;
@@ -46,6 +49,40 @@ export const ArticleLink = ({
 
 export const ArticleTaskInput = (props: ComponentPropsWithoutRef<"input">) => (
   <input {...props} disabled type="checkbox" />
+);
+
+type ArticleCodeBlockProps = ComponentPropsWithoutRef<"pre"> & {
+  readonly "data-code-tab-label"?: string;
+  readonly "data-code-title"?: string;
+  readonly "data-copy-source"?: string;
+  readonly "data-line-numbers-start"?: number;
+  readonly "data-twoslash"?: string;
+};
+
+export const ArticleCodeBlock = ({
+  "data-code-tab-label": _tabLabel,
+  "data-code-title": title,
+  "data-copy-source": copySource,
+  "data-line-numbers-start": lineNumbersStart,
+  "data-twoslash": twoslash,
+  children,
+  ...props
+}: ArticleCodeBlockProps) => (
+  <figure
+    data-code-block=""
+    data-line-numbers-start={lineNumbersStart}
+    data-twoslash={twoslash}
+  >
+    {title === undefined && copySource === undefined ? null : (
+      <figcaption>
+        {title === undefined ? null : <span>{title}</span>}
+        {copySource === undefined ? null : (
+          <ArticleCopyButton source={copySource} />
+        )}
+      </figcaption>
+    )}
+    <pre {...props}>{children}</pre>
+  </figure>
 );
 
 export const ArticleHeading2 = ({
@@ -104,3 +141,5 @@ export const ArticleTableCell = (props: ComponentPropsWithoutRef<"td">) => (
 export const ArticleThematicBreak = (props: ComponentPropsWithoutRef<"hr">) => (
   <hr {...props} />
 );
+
+export { ArticleCodeTabs };

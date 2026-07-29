@@ -2,6 +2,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vite-plus/test";
 
 import {
+  readCodeTabPreference,
+  writeCodeTabPreference,
+} from "./article-code-tabs";
+import {
+  ArticleCodeBlock,
   ArticleFigure,
   ArticleLink,
   ArticleTaskInput,
@@ -11,6 +16,7 @@ import { getArticleMdxComponents } from "./index";
 describe("semantic Article components", () => {
   test("owns every approved semantic Markdown mapping", () => {
     expect(Object.keys(getArticleMdxComponents()).toSorted()).toEqual([
+      "CodeTabs",
       "Figure",
       "a",
       "blockquote",
@@ -21,6 +27,7 @@ describe("semantic Article components", () => {
       "h6",
       "hr",
       "input",
+      "pre",
       "table",
       "tbody",
       "td",
@@ -74,5 +81,56 @@ describe("semantic Article components", () => {
     expect(input).toBe(
       '<input readOnly="" disabled="" type="checkbox" checked=""/>'
     );
+  });
+
+  test("renders clean code copy controls and line-number metadata", () => {
+    const markup = renderToStaticMarkup(
+      <ArticleCodeBlock
+        data-code-title="Example"
+        data-copy-source={"const answer = 42\n"}
+        data-line-numbers-start={3}
+      >
+        <code>highlighted output</code>
+      </ArticleCodeBlock>
+    );
+
+    expect(markup).toContain('data-line-numbers-start="3"');
+    expect(markup).toContain("<span>Example</span>");
+    expect(markup).toContain('aria-label="Copy code"');
+    expect(markup).toContain("<code>highlighted output</code>");
+  });
+
+  test("uses Blog-namespaced code-tab preferences with safe fallback", () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        values.set(key, value);
+      },
+    };
+
+    writeCodeTabPreference(storage, "runtime", "TypeScript");
+    expect(values.get("blog:code-tabs:runtime")).toBe("TypeScript");
+    expect(
+      readCodeTabPreference(storage, "runtime", ["JavaScript", "TypeScript"])
+    ).toBe("TypeScript");
+    expect(
+      readCodeTabPreference(storage, "runtime", ["Shell"])
+    ).toBeUndefined();
+
+    const unavailable = {
+      getItem: () => {
+        throw new Error("Storage denied");
+      },
+      setItem: () => {
+        throw new Error("Storage denied");
+      },
+    };
+    expect(
+      readCodeTabPreference(unavailable, "runtime", ["TypeScript"])
+    ).toBeUndefined();
+    expect(() => {
+      writeCodeTabPreference(unavailable, "runtime", "TypeScript");
+    }).not.toThrow();
   });
 });

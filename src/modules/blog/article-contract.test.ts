@@ -12,6 +12,9 @@ const loadedNextMdxLoader: unknown = require(
 const articleContractPlugin = fileURLToPath(
   new URL("article-contract.mts", import.meta.url)
 );
+const articleCodePlugin = fileURLToPath(
+  new URL("article-code.mts", import.meta.url)
+);
 
 interface MdxLoaderContext {
   readonly _compiler: object;
@@ -20,6 +23,17 @@ interface MdxLoaderContext {
   readonly resourcePath: string;
   readonly sourceMap: false;
   readonly getOptions: () => {
+    readonly rehypePlugins: readonly [
+      readonly [
+        string,
+        {
+          readonly themes: {
+            readonly dark: string;
+            readonly light: string;
+          };
+        },
+      ],
+    ];
     readonly remarkPlugins: readonly string[];
   };
   readonly async: () => (error?: Error, result?: Uint8Array) => void;
@@ -48,6 +62,17 @@ const compileArticle = async (source: string): Promise<string> =>
       ),
       sourceMap: false,
       getOptions: () => ({
+        rehypePlugins: [
+          [
+            articleCodePlugin,
+            {
+              themes: {
+                dark: "github-dark",
+                light: "github-light",
+              },
+            },
+          ],
+        ],
         remarkPlugins: ["remark-gfm", articleContractPlugin],
       }),
       async: () => (error, result) => {
@@ -246,5 +271,154 @@ const secretCodeBody = true
     expect(compiled).not.toContain(
       '\\"searchText\\":\\"Über & Cache Removed and documentation. Mode Result Static Fast Verified Pending const secretCodeBody'
     );
+  });
+
+  test("highlights the closed language allowlist with a dual-theme output", async () => {
+    const languages = [
+      "",
+      "text",
+      "bash",
+      "css",
+      "html",
+      "js",
+      "jsx",
+      "json",
+      "md",
+      "mdx",
+      "ts",
+      "tsx",
+      "yaml",
+      "diff",
+    ] as const;
+
+    await Promise.all(
+      languages.map(async (language) => {
+        const compiled = await compileArticle(
+          `\`\`\`${language}\nconst answer = 42\n\`\`\``
+        );
+        expect(compiled).toContain("data-copy-source");
+        if (language !== "" && language !== "text") {
+          expect(compiled).toContain("--shiki-dark");
+        }
+      })
+    );
+
+    await expect(compileArticle("```python\nprint('no')\n```")).rejects.toThrow(
+      /blog\/code-language.*python/u
+    );
+  });
+
+  test("validates fence metadata and rendering annotations", async () => {
+    const compiled =
+      await compileArticle(`\`\`\`ts title="Example" lineNumbers=3
+const answer = 42 // [!code highlight]
+const focused = answer // [!code focus]
+const changed = focused // [!code ++]
+console.log(changed) // [!code word:changed]
+\`\`\``);
+
+    expect(compiled).toContain("data-code-title");
+    expect(compiled).toContain("data-line-numbers-start");
+    expect(compiled).toContain("highlighted");
+    expect(compiled).toContain("focused");
+    expect(compiled).toContain("diff add");
+    expect(compiled).toContain("highlighted-word");
+    expect(compiled).not.toContain("[!code");
+
+    const invalid = [
+      ["```ts mystery\nvalue\n```", "blog/code-meta"],
+      ['```ts title="unterminated\nvalue\n```', "blog/code-meta"],
+      ["```ts lineNumbers=0\nvalue\n```", "blog/code-line-numbers"],
+      ["```ts twoslash=false\nvalue\n```", "blog/code-meta"],
+      ["```js twoslash\nvalue\n```", "blog/code-twoslash-language"],
+      ["```ts\nvalue // [!code unknown]\n```", "blog/code-annotation"],
+      ["```ts\nvalue // [!code word:]\n```", "blog/code-annotation"],
+    ] as const;
+
+    await Promise.all(
+      invalid.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("groups only valid consecutive tabbed fences", async () => {
+    const compiled =
+      await compileArticle(`\`\`\`ts tab="TypeScript" tab-group="runtime"
+const language = "ts"
+\`\`\`
+
+\`\`\`js tab="JavaScript"
+const language = "js"
+\`\`\`
+
+Paragraph.
+
+\`\`\`bash tab="Shell"
+echo first
+\`\`\`
+\`\`\`text tab="Text"
+first
+\`\`\``);
+
+    expect(compiled).toContain("{CodeTabs} = _components");
+    expect(compiled).toContain('groupId: "runtime"');
+    expect(compiled).toContain('labels: "TypeScript\\u0000JavaScript"');
+
+    const invalid = [
+      ['```ts tab="Only"\nvalue\n```', "blog/code-tabs-size"],
+      [
+        '```ts tab="Same"\na\n```\n```js tab="Same"\nb\n```',
+        "blog/code-tabs-label",
+      ],
+      [
+        '```ts tab="First"\na\n```\n```js tab="Second" tab-group="late"\nb\n```',
+        "blog/code-tabs-group",
+      ],
+      ['```ts tab="Tabbed"\na\n```\n```js\nb\n```', "blog/code-tabs-boundary"],
+    ] as const;
+
+    await Promise.all(
+      invalid.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("produces clean copy source and deterministic offline Twoslash output", async () => {
+    const source = `\`\`\`ts twoslash
+const ordinary = "kept" // ordinary comment
+const highlighted = ordinary // [!code highlight]
+const answer: number = 42
+//    ^?
+\`\`\``;
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = () => {
+      throw new Error("Article compilation attempted network access.");
+    };
+
+    try {
+      const first = await compileArticle(source);
+      const second = await compileArticle(source);
+      expect(first).toBe(second);
+      expect(first).toContain("twoslash");
+      expect(first).toContain("ordinary comment");
+      expect(first).not.toContain("[!code");
+      expect(first).not.toContain("^?");
+      expect(first).toContain(
+        '"data-copy-source": "const ordinary = \\"kept\\" // ordinary comment'
+      );
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+
+    await expect(
+      compileArticle("```ts twoslash\nconst value: string = 42\n```")
+    ).rejects.toThrow();
+    await expect(
+      compileArticle(
+        '```ts twoslash\nimport value from "./relative"\nconsole.log(value)\n```'
+      )
+    ).rejects.toThrow(/blog\/twoslash-import/u);
   });
 });

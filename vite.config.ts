@@ -193,6 +193,8 @@ export default defineConfig({
         rules: {
           complexity: "off",
           "no-loop-func": "off",
+          "prefer-named-capture-group": "off",
+          "typescript/no-unsafe-type-assertion": "off",
         },
       },
     ],
