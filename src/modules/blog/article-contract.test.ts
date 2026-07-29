@@ -432,6 +432,11 @@ const answer: number = 42
     ).rejects.toThrow();
     await expect(
       compileArticle(
+        "```ts twoslash\n// @noErrors\nconst value: string = 42\n```"
+      )
+    ).rejects.toThrow(/blog\/twoslash-directive/u);
+    await expect(
+      compileArticle(
         '```ts twoslash\nimport value from "./relative"\nconsole.log(value)\n```'
       )
     ).rejects.toThrow(/blog\/twoslash-import/u);

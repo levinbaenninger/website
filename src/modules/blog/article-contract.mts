@@ -163,11 +163,7 @@ const TWOSLASH_IMPORT_PATTERN =
 const TWOSLASH_DYNAMIC_IMPORT_PATTERN =
   /\b(?:import|require)\(\s*["']([^"']+)["']\s*\)/gu;
 const TWOSLASH_DIRECTIVE_PATTERN = /^\s*\/\/\s*@([A-Za-z][\w-]*)/gmu;
-const ALLOWED_TWOSLASH_DIRECTIVES = new Set([
-  "errors",
-  "noErrors",
-  "ts-expect-error",
-]);
+const ALLOWED_TWOSLASH_DIRECTIVES = new Set(["errors", "ts-expect-error"]);
 
 interface CodeFenceMetadata {
   readonly lineNumbers?: number;
@@ -349,9 +345,7 @@ const parseCodeMetadata = (metadata: string): CodeFenceMetadata => {
 const cleanCopySource = (source: string): string => {
   const lines = source.split("\n");
   const cleaned = lines.flatMap((line) => {
-    if (
-      /^\s*\/\/\s*(?:\^+\??|@(?:errors|noErrors|ts-expect-error)\b)/u.test(line)
-    ) {
+    if (/^\s*\/\/\s*(?:\^+\??|@(?:errors|ts-expect-error)\b)/u.test(line)) {
       return [];
     }
     const withoutAnnotation = line.replace(
