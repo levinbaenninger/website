@@ -6,12 +6,22 @@ import {
   ArticleLink,
   ArticleTaskInput,
 } from "./article-components";
+import {
+  ArticleAccordion,
+  ArticleAccordionItem,
+  ArticleTab,
+  ArticleTabs,
+} from "./article-interactions";
 import { getArticleMdxComponents } from "./index";
 
 describe("semantic Article components", () => {
   test("owns every approved semantic Markdown mapping", () => {
     expect(Object.keys(getArticleMdxComponents()).toSorted()).toEqual([
+      "Accordion",
+      "AccordionItem",
       "Figure",
+      "Tab",
+      "Tabs",
       "a",
       "blockquote",
       "h2",
@@ -73,6 +83,32 @@ describe("semantic Article components", () => {
 
     expect(input).toBe(
       '<input readOnly="" disabled="" type="checkbox" checked=""/>'
+    );
+  });
+
+  test("server-renders every interactive panel while preserving defaults", () => {
+    const markup = renderToStaticMarkup(
+      <ArticleTabs>
+        <ArticleTab title="First">
+          <h2 id="visible-heading">Visible heading</h2>
+        </ArticleTab>
+        <ArticleTab title="Second">
+          <ArticleAccordion>
+            <ArticleAccordionItem title="Closed">
+              <h2 id="hidden-heading">Hidden heading</h2>
+            </ArticleAccordionItem>
+          </ArticleAccordion>
+        </ArticleTab>
+      </ArticleTabs>
+    );
+
+    expect(markup).toContain('id="visible-heading"');
+    expect(markup).toContain('id="hidden-heading"');
+    expect(markup).toMatch(
+      /role="tabpanel"[^>]*hidden=""[^>]*data-article-panel="tab"/u
+    );
+    expect(markup).toMatch(
+      /hidden=""[^>]*role="region"[^>]*data-article-panel="accordion"/u
     );
   });
 });

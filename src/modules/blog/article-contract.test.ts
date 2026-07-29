@@ -191,12 +191,185 @@ Plain **strong** prose with \`inline code\`.
         'import image from "./assets/image.png"\n\n<Figure src={image} alt="Outer"><Figure src={image} alt="Inner" /></Figure>',
         "blog/figure-caption",
       ],
+      [
+        'import Tabs from "./assets/image.png"\n\n<Figure src={Tabs} alt="Shadow" />\n\n<Tabs><Tab title="One">One</Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/import-shadow",
+      ],
     ] as const;
 
     await Promise.all(
       invalidFigures.map(async ([source, ruleId]) => {
         await expect(compileArticle(source)).rejects.toThrow(ruleId);
       })
+    );
+  });
+
+  test("compiles validated Accordions and Tabs with searchable hidden content", async () => {
+    const compiled = await compileArticle(`import { Circle } from "lucide-react"
+
+<Tabs>
+  <Tab title="Overview" icon={<Circle />}>
+    ## Overview heading
+
+    First panel prose.
+  </Tab>
+  <Tab title="Details">
+    <Accordion>
+      <AccordionItem title="Initially open" defaultOpen>
+        ### Nested heading
+
+        Nested searchable prose.
+      </AccordionItem>
+      <AccordionItem title="Initially closed">
+        Closed searchable prose.
+      </AccordionItem>
+    </Accordion>
+  </Tab>
+</Tabs>
+`);
+
+    expect(compiled).toContain('import {Circle} from "lucide-react"');
+    expect(compiled).toContain('id: "overview-heading"');
+    expect(compiled).toContain('id: "nested-heading"');
+    expect(compiled).toContain("defaultOpen: true");
+    expect(compiled).toContain(
+      '\\"searchText\\":\\"Overview Overview heading First panel prose. Details Initially open Nested heading Nested searchable prose. Initially closed Closed searchable prose.\\"'
+    );
+  });
+
+  test("rejects invalid Accordion and Tabs composition with stable diagnostics", async () => {
+    const invalidSources = [
+      ["an empty Accordion", "<Accordion />", "blog/accordion-children"],
+      [
+        "Accordion prose",
+        "<Accordion>Not an item</Accordion>",
+        "blog/accordion-children",
+      ],
+      [
+        "an untitled Accordion item",
+        "<Accordion><AccordionItem>Body</AccordionItem></Accordion>",
+        "blog/accordion-item-title",
+      ],
+      [
+        "an Accordion item value",
+        '<Accordion><AccordionItem title="Title" value="custom">Body</AccordionItem></Accordion>',
+        "blog/accordion-item-prop",
+      ],
+      [
+        "an empty Accordion item",
+        '<Accordion><AccordionItem title="Title" /></Accordion>',
+        "blog/accordion-item-children",
+      ],
+      [
+        "an authored Accordion state",
+        '<Accordion value="open"><AccordionItem title="Title">Body</AccordionItem></Accordion>',
+        "blog/accordion-prop",
+      ],
+      [
+        "a non-boolean Accordion default",
+        '<Accordion><AccordionItem title="Title" defaultOpen={false}>Body</AccordionItem></Accordion>',
+        "blog/accordion-item-default",
+      ],
+      [
+        "interactive Accordion item content",
+        '<Accordion><AccordionItem title="Title"><Tabs><Tab title="One">One</Tab><Tab title="Two">Two</Tab></Tabs></AccordionItem></Accordion>',
+        "blog/accordion-item-children",
+      ],
+      [
+        "a lone Tab",
+        '<Tabs><Tab title="One">One</Tab></Tabs>',
+        "blog/tabs-count",
+      ],
+      [
+        "duplicate Tab titles",
+        '<Tabs><Tab title="Same">One</Tab><Tab title="Same">Two</Tab></Tabs>',
+        "blog/tab-title-duplicate",
+      ],
+      [
+        "an authored Tab value",
+        '<Tabs><Tab title="One" value="one">One</Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/tab-prop",
+      ],
+      [
+        "an empty Tab",
+        '<Tabs><Tab title="One" /><Tab title="Two">Two</Tab></Tabs>',
+        "blog/tab-children",
+      ],
+      [
+        "nested general Tabs",
+        '<Tabs><Tab title="One"><Tabs><Tab title="A">A</Tab><Tab title="B">B</Tab></Tabs></Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/tabs-nested",
+      ],
+      [
+        "a standalone item",
+        '<AccordionItem title="Title">Body</AccordionItem>',
+        "blog/accordion-item-parent",
+      ],
+      [
+        "a standalone panel",
+        '<Tab title="Title">Body</Tab>',
+        "blog/tab-parent",
+      ],
+    ] as const;
+
+    await Promise.all(
+      invalidSources.map(async ([name, source, ruleId]) => {
+        await expect(
+          compileArticle(source),
+          `Expected ${name} to fail`
+        ).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("limits Lucide imports to zero-prop general Tab icons", async () => {
+    const invalidSources = [
+      [
+        'import { Tabs } from "lucide-react"\n\n<Tabs><Tab title="One" icon={<Tabs />}>One</Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/import-shadow",
+      ],
+      [
+        'import { Circle as Icon } from "lucide-react"\n\n<Tabs><Tab title="One" icon={<Icon />}>One</Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/icon-import",
+      ],
+      [
+        'import Circle from "lucide-react"\n\n<Tabs><Tab title="One" icon={<Circle />}>One</Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/icon-import",
+      ],
+      ['import { Circle } from "lucide-react"\n\n<Circle />', "blog/element"],
+      [
+        'import { Circle } from "lucide-react"\n\n<Tabs><Tab title="One" icon={<Circle size={12} />}>One</Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/tab-icon",
+      ],
+      [
+        'import { Circle } from "lucide-react"\n\n<Tabs><Tab title="One">One</Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/import-unused",
+      ],
+      [
+        '<Tabs><Tab title="One" icon={<Circle />}>One</Tab><Tab title="Two">Two</Tab></Tabs>',
+        "blog/tab-icon",
+      ],
+    ] as const;
+
+    await Promise.all(
+      invalidSources.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("reports interactive contract values at their source positions", async () => {
+    const failure = await compileArticle(`<Tabs>
+  <Tab>Missing title</Tab>
+  <Tab title="Valid">Valid panel</Tab>
+</Tabs>`).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    if (!(failure instanceof Error)) {
+      throw new TypeError("Expected Tabs compilation to fail.");
+    }
+    expect(failure.message).toMatch(
+      /2:3.*blog\/tab-title.*title undefined is invalid.*Use one literal/u
     );
   });
 

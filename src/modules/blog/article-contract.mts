@@ -98,8 +98,19 @@ const normalizeSearchText = (value: string): string =>
 
 const ASSET_IMPORT_PATTERN =
   /^import\s+[A-Za-z_$][\w$]*\s+from\s+["']\.\/assets\/[^"'?#]+["'];?\s*$/u;
+const ICON_IMPORT_PATTERN =
+  /^import\s*\{\s*([A-Za-z_$][\w$]*(?:\s*,\s*[A-Za-z_$][\w$]*)*)\s*\}\s*from\s*["']lucide-react["'];?\s*$/u;
 const SUPPORTED_ASSET_PATTERN =
   /^\.\/assets\/[a-z0-9]+(?:[/-][a-z0-9]+)*(?:\.avif|\.jpeg|\.jpg|\.png|\.svg|\.webp)$/u;
+// This compile-time list cannot import the React registry without pulling its
+// client module graph into the build-only MDX transform.
+const ARTICLE_COMPONENT_NAMES = new Set([
+  "Accordion",
+  "AccordionItem",
+  "Figure",
+  "Tab",
+  "Tabs",
+]);
 
 const inlineNodeTypes = new Set([
   "delete",
@@ -128,7 +139,20 @@ const searchableText = (node: Root | Root["children"][number]): string => {
 
   if ("children" in node && Array.isArray(node.children)) {
     const separator = inlineNodeTypes.has(node.type) ? "" : " ";
-    return node.children.map(searchableText).join(separator);
+    const title =
+      (node.type === "mdxJsxFlowElement" ||
+        node.type === "mdxJsxTextElement") &&
+      (node.name === "AccordionItem" || node.name === "Tab")
+        ? node.attributes.find(
+            (attribute) =>
+              attribute.type === "mdxJsxAttribute" &&
+              attribute.name === "title" &&
+              typeof attribute.value === "string"
+          )?.value
+        : undefined;
+    return [title, ...node.children.map(searchableText)]
+      .filter((value): value is string => value !== undefined && value !== "")
+      .join(separator);
   }
 
   return "";
@@ -232,12 +256,26 @@ const assignHeadingIds = (
   return headings;
 };
 
-const collectAssetImports = (
+interface ArticleImports {
+  readonly assets: ReadonlyMap<string, string>;
+  readonly icons: ReadonlySet<string>;
+}
+
+const assertImportDoesNotShadowRegistry = (localName: string): void => {
+  if (ARTICLE_COMPONENT_NAMES.has(localName)) {
+    throw new Error(
+      `[blog/import-shadow] Import ${JSON.stringify(localName)} shadows an Article registry component. Choose a local name other than ${[...ARTICLE_COMPONENT_NAMES].map((componentName) => JSON.stringify(componentName)).join(", ")}.`
+    );
+  }
+};
+
+const collectArticleImports = (
   root: Root,
   diagnostics: ArticleDiagnostics
-): ReadonlyMap<string, string> => {
-  const imports = new Map<string, string>();
-  const importedSpecifiers = new Set<string>();
+): ArticleImports => {
+  const assets = new Map<string, string>();
+  const icons = new Set<string>();
+  const importedAssets = new Set<string>();
 
   visit(root, "mdxjsEsm", (node) => {
     diagnostics.capture(node, () => {
@@ -245,13 +283,32 @@ const collectAssetImports = (
         return;
       }
 
-      const match = ASSET_IMPORT_PATTERN.exec(node.value);
-      if (match === null) {
+      const iconMatch = ICON_IMPORT_PATTERN.exec(node.value);
+      if (iconMatch !== null) {
+        const names = iconMatch[1]?.split(",").map((name) => name.trim()) ?? [];
+        for (const name of names) {
+          assertImportDoesNotShadowRegistry(name);
+          if (icons.has(name) || assets.has(name)) {
+            throw new Error(
+              `[blog/icon-import] Lucide icon ${JSON.stringify(name)} is imported more than once. Keep one unaliased named import.`
+            );
+          }
+          icons.add(name);
+        }
+        return;
+      }
+
+      if (!ASSET_IMPORT_PATTERN.test(node.value)) {
+        if (node.value.includes("lucide-react")) {
+          throw new Error(
+            '[blog/icon-import] Lucide icons require unaliased named imports from "lucide-react". Use import { IconName } from "lucide-react".'
+          );
+        }
         const ruleId = node.value.trimStart().startsWith("import")
           ? "blog/import"
           : "blog/export";
         throw new Error(
-          `[${ruleId}] Article-authored modules are limited to default local image imports. Use a default import from "./assets/...".`
+          `[${ruleId}] Article-authored modules are limited to default local image imports and unaliased named Lucide imports.`
         );
       }
 
@@ -260,6 +317,7 @@ const collectAssetImports = (
       const localName = normalizedImport
         .slice("import ".length, fromIndex)
         .trim();
+      assertImportDoesNotShadowRegistry(localName);
       const quotedSpecifier = normalizedImport.slice(
         fromIndex + " from ".length
       );
@@ -269,18 +327,22 @@ const collectAssetImports = (
           `[blog/import] ${JSON.stringify(specifier)} is not an approved Article-local still-image import. Use AVIF, WebP, PNG, JPEG, or SVG.`
         );
       }
-      if (imports.has(localName) || importedSpecifiers.has(specifier)) {
+      if (
+        assets.has(localName) ||
+        icons.has(localName) ||
+        importedAssets.has(specifier)
+      ) {
         throw new Error(
           `[blog/import-duplicate] ${JSON.stringify(specifier)} is imported more than once. Reuse one binding.`
         );
       }
 
-      imports.set(localName, specifier);
-      importedSpecifiers.add(specifier);
+      assets.set(localName, specifier);
+      importedAssets.add(specifier);
     });
   });
 
-  return imports;
+  return { assets, icons };
 };
 
 const captionNodeTypes = new Set([
@@ -307,13 +369,13 @@ const validateFigureCaption = (
   });
 };
 
-type FigureNode = Extract<
+type ArticleComponentNode = Extract<
   Root["children"][number],
   { readonly type: "mdxJsxFlowElement" | "mdxJsxTextElement" }
 >;
 
 const validateFigure = (
-  node: FigureNode,
+  node: ArticleComponentNode,
   imports: ReadonlyMap<string, string>,
   consumedImports: Set<string>,
   diagnostics: ArticleDiagnostics
@@ -430,14 +492,277 @@ const validateFigure = (
   );
 };
 
-const validateClosedLanguage = (
-  root: Root,
-  imports: ReadonlyMap<string, string>,
+const meaningfulComponentChildren = (
+  node: ArticleComponentNode
+): readonly Root["children"][number][] =>
+  node.children.filter(
+    (child) => child.type !== "text" || child.value.trim() !== ""
+  );
+
+const authoredAttributeValue = (
+  attribute: ArticleComponentNode["attributes"][number] | undefined
+): unknown => {
+  if (attribute === undefined) {
+    return undefined;
+  }
+  if (attribute.type !== "mdxJsxAttribute") {
+    return "spread";
+  }
+  if (attribute.value !== null && typeof attribute.value === "object") {
+    return attribute.value.value;
+  }
+  return attribute.value;
+};
+
+const validateLiteralTitle = (
+  node: ArticleComponentNode,
+  component: "AccordionItem" | "Tab",
+  attribute: ArticleComponentNode["attributes"][number] | undefined,
+  diagnostics: ArticleDiagnostics
+): string | undefined => {
+  let title: string | undefined;
+  diagnostics.capture(attribute ?? node, () => {
+    const ruleId =
+      component === "Tab" ? "blog/tab-title" : "blog/accordion-item-title";
+    const maximum = component === "Tab" ? 40 : 120;
+    if (
+      attribute?.type !== "mdxJsxAttribute" ||
+      attribute.name !== "title" ||
+      typeof attribute.value !== "string" ||
+      attribute.value.length === 0 ||
+      attribute.value !== attribute.value.trim() ||
+      /[\n\r\u2028\u2029]/u.test(attribute.value) ||
+      !attribute.value.isWellFormed() ||
+      attribute.value.normalize("NFC") !== attribute.value ||
+      [
+        ...new Intl.Segmenter(undefined, {
+          granularity: "grapheme",
+        }).segment(attribute.value),
+      ].length > maximum
+    ) {
+      throw new Error(
+        `[${ruleId}] ${component} title ${JSON.stringify(authoredAttributeValue(attribute))} is invalid. Use one literal, trimmed, single-line NFC title of 1–${maximum} characters.`
+      );
+    }
+    title = attribute.value;
+  });
+  return title;
+};
+
+const validateNoComponentProps = (
+  node: ArticleComponentNode,
+  component: "Accordion" | "Tabs",
   diagnostics: ArticleDiagnostics
 ): void => {
-  const consumedImports = new Set<string>();
+  for (const attribute of node.attributes) {
+    diagnostics.capture(attribute, () => {
+      const ruleId =
+        component === "Tabs" ? "blog/tabs-prop" : "blog/accordion-prop";
+      const name =
+        attribute.type === "mdxJsxAttribute" ? attribute.name : "spread";
+      throw new Error(
+        `[${ruleId}] ${component} does not accept author-controlled prop ${JSON.stringify(name)}.`
+      );
+    });
+  }
+};
 
-  visit(root, (node) => {
+const validateAccordion = (
+  node: ArticleComponentNode,
+  diagnostics: ArticleDiagnostics
+): void => {
+  validateNoComponentProps(node, "Accordion", diagnostics);
+  const children = meaningfulComponentChildren(node);
+  diagnostics.capture(node, () => {
+    if (
+      children.length === 0 ||
+      children.some(
+        (child) =>
+          (child.type !== "mdxJsxFlowElement" &&
+            child.type !== "mdxJsxTextElement") ||
+          child.name !== "AccordionItem"
+      )
+    ) {
+      throw new Error(
+        "[blog/accordion-children] Accordion requires one or more direct AccordionItem children and no other content."
+      );
+    }
+  });
+};
+
+const validateAccordionItem = (
+  node: ArticleComponentNode,
+  parent: ArticleComponentNode | undefined,
+  diagnostics: ArticleDiagnostics
+): void => {
+  diagnostics.capture(node, () => {
+    if (parent?.name !== "Accordion") {
+      throw new Error(
+        "[blog/accordion-item-parent] AccordionItem must be a direct child of Accordion."
+      );
+    }
+  });
+
+  let titleAttribute: ArticleComponentNode["attributes"][number] | undefined;
+  let defaultOpenCount = 0;
+  for (const attribute of node.attributes) {
+    if (
+      attribute.type === "mdxJsxAttribute" &&
+      attribute.name === "title" &&
+      titleAttribute === undefined
+    ) {
+      titleAttribute = attribute;
+      continue;
+    }
+    diagnostics.capture(attribute, () => {
+      if (
+        attribute.type === "mdxJsxAttribute" &&
+        attribute.name === "defaultOpen"
+      ) {
+        defaultOpenCount += 1;
+        if (defaultOpenCount > 1 || attribute.value !== null) {
+          throw new Error(
+            `[blog/accordion-item-default] AccordionItem defaultOpen received ${JSON.stringify(authoredAttributeValue(attribute))}. Use an optional bare defaultOpen boolean prop that appears once.`
+          );
+        }
+        return;
+      }
+      const name =
+        attribute.type === "mdxJsxAttribute" ? attribute.name : "spread";
+      throw new Error(
+        `[blog/accordion-item-prop] AccordionItem does not accept ${JSON.stringify(name)}. Use only title and optional bare defaultOpen.`
+      );
+    });
+  }
+  validateLiteralTitle(node, "AccordionItem", titleAttribute, diagnostics);
+  diagnostics.capture(node, () => {
+    if (meaningfulComponentChildren(node).length === 0) {
+      throw new Error(
+        "[blog/accordion-item-children] AccordionItem requires Markdown children."
+      );
+    }
+  });
+};
+
+const validateTabs = (
+  node: ArticleComponentNode,
+  ancestors: readonly ArticleComponentNode[],
+  diagnostics: ArticleDiagnostics
+): void => {
+  validateNoComponentProps(node, "Tabs", diagnostics);
+  diagnostics.capture(node, () => {
+    if (ancestors.some((ancestor) => ancestor.name === "Tabs")) {
+      throw new Error(
+        "[blog/tabs-nested] General Tabs cannot be nested inside other general Tabs."
+      );
+    }
+  });
+  const children = meaningfulComponentChildren(node);
+  diagnostics.capture(node, () => {
+    if (
+      children.length < 2 ||
+      children.some(
+        (child) =>
+          (child.type !== "mdxJsxFlowElement" &&
+            child.type !== "mdxJsxTextElement") ||
+          child.name !== "Tab"
+      )
+    ) {
+      throw new Error(
+        "[blog/tabs-count] Tabs requires at least two direct Tab children and no other content."
+      );
+    }
+  });
+};
+
+const validateTabIcon = (
+  attribute: ArticleComponentNode["attributes"][number],
+  importedIcons: ReadonlySet<string>,
+  consumedIcons: Set<string>,
+  diagnostics: ArticleDiagnostics
+): void => {
+  diagnostics.capture(attribute, () => {
+    const expression =
+      attribute.type === "mdxJsxAttribute" &&
+      attribute.name === "icon" &&
+      attribute.value !== null &&
+      typeof attribute.value === "object"
+        ? attribute.value.value.trim()
+        : "";
+    const match = /^<([A-Za-z_$][\w$]*)\s*\/>$/u.exec(expression);
+    const iconName = match?.[1];
+    if (iconName === undefined || !importedIcons.has(iconName)) {
+      throw new Error(
+        `[blog/tab-icon] Tab icon ${JSON.stringify(expression)} is invalid. Use one imported Lucide icon rendered as a zero-prop self-closing element.`
+      );
+    }
+    consumedIcons.add(iconName);
+  });
+};
+
+const validateTab = (
+  node: ArticleComponentNode,
+  parent: ArticleComponentNode | undefined,
+  importedIcons: ReadonlySet<string>,
+  consumedIcons: Set<string>,
+  diagnostics: ArticleDiagnostics
+): string | undefined => {
+  diagnostics.capture(node, () => {
+    if (parent?.name !== "Tabs") {
+      throw new Error("[blog/tab-parent] Tab must be a direct child of Tabs.");
+    }
+  });
+
+  let titleAttribute: ArticleComponentNode["attributes"][number] | undefined;
+  let iconCount = 0;
+  for (const attribute of node.attributes) {
+    if (
+      attribute.type === "mdxJsxAttribute" &&
+      attribute.name === "title" &&
+      titleAttribute === undefined
+    ) {
+      titleAttribute = attribute;
+      continue;
+    }
+    if (attribute.type === "mdxJsxAttribute" && attribute.name === "icon") {
+      iconCount += 1;
+      if (iconCount === 1) {
+        validateTabIcon(attribute, importedIcons, consumedIcons, diagnostics);
+        continue;
+      }
+    }
+    diagnostics.capture(attribute, () => {
+      const name =
+        attribute.type === "mdxJsxAttribute" ? attribute.name : "spread";
+      throw new Error(
+        `[blog/tab-prop] Tab does not accept ${JSON.stringify(name)}. Use only title and one optional icon.`
+      );
+    });
+  }
+  const title = validateLiteralTitle(node, "Tab", titleAttribute, diagnostics);
+  diagnostics.capture(node, () => {
+    if (meaningfulComponentChildren(node).length === 0) {
+      throw new Error(
+        "[blog/tab-children] Tab requires Markdown or approved component children."
+      );
+    }
+  });
+  return title;
+};
+
+const validateClosedLanguage = (
+  root: Root,
+  imports: ArticleImports,
+  diagnostics: ArticleDiagnostics
+): void => {
+  const consumedAssets = new Set<string>();
+  const consumedIcons = new Set<string>();
+  const tabTitles = new Map<ArticleComponentNode, Set<string>>();
+
+  const validateNode = (
+    node: Root | Root["children"][number],
+    ancestors: readonly ArticleComponentNode[]
+  ): void => {
     diagnostics.capture(node, () => {
       if (node.type === "html") {
         throw new Error(
@@ -456,18 +781,50 @@ const validateClosedLanguage = (
         node.type === "mdxJsxFlowElement" ||
         node.type === "mdxJsxTextElement"
       ) {
-        if (node.name !== "Figure") {
+        const parent = ancestors.at(-1);
+        if (ancestors.some((ancestor) => ancestor.name === "AccordionItem")) {
+          throw new Error(
+            `[blog/accordion-item-children] AccordionItem children may contain Markdown but not Article component ${node.name}.`
+          );
+        }
+        if (node.name === "Figure") {
+          validateFigure(node, imports.assets, consumedAssets, diagnostics);
+        } else if (node.name === "Accordion") {
+          validateAccordion(node, diagnostics);
+        } else if (node.name === "AccordionItem") {
+          validateAccordionItem(node, parent, diagnostics);
+        } else if (node.name === "Tabs") {
+          validateTabs(node, ancestors, diagnostics);
+          tabTitles.set(node, new Set());
+        } else if (node.name === "Tab") {
+          const title = validateTab(
+            node,
+            parent,
+            imports.icons,
+            consumedIcons,
+            diagnostics
+          );
+          if (parent?.name === "Tabs" && title !== undefined) {
+            const titles = tabTitles.get(parent);
+            diagnostics.capture(node, () => {
+              if (titles?.has(title) === true) {
+                throw new Error(
+                  `[blog/tab-title-duplicate] Tab title ${JSON.stringify(title)} appears more than once in the same Tabs. Use unique titles.`
+                );
+              }
+              titles?.add(title);
+            });
+          }
+        } else {
           const ruleId =
             typeof node.name === "string" &&
             node.name === node.name.toLowerCase()
               ? "blog/raw-html"
               : "blog/element";
           throw new Error(
-            `[${ruleId}] ${JSON.stringify(node.name)} is not an approved Article element. Use Figure or approved Markdown.`
+            `[${ruleId}] ${JSON.stringify(node.name)} is not an approved Article element. Use Figure, Accordion, Tabs, or approved Markdown.`
           );
         }
-        validateFigure(node, imports, consumedImports, diagnostics);
-        return;
       }
       if (node.type === "image" || node.type === "imageReference") {
         throw new Error(
@@ -492,13 +849,34 @@ const validateClosedLanguage = (
         );
       }
     });
-  });
 
-  for (const localName of imports.keys()) {
-    if (!consumedImports.has(localName)) {
+    if ("children" in node && Array.isArray(node.children)) {
+      const nextAncestors =
+        node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement"
+          ? [...ancestors, node]
+          : ancestors;
+      for (const child of node.children) {
+        validateNode(child, nextAncestors);
+      }
+    }
+  };
+
+  validateNode(root, []);
+
+  for (const localName of imports.assets.keys()) {
+    if (!consumedAssets.has(localName)) {
       diagnostics.capture(root, () => {
         throw new Error(
           `[blog/import-unused] Imported Article asset ${JSON.stringify(localName)} is not consumed by a Figure. Add a Figure or remove the import.`
+        );
+      });
+    }
+  }
+  for (const iconName of imports.icons) {
+    if (!consumedIcons.has(iconName)) {
+      diagnostics.capture(root, () => {
+        throw new Error(
+          `[blog/import-unused] Imported Lucide icon ${JSON.stringify(iconName)} is not consumed by a general Tab icon. Add it to Tab.icon or remove the import.`
         );
       });
     }
@@ -585,7 +963,7 @@ const validateLinks = (
 export default function articleContract() {
   return (root: Root, file: ArticleFile): void => {
     const diagnostics = new ArticleDiagnostics(file);
-    const imports = collectAssetImports(root, diagnostics);
+    const imports = collectArticleImports(root, diagnostics);
     validateClosedLanguage(root, imports, diagnostics);
     const headings = assignHeadingIds(root, diagnostics);
     const facts: ArticleCompilationFacts = {

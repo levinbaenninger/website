@@ -193,6 +193,13 @@ export default defineConfig({
         rules: {
           complexity: "off",
           "no-loop-func": "off",
+          "prefer-named-capture-group": "off",
+        },
+      },
+      {
+        files: ["src/modules/blog/article-interactions.test.tsx"],
+        rules: {
+          "promise/prefer-await-to-callbacks": "off",
         },
       },
     ],

@@ -18,9 +18,19 @@ import {
   ArticleTaskInput,
   ArticleThematicBreak,
 } from "./article-components";
+import {
+  ArticleAccordion,
+  ArticleAccordionItem,
+  ArticleTab,
+  ArticleTabs,
+} from "./article-interactions";
 
 const articleMdxComponents: MDXComponents = {
+  Accordion: ArticleAccordion,
+  AccordionItem: ArticleAccordionItem,
   Figure: ArticleFigure,
+  Tab: ArticleTab,
+  Tabs: ArticleTabs,
   a: ArticleLink,
   blockquote: ArticleQuote,
   h2: ArticleHeading2,
