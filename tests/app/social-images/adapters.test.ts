@@ -4,14 +4,14 @@ import BlogOpenGraphImage, {
   alt as blogAlt,
   contentType as blogContentType,
   size as blogSize,
-} from "./blog/opengraph-image";
-import BlogTwitterImage from "./blog/twitter-image";
+} from "@/app/blog/opengraph-image";
+import BlogTwitterImage from "@/app/blog/twitter-image";
 import PortfolioOpenGraphImage, {
   alt as portfolioAlt,
   contentType as portfolioContentType,
   size as portfolioSize,
-} from "./opengraph-image";
-import PortfolioTwitterImage from "./twitter-image";
+} from "@/app/opengraph-image";
+import PortfolioTwitterImage from "@/app/twitter-image";
 
 const responseBytes = async (response: Response): Promise<Buffer> =>
   Buffer.from(await response.arrayBuffer());

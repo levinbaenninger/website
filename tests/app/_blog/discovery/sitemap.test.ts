@@ -1,12 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import type { ArticleDiscoveryEntry } from "@/modules/blog/articles";
-
 import {
   createRobotsPolicy,
   createSitemap,
   getArticleLastModified,
-} from "./sitemap";
+} from "@/app/_blog/discovery/sitemap";
+import type { ArticleDiscoveryEntry } from "@/modules/blog/articles";
 
 const cover = { height: 630, src: "/cover.png", width: 1200 };
 

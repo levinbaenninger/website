@@ -1,12 +1,14 @@
 import { describe, expect, test, vi } from "vite-plus/test";
 
+import {
+  createArticleRouteContract,
+  requireCurrentArticle,
+} from "@/app/_blog/articles/route";
 import type {
   ArticleDetail,
   ArticleRedirect,
   ArticleSummary,
 } from "@/modules/blog/articles";
-
-import { createArticleRouteContract, requireCurrentArticle } from "./route";
 
 const Content = () => null;
 const cover = { height: 1, src: "/cover.png", width: 1 };

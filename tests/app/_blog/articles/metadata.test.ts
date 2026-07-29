@@ -1,11 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import type { ArticleDetail } from "@/modules/blog/articles";
-
 import {
   createArticleMetadata,
   createPublishedArticleStructuredDataInput,
-} from "./metadata";
+} from "@/app/_blog/articles/metadata";
+import type { ArticleDetail } from "@/modules/blog/articles";
 
 const Content = () => null;
 const cover = {

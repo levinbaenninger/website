@@ -197,6 +197,35 @@ export default defineConfig({
         },
       },
       {
+        files: ["tests/app/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        rules: {
+          "no-restricted-imports": [
+            "error",
+            {
+              paths: [
+                {
+                  name: "@/modules",
+                  message:
+                    "App tests must consume a specific product module entrypoint.",
+                },
+              ],
+              patterns: [
+                {
+                  group: [
+                    "@/modules/*/**",
+                    "!@/modules/blog/articles",
+                    "!@/modules/blog/search",
+                    "!@/modules/blog/search/artifact",
+                  ],
+                  message:
+                    "App tests must consume a product module through its public entrypoint.",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
         files: [
           "src/modules/blog/tooling/cli.mts",
           "src/modules/blog/tooling/source-manifest.mts",

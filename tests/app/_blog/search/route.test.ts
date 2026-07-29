@@ -2,12 +2,11 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, test } from "vite-plus/test";
 
+import { createArticleSearchResponse } from "@/app/_blog/search/route";
 import type { ArticleSearchDocument } from "@/modules/blog/search/artifact";
 
-import { createArticleSearchResponse } from "./route";
-
 const routeSource = readFileSync(
-  new URL("../../blog/search.json/route.ts", import.meta.url),
+  new URL("../../../../src/app/blog/search.json/route.ts", import.meta.url),
   "utf-8"
 );
 

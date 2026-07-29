@@ -1,9 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vite-plus/test";
 
+import {
+  ArticleStructuredData,
+  serializeJsonLd,
+} from "@/app/_blog/articles/structured-data";
 import type { ArticleDetail } from "@/modules/blog/articles";
-
-import { ArticleStructuredData, serializeJsonLd } from "./structured-data";
 
 const Content = () => null;
 const cover = { height: 630, src: "/cover.png", width: 1200 };
