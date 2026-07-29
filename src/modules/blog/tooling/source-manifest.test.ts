@@ -30,14 +30,14 @@ const temporaryRepositories: string[] = [];
 const createRepository = async (): Promise<BlogToolPaths> => {
   const repositoryRoot = await mkdtemp(path.join(tmpdir(), "blog-tooling-"));
   temporaryRepositories.push(repositoryRoot);
-  const articlesRoot = path.join(repositoryRoot, "src/modules/blog/articles");
+  const articlesRoot = path.join(repositoryRoot, "src/modules/blog/content");
   await mkdir(articlesRoot, { recursive: true });
   return {
     repositoryRoot,
     articlesRoot,
     manifestPath: path.join(
       repositoryRoot,
-      "src/modules/blog/article-manifest.generated.ts"
+      "src/modules/blog/articles/manifest.generated.ts"
     ),
   };
 };
@@ -129,16 +129,16 @@ describe("Article source-manifest tooling", () => {
       expect(firstBytes)
         .toBe(`// Generated deterministically. Do not edit by hand.
 
-import cover_alpha from "./articles/alpha/assets/cover.png";
-import cover_zebra from "./articles/zebra/assets/cover.png";
-import type { ArticleManifestEntry } from "./article-collection";
+import cover_alpha from "../content/alpha/assets/cover.png";
+import cover_zebra from "../content/zebra/assets/cover.png";
+import type { ArticleManifestEntry } from "./collection";
 
 export const ARTICLE_MANIFEST = [
   {
     slug: "alpha",
     loadArticle: () =>
       import(
-        "./articles/alpha/alpha.mdx"
+        "../content/alpha/alpha.mdx"
       ),
     cover: cover_alpha,
   },
@@ -146,7 +146,7 @@ export const ARTICLE_MANIFEST = [
     slug: "zebra",
     loadArticle: () =>
       import(
-        "./articles/zebra/zebra.mdx"
+        "../content/zebra/zebra.mdx"
       ),
     cover: cover_zebra,
   },

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { createBlogMetadata } from "@/app/_blog/metadata";
-import { listArticles, listArticleTags } from "@/app/_blog/server";
+import { listArticles, listArticleTags } from "@/app/_blog/articles/server";
+import { createBlogMetadata } from "@/app/_blog/catalog/metadata";
 import { BlogView } from "@/modules/blog";
 
 export const metadata: Metadata = createBlogMetadata();

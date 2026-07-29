@@ -644,7 +644,7 @@ export const renderArticleManifest = (
 
   return `// Generated deterministically. Do not edit by hand.
 
-${importBlock}import type { ArticleManifestEntry } from "./article-collection";
+${importBlock}import type { ArticleManifestEntry } from "./collection";
 
 export const ARTICLE_MANIFEST = [
 ${entries.join("\n")}

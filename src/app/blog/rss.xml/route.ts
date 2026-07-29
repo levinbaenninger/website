@@ -1,5 +1,5 @@
-import { createRssResponse } from "@/app/_blog/rss";
-import { listPublishedArticleDiscoveryEntries } from "@/app/_blog/server";
+import { listPublishedArticleDiscoveryEntries } from "@/app/_blog/articles/server";
+import { createRssResponse } from "@/app/_blog/discovery/rss";
 
 export const dynamic = "force-static";
 

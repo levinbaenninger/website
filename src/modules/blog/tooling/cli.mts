@@ -13,10 +13,10 @@ import type { BlogToolPaths } from "./source-manifest.mts";
 const repositoryRoot = process.cwd();
 const paths: BlogToolPaths = {
   repositoryRoot,
-  articlesRoot: path.join(repositoryRoot, "src/modules/blog/articles"),
+  articlesRoot: path.join(repositoryRoot, "src/modules/blog/content"),
   manifestPath: path.join(
     repositoryRoot,
-    "src/modules/blog/article-manifest.generated.ts"
+    "src/modules/blog/articles/manifest.generated.ts"
   ),
 };
 

@@ -128,6 +128,46 @@ export default defineConfig({
         },
       },
       {
+        files: ["src/modules/blog/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        rules: {
+          "no-restricted-imports": [
+            "error",
+            {
+              paths: [
+                {
+                  name: "@/app",
+                  message: "Blog cannot depend on app.",
+                },
+                {
+                  name: "@/modules",
+                  message: "Blog cannot import the modules root.",
+                },
+                {
+                  name: "@/modules/blog",
+                  message:
+                    "Blog internals must not import their public entrypoint.",
+                },
+              ],
+              patterns: [
+                {
+                  group: ["@/app/**"],
+                  message: "Blog cannot depend on app.",
+                },
+                {
+                  group: [
+                    "@/modules/*",
+                    "@/modules/*/**",
+                    "!@/modules/blog",
+                    "!@/modules/blog/**",
+                  ],
+                  message: "Blog cannot depend on peer modules.",
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
         files: ["src/app/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
         rules: {
           "no-restricted-imports": [
@@ -146,7 +186,7 @@ export default defineConfig({
                     "@/modules/*/**",
                     "!@/modules/blog/articles",
                     "!@/modules/blog/search",
-                    "!@/modules/blog/search-artifact",
+                    "!@/modules/blog/search/artifact",
                   ],
                   message:
                     "App code must consume a product module through its public entrypoint.",
@@ -195,13 +235,13 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/blog/article-contract.test.ts"],
+        files: ["src/modules/blog/rendering/contract.test.ts"],
         rules: {
           "promise/avoid-new": "off",
         },
       },
       {
-        files: ["src/modules/blog/article-contract.mts"],
+        files: ["src/modules/blog/rendering/contract.mts"],
         rules: {
           complexity: "off",
           "no-loop-func": "off",
@@ -210,7 +250,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/blog/article-interactions.test.tsx"],
+        files: ["src/modules/blog/rendering/interactions.test.tsx"],
         rules: {
           "promise/prefer-await-to-callbacks": "off",
         },

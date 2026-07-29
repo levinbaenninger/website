@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { DevTools } from "@/app/_devtools/devtools";
-import { createRootMetadata } from "@/app/_metadata";
 import { AppShell } from "@/app/_shell";
+import { createRootMetadata } from "@/app/_site/metadata";
 import { ThemeProvider } from "@/app/_theme/theme-provider";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 

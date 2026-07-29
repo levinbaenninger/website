@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { requireCurrentArticle } from "@/app/_blog/article-route";
-import { articleRouteContract } from "@/app/_blog/article-route-server";
-import { createArticleMetadata } from "@/app/_blog/metadata";
-import { ArticleStructuredData } from "@/app/_blog/structured-data";
+import { createArticleMetadata } from "@/app/_blog/articles/metadata";
+import { requireCurrentArticle } from "@/app/_blog/articles/route";
+import { articleRouteContract } from "@/app/_blog/articles/route-server";
+import { ArticleStructuredData } from "@/app/_blog/articles/structured-data";
 import { ArticleView } from "@/modules/blog/articles";
 
 interface ArticlePageProps {

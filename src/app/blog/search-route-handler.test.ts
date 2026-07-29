@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vite-plus/test";
 
-import type { ArticleSearchDocument } from "@/modules/blog/search-artifact";
+import type { ArticleSearchDocument } from "@/modules/blog/search/artifact";
 
 import { dynamic, GET } from "./search.json/route";
 
@@ -22,7 +22,7 @@ const documents: readonly ArticleSearchDocument[] = [
   },
 ];
 
-vi.mock("@/app/_blog/server", () => ({
+vi.mock("@/app/_blog/articles/server", () => ({
   listArticleSearchDocuments,
 }));
 
