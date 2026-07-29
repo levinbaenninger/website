@@ -16,6 +16,7 @@ This is Levin's Next.js personal website, containing the visitor-facing Portfoli
 Read only the guides relevant to the task:
 
 - [Toolchain](docs/agents/toolchain.md) — dependency management, commands, validation, and troubleshooting
+- [Testing](docs/agents/testing.md) — test selection, placement, behavior-focused assertions, mocking, and AI-generated test review
 - [Next.js](docs/agents/nextjs.md) — required local documentation lookup before Next.js work
 - [Domain documentation](docs/agents/domain.md) — domain vocabulary and architectural decisions
 - [Issue tracker](docs/agents/issue-tracker.md) — GitHub issue and PRD operations
