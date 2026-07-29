@@ -321,7 +321,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/blog/rendering/interactions.test.tsx"],
+        files: ["src/modules/blog/rendering/interactions.dom.test.tsx"],
         rules: {
           "promise/prefer-await-to-callbacks": "off",
         },
@@ -334,5 +334,33 @@ export default defineConfig({
       "sort-keys": "off",
     },
     options: { typeAware: true, typeCheck: true },
+  },
+  test: {
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "node",
+          environment: "node",
+          include: [
+            "src/**/*.{test,spec}.{ts,tsx}",
+            "tests/**/*.{test,spec}.{ts,tsx}",
+          ],
+          exclude: ["**/*.dom.test.{ts,tsx}"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "dom",
+          environment: "happy-dom",
+          include: [
+            "src/**/*.dom.test.{ts,tsx}",
+            "tests/**/*.dom.test.{ts,tsx}",
+          ],
+          setupFiles: ["./tests/setup/react-dom.ts"],
+        },
+      },
+    ],
   },
 });

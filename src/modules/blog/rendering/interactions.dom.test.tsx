@@ -1,7 +1,5 @@
-// @vitest-environment happy-dom
-
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {
   afterEach,
   beforeEach,
@@ -22,24 +20,6 @@ const scrollIntoViewMock = vi.fn(
   (_options?: boolean | ScrollIntoViewOptions): void => undefined
 );
 
-const renderInteraction = (element: React.ReactNode) => {
-  const container = document.createElement("div");
-  document.body.append(container);
-  const root = createRoot(container);
-  act(() => {
-    root.render(element);
-  });
-  return {
-    container,
-    unmount() {
-      act(() => {
-        root.unmount();
-      });
-      container.remove();
-    },
-  };
-};
-
 describe("Article interactions", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
@@ -52,12 +32,12 @@ describe("Article interactions", () => {
   });
 
   afterEach(() => {
-    document.body.replaceChildren();
     vi.restoreAllMocks();
   });
 
-  test("keeps Accordion items independent and honors authored defaults", () => {
-    const view = renderInteraction(
+  test("keeps Accordion items independent and honors authored defaults", async () => {
+    const user = userEvent.setup();
+    render(
       <ArticleAccordion>
         <ArticleAccordionItem defaultOpen title="Open">
           <p>First body</p>
@@ -67,28 +47,25 @@ describe("Article interactions", () => {
         </ArticleAccordionItem>
       </ArticleAccordion>
     );
-    const triggers = view.container.querySelectorAll("button");
-    const panels = view.container.querySelectorAll<HTMLElement>(
+    const panels = document.querySelectorAll<HTMLElement>(
       "[data-article-panel='accordion']"
     );
 
-    expect(triggers).toHaveLength(2);
+    expect(screen.getAllByRole("button")).toHaveLength(2);
     expect(panels).toHaveLength(2);
     expect(panels[0]?.hidden).toBe(false);
     expect(panels[1]?.hidden).toBe(true);
 
-    act(() => {
-      triggers[1]?.click();
-    });
+    await user.click(screen.getByRole("button", { name: "Closed" }));
 
     expect(panels[0]?.hidden).toBe(false);
     expect(panels[1]?.hidden).toBe(false);
-    view.unmount();
   });
 
-  test("selects the first general Tab without persistence or synchronization", () => {
+  test("selects the first general Tab without persistence or synchronization", async () => {
+    const user = userEvent.setup();
     window.localStorage.setItem("blog:tabs", "unrelated-preference");
-    const view = renderInteraction(
+    render(
       <>
         <ArticleTabs>
           <ArticleTab title="First">
@@ -104,8 +81,8 @@ describe("Article interactions", () => {
         </ArticleTabs>
       </>
     );
-    const tabs = view.container.querySelectorAll<HTMLElement>("[role='tab']");
-    const panels = view.container.querySelectorAll<HTMLElement>(
+    const tabs = document.querySelectorAll<HTMLElement>("[role='tab']");
+    const panels = document.querySelectorAll<HTMLElement>(
       "[data-article-panel='tab']"
     );
 
@@ -113,25 +90,20 @@ describe("Article interactions", () => {
     expect(panels[0]?.hidden).toBe(false);
     expect(panels[1]?.hidden).toBe(true);
 
-    act(() => {
-      tabs[1]?.dispatchEvent(
-        new MouseEvent("mousedown", { bubbles: true, button: 0 })
-      );
-      tabs[1]?.click();
-    });
+    const [firstTablist] = screen.getAllByRole("tablist");
+    await user.click(within(firstTablist).getByRole("tab", { name: "Second" }));
 
     expect(tabs[1]?.getAttribute("aria-selected")).toBe("true");
     expect(tabs[2]?.getAttribute("aria-selected")).toBe("true");
     expect(window.localStorage.getItem("blog:tabs")).toBe(
       "unrelated-preference"
     );
-    view.unmount();
   });
 
   test("reveals a hash target during initial navigation", async () => {
     window.history.replaceState(null, "", "#initial-heading");
 
-    const view = renderInteraction(
+    const { container } = render(
       <ArticleTabs>
         <ArticleTab title="Visible">Visible</ArticleTab>
         <ArticleTab title="Hidden">
@@ -139,21 +111,19 @@ describe("Article interactions", () => {
         </ArticleTab>
       </ArticleTabs>
     );
-    await act(async () => {
-      await Promise.resolve();
-    });
 
-    expect(
-      view.container.querySelector<HTMLElement>(
-        "[data-article-panel='tab']:has(#initial-heading)"
-      )?.hidden
-    ).toBe(false);
+    await waitFor(() => {
+      expect(
+        container.querySelector<HTMLElement>(
+          "[data-article-panel='tab']:has(#initial-heading)"
+        )?.hidden
+      ).toBe(false);
+    });
     expect(scrollIntoViewMock).toHaveBeenCalled();
-    view.unmount();
   });
 
   test("reveals nested panels outermost-first on later hash changes", async () => {
-    const view = renderInteraction(
+    const { container } = render(
       <ArticleTabs>
         <ArticleTab title="Visible">Visible</ArticleTab>
         <ArticleTab title="Hidden">
@@ -165,9 +135,8 @@ describe("Article interactions", () => {
         </ArticleTab>
       </ArticleTabs>
     );
-    const [, tab] =
-      view.container.querySelectorAll<HTMLElement>("[role='tab']");
-    const accordion = view.container.querySelector<HTMLElement>(
+    const [, tab] = container.querySelectorAll<HTMLElement>("[role='tab']");
+    const accordion = container.querySelector<HTMLElement>(
       "[data-article-accordion-trigger]"
     );
     const revealOrder: string[] = [];
@@ -179,24 +148,21 @@ describe("Article interactions", () => {
     });
     scrollIntoViewMock.mockClear();
 
-    await act(async () => {
-      window.history.replaceState(null, "", "#deep-heading");
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
-      await Promise.resolve();
-    });
+    window.history.replaceState(null, "", "#deep-heading");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
 
-    expect(revealOrder).toEqual(["tab", "accordion"]);
+    await waitFor(() => {
+      expect(revealOrder).toEqual(["tab", "accordion"]);
+    });
     expect(
-      view.container.querySelector<HTMLElement>(
+      container.querySelector<HTMLElement>(
         "[data-article-panel='tab']:has(#deep-heading)"
       )?.hidden
     ).toBe(false);
     expect(
-      view.container.querySelector<HTMLElement>(
-        "[data-article-panel='accordion']"
-      )?.hidden
+      container.querySelector<HTMLElement>("[data-article-panel='accordion']")
+        ?.hidden
     ).toBe(false);
     expect(scrollIntoViewMock).toHaveBeenCalled();
-    view.unmount();
   });
 });
