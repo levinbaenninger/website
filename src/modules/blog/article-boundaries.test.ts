@@ -14,6 +14,10 @@ const articlesSource = readFileSync(
   new URL("articles.ts", import.meta.url),
   "utf-8"
 );
+const searchSource = readFileSync(
+  new URL("search.ts", import.meta.url),
+  "utf-8"
+);
 
 describe("Article server and client boundaries", () => {
   test("keeps the Article registry server-first", () => {
@@ -41,5 +45,14 @@ describe("Article server and client boundaries", () => {
     for (const forbiddenSpecifier of forbiddenSpecifiers) {
       expect(interactionSource).not.toContain(forbiddenSpecifier);
     }
+  });
+
+  test("keeps the lazy search entrypoint client-safe", () => {
+    expect(searchSource.startsWith('"use client";')).toBe(true);
+    expect(searchSource).not.toContain('"./articles"');
+    expect(searchSource).not.toContain('"./article-collection"');
+    expect(searchSource).not.toContain('"./article-manifest.generated"');
+    expect(searchSource).not.toContain('"server-only"');
+    expect(searchSource).not.toContain('"node:');
   });
 });
