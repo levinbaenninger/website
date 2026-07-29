@@ -1,6 +1,8 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { z } from "zod";
 
+import { isXml10CompatibleText } from "@/shared/xml/xml-characters";
+
 import { resolveTag } from "./tags";
 import type { Tag } from "./tags";
 
@@ -21,6 +23,10 @@ const authoredText = (maximumLength: number) =>
       "must be NFC-normalized"
     )
     .refine((value) => !LINE_BREAK_PATTERN.test(value), "must be single-line")
+    .refine(
+      isXml10CompatibleText,
+      "must contain only XML 1.0-compatible characters"
+    )
     .refine((value) => {
       const length = graphemeCount(value);
       return length >= 1 && length <= maximumLength;

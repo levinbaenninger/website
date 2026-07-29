@@ -34,6 +34,10 @@ describe("Article metadata", () => {
     ["leading whitespace", { ...VALID_DRAFT, title: ` ${VALID_DRAFT.title}` }],
     ["non-NFC text", { ...VALID_DRAFT, title: "Cafe\u0301" }],
     [
+      "XML-forbidden control characters",
+      { ...VALID_DRAFT, title: "Invalid\u0001title" },
+    ],
+    [
       "more than 100 grapheme clusters",
       { ...VALID_DRAFT, title: "a".repeat(101) },
     ],

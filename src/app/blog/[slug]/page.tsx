@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { requireCurrentArticle } from "@/app/_blog/article-route";
 import { articleRouteContract } from "@/app/_blog/article-route-server";
 import { createArticleMetadata } from "@/app/_blog/metadata";
+import { ArticleStructuredData } from "@/app/_blog/structured-data";
 import { ArticleView } from "@/modules/blog/articles";
 
 interface ArticlePageProps {
@@ -31,5 +32,12 @@ export const generateMetadata = async (
 ): Promise<Metadata> => createArticleMetadata(await resolveArticle(props));
 
 export default async function ArticlePage(props: ArticlePageProps) {
-  return <ArticleView article={await resolveArticle(props)} />;
+  const article = await resolveArticle(props);
+
+  return (
+    <>
+      <ArticleStructuredData article={article} />
+      <ArticleView article={article} />
+    </>
+  );
 }
