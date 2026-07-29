@@ -247,4 +247,179 @@ const secretCodeBody = true
       '\\"searchText\\":\\"Über & Cache Removed and documentation. Mode Result Static Fast Verified Pending const secretCodeBody'
     );
   });
+
+  test("compiles the approved static Article compositions and visitor labels", async () => {
+    const compiled =
+      await compileArticle(`import { RocketIcon } from "lucide-react"
+
+<Callout kind="tip" title="Start here">
+  Read the **guide** first.
+</Callout>
+
+<Cards>
+  <Card title="Deploy" href="/blog/deploy" icon={<RocketIcon />}>
+    Ship with confidence.
+  </Card>
+  <Card title="Inspect">
+    Review the output.
+  </Card>
+</Cards>
+
+<Files>
+  <Folder name="app" defaultOpen>
+    <Folder name="blog">
+      <File name="page.tsx" />
+    </Folder>
+    <File name="layout.tsx" />
+  </Folder>
+  <File name="package.json" />
+</Files>
+
+<Steps>
+  <Step title="Install">Run <Kbd>Enter</Kbd>.</Step>
+  <Step title="Verify">Check the result.</Step>
+</Steps>
+
+\`\`\`files
+src/
+  app/
+    page.tsx
+package.json
+\`\`\`
+`);
+
+    expect(compiled).toContain(
+      "{Callout, Card, Cards, File, Files, Folder, Kbd, Step, Steps}"
+    );
+    expect(compiled).toContain("RocketIcon");
+    expect(compiled).toContain(
+      '\\"searchText\\":\\"Start here Read the guide first. Deploy Ship with confidence. Inspect Review the output. app blog page.tsx layout.tsx package.json Install Run Enter. Verify Check the result. src app page.tsx package.json\\"'
+    );
+  });
+
+  test("rejects invalid static composition props and nesting", async () => {
+    const invalidSources = [
+      ['<Callout kind="info">Text</Callout>', "blog/callout-kind"],
+      ['<Callout kind="note" />', "blog/callout-children"],
+      [
+        '<Callout kind="tip" title={"Computed"}>Text</Callout>',
+        "blog/callout-title",
+      ],
+      ['<Callout kind="tip" {...settings}>Text</Callout>', "blog/callout-prop"],
+      ['<Callouts kind="tip">Alias</Callouts>', "blog/element"],
+      ['<Layout.Callout kind="tip">Member</Layout.Callout>', "blog/element"],
+      ["<Cards><p>Wrong child</p></Cards>", "blog/cards-children"],
+      ['<Card title="Orphan">Text</Card>', "blog/card-position"],
+      ["<Cards><Card>Missing title</Card></Cards>", "blog/card-title"],
+      [
+        '<Cards><Card title="Computed" href={"/target"} /></Cards>',
+        "blog/card-href",
+      ],
+      [
+        '<Cards><Card title={{ label: "Object" }} /></Cards>',
+        "blog/card-title",
+      ],
+      ['<Cards><Card title={["Array"]} /></Cards>', "blog/card-title"],
+      ['<Cards><Card title={() => "Callback"} /></Cards>', "blog/card-title"],
+      ["<Cards><Card title={`Template`} /></Cards>", "blog/card-title"],
+      [
+        '<Cards><Card title="Linked" href="/target">[Nested](/other)</Card></Cards>',
+        "blog/card-interactive",
+      ],
+      [
+        '<Cards>\n<Card title="Linked" href="/target">\n\n- [ ] Task\n\n</Card>\n</Cards>',
+        "blog/card-interactive",
+      ],
+      [
+        '<Cards><Card title="Static">Press <Kbd>K</Kbd></Card></Cards>',
+        "blog/card-children",
+      ],
+      [
+        '<Files><File name="one"><File name="two" /></File></Files>',
+        "blog/file-children",
+      ],
+      [
+        '<Files><Folder name="app">Prose</Folder></Files>',
+        "blog/folder-children",
+      ],
+      ['<Folder name="app" />', "blog/folder-position"],
+      ['<Files><File name="nested/path.ts" /></Files>', "blog/file-name"],
+      ["<Steps />", "blog/steps-children"],
+      [
+        '<Steps><Step title="One" extra="no">Text</Step></Steps>',
+        "blog/step-prop",
+      ],
+      ["Before <Kbd><strong>K</strong></Kbd>", "blog/kbd-children"],
+      ["<Kbd>Block</Kbd>", "blog/kbd-position"],
+    ] as const;
+
+    await Promise.all(
+      invalidSources.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("enforces the narrow Lucide Card icon exception", async () => {
+    const invalidSources = [
+      [
+        'import * as Icons from "lucide-react"\n\n<Cards><Card title="Bad" icon={<Icons.RocketIcon />} /></Cards>',
+        "blog/icon-import",
+      ],
+      [
+        'import { RocketIcon as LaunchIcon } from "lucide-react"\n\n<Cards><Card title="Bad" icon={<LaunchIcon />} /></Cards>',
+        "blog/icon-import",
+      ],
+      [
+        'import { RocketIcon } from "lucide-react"\n\n<Cards><Card title="Bad" icon={<RocketIcon size={12} />} /></Cards>',
+        "blog/card-icon",
+      ],
+      [
+        'import { DefinitelyNotAnIcon } from "lucide-react"\n\n<Cards><Card title="Bad" icon={<DefinitelyNotAnIcon />} /></Cards>',
+        "blog/icon-import",
+      ],
+      [
+        'import { RocketIcon } from "lucide-react"\n\n<RocketIcon />',
+        "blog/icon-position",
+      ],
+      [
+        'import { RocketIcon } from "lucide-react"\n\n<Cards><Card title="No icon" /></Cards>',
+        "blog/import-unused",
+      ],
+    ] as const;
+
+    await Promise.all(
+      invalidSources.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("validates the files fence shorthand", async () => {
+    const invalidSources = [
+      ["```files\n  orphan.ts\n```", "blog/files-fence"],
+      ["```files\nsrc/\n   uneven.ts\n```", "blog/files-fence"],
+      ["```files\nsrc/\nsrc/\n```", "blog/files-fence"],
+      ['```files title="Tree"\nsrc/\n```', "blog/files-fence"],
+    ] as const;
+
+    await Promise.all(
+      invalidSources.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("accepts the conventional box-drawing files shorthand", async () => {
+    const compiled = await compileArticle(`\`\`\`files
+app/
+├── components/
+│   └── button.tsx
+└── page.tsx
+\`\`\``);
+
+    expect(compiled).toContain(
+      '\\"searchText\\":\\"app components button.tsx page.tsx\\"'
+    );
+  });
 });
