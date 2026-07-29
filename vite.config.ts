@@ -6,10 +6,58 @@ import next from "ultracite/oxlint/next";
 import react from "ultracite/oxlint/react";
 import { defineConfig } from "vite-plus";
 
+const blogTool = (subcommand: string): string =>
+  `node --experimental-strip-types src/modules/blog/tooling/cli.ts ${subcommand}`;
+
 export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("src", import.meta.url)),
+    },
+  },
+  run: {
+    tasks: {
+      dev: {
+        command: "mprocs",
+        dependsOn: ["blog:generate"],
+        cache: false,
+      },
+      build: {
+        command: "next build",
+        dependsOn: ["blog:check"],
+        cache: false,
+      },
+      verify: {
+        command: "vp check && vp test",
+        dependsOn: ["build"],
+        cache: false,
+      },
+      "blog:generate": {
+        command: blogTool("generate"),
+        input: [
+          { pattern: "src/modules/blog/content/**", base: "workspace" },
+          { pattern: "src/modules/blog/tooling/**", base: "workspace" },
+        ],
+        output: [
+          {
+            pattern: "src/modules/blog/articles/manifest.generated.ts",
+            base: "workspace",
+          },
+        ],
+      },
+      "blog:check": {
+        command: blogTool("check"),
+        cache: false,
+      },
+      "blog:watch": {
+        command: blogTool("watch"),
+        cache: false,
+      },
+      "update:social-image-snapshots": {
+        command:
+          "SOCIAL_IMAGE_GOLDENS=review vp test src/shared/social-image/social-image.test.tsx",
+        cache: false,
+      },
     },
   },
   staged: {
@@ -235,12 +283,6 @@ export default defineConfig({
           "prefer-destructuring": "off",
           "prefer-named-capture-group": "off",
           "unicorn/no-await-expression-member": "off",
-        },
-      },
-      {
-        files: ["src/modules/blog/tooling/cli.ts"],
-        rules: {
-          "promise/avoid-new": "off",
         },
       },
       {

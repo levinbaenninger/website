@@ -8,7 +8,8 @@ This is Levin's Next.js personal website, containing the visitor-facing Portfoli
 - Install dependencies with `vp install`.
 - Run static validation and type checking with `vp check`.
 - Run tests with `vp test`.
-- Run the Next.js production build with `vp run build`; it requires network access because static rendering fetches the external GitHub contributions API.
+- Use `vp run dev` for local development.
+- Use `vp run build` for the Next.js production build; it requires network access because static rendering fetches the external GitHub contributions API.
 
 ## Task-specific guidance
 

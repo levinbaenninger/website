@@ -4,13 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --experimental-strip-types src/modules/blog/tooling/cli.ts dev",
-    "blog:generate": "node --experimental-strip-types src/modules/blog/tooling/cli.ts generate",
-    "blog:check": "node --experimental-strip-types src/modules/blog/tooling/cli.ts check",
-    "social-images:goldens": "SOCIAL_IMAGE_GOLDENS=review vp test src/shared/social-image/social-image.test.tsx",
-    "build": "vp run blog:check && next build",
-    "start": "next start",
-    "verify": "vp check && vp test && vp run build",
     "prepare": "vp config"
   },
   "dependencies": {
@@ -66,6 +59,7 @@
     "@xmldom/xmldom": "0.9.10",
     "babel-plugin-react-compiler": "1.0.0",
     "happy-dom": "20.0.8",
+    "mprocs": "^0.9.6",
     "shadcn": "4.13.0",
     "sharp": "0.34.5",
     "tailwindcss": "4.3.2",

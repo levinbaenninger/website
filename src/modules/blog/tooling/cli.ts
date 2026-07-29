@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import path from "node:path";
 import process from "node:process";
 
@@ -26,21 +25,14 @@ const reportGeneration = (result: { readonly changed: boolean }): void => {
   }
 };
 
-const runDevelopment = async (): Promise<void> => {
-  await generateArticleManifest(paths);
+const runWatch = async (): Promise<void> => {
   const controller = new AbortController();
-  const next = spawn(
-    process.execPath,
-    [path.join(repositoryRoot, "node_modules/next/dist/bin/next"), "dev"],
-    { stdio: "inherit" }
-  );
   const stop = (): void => {
     controller.abort();
-    next.kill("SIGTERM");
   };
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
-  const watcher = watchArticleSource(paths, {
+  await watchArticleSource(paths, {
     signal: controller.signal,
     onGeneration: reportGeneration,
     onError: (error) => {
@@ -49,14 +41,6 @@ const runDevelopment = async (): Promise<void> => {
       );
     },
   });
-  const exitCode = await new Promise<number>((resolve) => {
-    next.once("exit", (code) => {
-      resolve(code ?? 1);
-    });
-  });
-  controller.abort();
-  await watcher;
-  process.exitCode = exitCode;
 };
 
 const main = async (): Promise<void> => {
@@ -75,11 +59,11 @@ const main = async (): Promise<void> => {
     process.stdout.write("Article source bundles and manifest are valid.\n");
     return;
   }
-  if (command === "dev") {
-    await runDevelopment();
+  if (command === "watch") {
+    await runWatch();
     return;
   }
-  throw new Error("Expected one of: generate, check, dev.");
+  throw new Error("Expected one of: generate, check, watch.");
 };
 
 try {
