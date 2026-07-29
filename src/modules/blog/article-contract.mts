@@ -3,6 +3,7 @@ import type { Code, Definition, Heading, Root, RootContent } from "mdast";
 import { toString } from "mdast-util-to-string";
 import { visit } from "unist-util-visit";
 
+import { serializeCodeTabLabels } from "./article-code-tabs-contract.mts";
 import type {
   ArticleCompilationFacts,
   ArticleHeadingFact,
@@ -354,7 +355,7 @@ const cleanCopySource = (source: string): string => {
       return [];
     }
     const withoutAnnotation = line.replace(
-      /\s*(?:\/\/|\/\*|<!--|#)\s*\[!code (?:(?:\+\+|--|focus|highlight)(?::[1-9]\d*)?|word:(?:\\.|[^:\]])+(?::[1-9]\d*)?)\]\s*(?:\*\/|-->)?\s*$/u,
+      /\s*(?:\/\/|\/\*|<!--|#)\s*\[!code[^\]]+\]\s*(?:\*\/|-->)?\s*$/u,
       ""
     );
     return [withoutAnnotation === line ? line : withoutAnnotation.trimEnd()];
@@ -456,7 +457,7 @@ const codeTabsNode = (
       {
         type: "mdxJsxAttribute",
         name: "labels",
-        value: labels.join("\u0000"),
+        value: serializeCodeTabLabels(labels),
       },
       ...(groupId === undefined
         ? []

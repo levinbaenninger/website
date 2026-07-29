@@ -3,6 +3,8 @@
 import { Children, useEffect, useId, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
+import { parseCodeTabLabels } from "./article-code-tabs-contract.mts";
+
 const CODE_TAB_STORAGE_PREFIX = "blog:code-tabs:";
 const CODE_TAB_EVENT = "blog:code-tabs-change";
 
@@ -41,6 +43,17 @@ interface CodeTabChangeDetail {
   readonly label: string;
 }
 
+export const matchSynchronizedCodeTab = (
+  groupId: string | undefined,
+  labels: readonly string[],
+  detail: CodeTabChangeDetail
+): string | undefined =>
+  groupId !== undefined &&
+  detail.groupId === groupId &&
+  labels.includes(detail.label)
+    ? detail.label
+    : undefined;
+
 declare global {
   interface WindowEventMap {
     readonly "blog:code-tabs-change": CustomEvent<CodeTabChangeDetail>;
@@ -59,7 +72,7 @@ export const ArticleCodeTabs = ({
   labels: serializedLabels,
 }: ArticleCodeTabsProps) => {
   const labels = useMemo(
-    () => serializedLabels.split("\u0000"),
+    () => parseCodeTabLabels(serializedLabels),
     [serializedLabels]
   );
   const panels = Children.toArray(children);
@@ -69,8 +82,9 @@ export const ArticleCodeTabs = ({
   useEffect(() => {
     const synchronize = (event: WindowEventMap[typeof CODE_TAB_EVENT]) => {
       const { detail } = event;
-      if (detail.groupId === groupId && labels.includes(detail.label)) {
-        setSelected(detail.label);
+      const synchronized = matchSynchronizedCodeTab(groupId, labels, detail);
+      if (synchronized !== undefined) {
+        setSelected(synchronized);
       }
     };
     if (groupId !== undefined) {

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vite-plus/test";
 
 import {
+  matchSynchronizedCodeTab,
   readCodeTabPreference,
   writeCodeTabPreference,
 } from "./article-code-tabs";
@@ -116,6 +117,24 @@ describe("semantic Article components", () => {
     ).toBe("TypeScript");
     expect(
       readCodeTabPreference(storage, "runtime", ["Shell"])
+    ).toBeUndefined();
+    expect(
+      matchSynchronizedCodeTab("runtime", ["JavaScript", "TypeScript"], {
+        groupId: "runtime",
+        label: "TypeScript",
+      })
+    ).toBe("TypeScript");
+    expect(
+      matchSynchronizedCodeTab("runtime", ["JavaScript"], {
+        groupId: "runtime",
+        label: "TypeScript",
+      })
+    ).toBeUndefined();
+    expect(
+      matchSynchronizedCodeTab(undefined, ["TypeScript"], {
+        groupId: "runtime",
+        label: "TypeScript",
+      })
     ).toBeUndefined();
 
     const unavailable = {

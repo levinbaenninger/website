@@ -1,9 +1,9 @@
 import type { MDXComponents } from "mdx/types";
 
+import { ArticleCodeTabs } from "./article-code-tabs";
 import {
   ArticleFigure,
   ArticleCodeBlock,
-  ArticleCodeTabs,
   ArticleHeading2,
   ArticleHeading3,
   ArticleHeading4,

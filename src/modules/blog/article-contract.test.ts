@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vite-plus/test";
 
+import type { ArticleCodeThemes } from "./article-code-theme-contract.mts";
+
 const require = createRequire(import.meta.url);
 const nextMdxEntry = require.resolve("@next/mdx");
 const loadedNextMdxLoader: unknown = require(
@@ -27,10 +29,7 @@ interface MdxLoaderContext {
       readonly [
         string,
         {
-          readonly themes: {
-            readonly dark: string;
-            readonly light: string;
-          };
+          readonly themes: ArticleCodeThemes;
         },
       ],
     ];
@@ -50,7 +49,15 @@ if (!isNextMdxLoader(loadedNextMdxLoader)) {
 
 const nextMdxLoader = loadedNextMdxLoader;
 
-const compileArticle = async (source: string): Promise<string> =>
+const FIXTURE_CODE_THEMES: ArticleCodeThemes = {
+  dark: "github-dark",
+  light: "github-light",
+};
+
+const compileArticle = async (
+  source: string,
+  themes: ArticleCodeThemes = FIXTURE_CODE_THEMES
+): Promise<string> =>
   await new Promise((resolve, reject) => {
     const context: MdxLoaderContext = {
       _compiler: {},
@@ -66,10 +73,7 @@ const compileArticle = async (source: string): Promise<string> =>
           [
             articleCodePlugin,
             {
-              themes: {
-                dark: "github-dark",
-                light: "github-light",
-              },
+              themes,
             },
           ],
         ],
@@ -306,6 +310,17 @@ const secretCodeBody = true
     await expect(compileArticle("```python\nprint('no')\n```")).rejects.toThrow(
       /blog\/code-language.*python/u
     );
+
+    const alternateThemes = await compileArticle(
+      "```ts\nconst themed = true\n```",
+      {
+        dark: "vitesse-dark",
+        light: "vitesse-light",
+      }
+    );
+    expect(alternateThemes).toContain(
+      "shiki-themes vitesse-light vitesse-dark"
+    );
   });
 
   test("validates fence metadata and rendering annotations", async () => {
@@ -363,7 +378,7 @@ first
 
     expect(compiled).toContain("{CodeTabs} = _components");
     expect(compiled).toContain('groupId: "runtime"');
-    expect(compiled).toContain('labels: "TypeScript\\u0000JavaScript"');
+    expect(compiled).toContain('labels: "[\\"TypeScript\\",\\"JavaScript\\"]"');
 
     const invalid = [
       ['```ts tab="Only"\nvalue\n```', "blog/code-tabs-size"],
@@ -423,5 +438,27 @@ const answer: number = 42
     await expect(
       compileArticle('```ts twoslash\nconst value = import("./relative")\n```')
     ).rejects.toThrow(/blog\/twoslash-import/u);
+
+    const teachingError = await compileArticle(`\`\`\`ts twoslash
+// @errors: 2322
+const teaching: string = 42
+\`\`\``);
+    expect(teachingError).toContain("twoslash");
+    expect(teachingError).not.toContain("@errors");
+
+    const tsx = await compileArticle(`\`\`\`tsx twoslash
+const view = <div>Hello</div>
+\`\`\``);
+    expect(tsx).toContain("twoslash");
+    expect(tsx).toContain("Hello");
+
+    const diffWithFinalNewline = await compileArticle(`\`\`\`diff
+-old
++new
+
+\`\`\``);
+    expect(diffWithFinalNewline).toContain(
+      '"data-copy-source": "-old\\n+new\\n"'
+    );
   });
 });

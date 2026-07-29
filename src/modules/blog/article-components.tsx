@@ -2,7 +2,6 @@ import Image from "next/image";
 import type { StaticImageData } from "next/image";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
-import { ArticleCodeTabs } from "./article-code-tabs";
 import { ArticleCopyButton } from "./article-copy-button";
 
 interface FigureProps {
@@ -141,5 +140,3 @@ export const ArticleTableCell = (props: ComponentPropsWithoutRef<"td">) => (
 export const ArticleThematicBreak = (props: ComponentPropsWithoutRef<"hr">) => (
   <hr {...props} />
 );
-
-export { ArticleCodeTabs };
