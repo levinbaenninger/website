@@ -26,8 +26,3 @@ export const createArticleMdxOptions = (themes: ArticleCodeThemes) => ({
     articleContractPlugin,
   ],
 });
-
-export const articleMdxOptions = createArticleMdxOptions({
-  dark: "github-dark",
-  light: "github-light",
-});

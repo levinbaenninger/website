@@ -387,7 +387,7 @@ first
 
   test("produces clean copy source and deterministic offline Twoslash output", async () => {
     const source = `\`\`\`ts twoslash
-const ordinary = "kept" // ordinary comment
+const ordinary = "kept" // ordinary comment  
 const highlighted = ordinary // [!code highlight]
 const answer: number = 42
 //    ^?
@@ -406,7 +406,7 @@ const answer: number = 42
       expect(first).not.toContain("[!code");
       expect(first).not.toContain("^?");
       expect(first).toContain(
-        '"data-copy-source": "const ordinary = \\"kept\\" // ordinary comment'
+        '"data-copy-source": "const ordinary = \\"kept\\" // ordinary comment  \\n'
       );
     } finally {
       globalThis.fetch = previousFetch;
@@ -419,6 +419,9 @@ const answer: number = 42
       compileArticle(
         '```ts twoslash\nimport value from "./relative"\nconsole.log(value)\n```'
       )
+    ).rejects.toThrow(/blog\/twoslash-import/u);
+    await expect(
+      compileArticle('```ts twoslash\nconst value = import("./relative")\n```')
     ).rejects.toThrow(/blog\/twoslash-import/u);
   });
 });

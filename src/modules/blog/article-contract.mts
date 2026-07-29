@@ -159,6 +159,8 @@ const CODE_ANNOTATION_PATTERN =
 const CODE_ANNOTATION_CANDIDATE_PATTERN = /\[!code[^\]]*(?:\]|$)/gu;
 const TWOSLASH_IMPORT_PATTERN =
   /^\s*(?:import|export)\s+(?:[^"']*\s+from\s+)?["']([^"']+)["']/gmu;
+const TWOSLASH_DYNAMIC_IMPORT_PATTERN =
+  /\b(?:import|require)\(\s*["']([^"']+)["']\s*\)/gu;
 const TWOSLASH_DIRECTIVE_PATTERN = /^\s*\/\/\s*@([A-Za-z][\w-]*)/gmu;
 const ALLOWED_TWOSLASH_DIRECTIVES = new Set([
   "errors",
@@ -351,13 +353,11 @@ const cleanCopySource = (source: string): string => {
     ) {
       return [];
     }
-    const withoutAnnotation = line
-      .replace(
-        /\s*(?:\/\/|\/\*|<!--|#)\s*\[!code (?:(?:\+\+|--|focus|highlight)(?::[1-9]\d*)?|word:(?:\\.|[^:\]])+(?::[1-9]\d*)?)\]\s*(?:\*\/|-->)?\s*$/u,
-        ""
-      )
-      .trimEnd();
-    return [withoutAnnotation];
+    const withoutAnnotation = line.replace(
+      /\s*(?:\/\/|\/\*|<!--|#)\s*\[!code (?:(?:\+\+|--|focus|highlight)(?::[1-9]\d*)?|word:(?:\\.|[^:\]])+(?::[1-9]\d*)?)\]\s*(?:\*\/|-->)?\s*$/u,
+      ""
+    );
+    return [withoutAnnotation === line ? line : withoutAnnotation.trimEnd()];
   });
   return cleaned.join("\n");
 };
@@ -376,12 +376,17 @@ const validateCodeAnnotations = (node: Code): void => {
 };
 
 const validateTwoslashSource = (node: Code): void => {
-  TWOSLASH_IMPORT_PATTERN.lastIndex = 0;
-  for (const matched of node.value.matchAll(TWOSLASH_IMPORT_PATTERN)) {
-    const [, specifier] = matched;
-    throw new Error(
-      `[blog/twoslash-import] Twoslash import ${JSON.stringify(specifier)} is outside the isolated type allowlist. Use pinned TypeScript library declarations only.`
-    );
+  for (const pattern of [
+    TWOSLASH_IMPORT_PATTERN,
+    TWOSLASH_DYNAMIC_IMPORT_PATTERN,
+  ]) {
+    pattern.lastIndex = 0;
+    for (const matched of node.value.matchAll(pattern)) {
+      const [, specifier] = matched;
+      throw new Error(
+        `[blog/twoslash-import] Twoslash import ${JSON.stringify(specifier)} is outside the isolated type allowlist. Use pinned TypeScript library declarations only.`
+      );
+    }
   }
 
   TWOSLASH_DIRECTIVE_PATTERN.lastIndex = 0;
