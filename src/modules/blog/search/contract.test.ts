@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vite-plus/test";
+import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
 import type { ArticleSearchDocument } from "@/modules/blog/articles/types";
 
@@ -8,6 +8,10 @@ import {
   parseArticleSearchArtifact,
   serializeArticleSearchArtifact,
 } from "./contract";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const document = (
   id: string,
@@ -36,16 +40,14 @@ describe("Article search artifact contract", () => {
 
   test("serializes deterministic UTF-8 JSON with a trailing newline", () => {
     const alpha = document("alpha", { title: "Café ☕" });
-    const dateNow = vi.spyOn(Date, "now").mockImplementation(() => {
+    vi.spyOn(Date, "now").mockImplementation(() => {
       throw new Error("Search artifact serialization read the clock.");
     });
-    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+    vi.spyOn(Math, "random").mockImplementation(() => {
       throw new Error("Search artifact serialization used randomness.");
     });
     const first = serializeArticleSearchArtifact([document("zebra"), alpha]);
     const second = serializeArticleSearchArtifact([document("zebra"), alpha]);
-    dateNow.mockRestore();
-    random.mockRestore();
 
     expect(first).toBe(second);
     expect(first).toBe(

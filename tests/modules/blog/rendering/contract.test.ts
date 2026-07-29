@@ -1,99 +1,88 @@
-import { createRequire } from "node:module";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { compile, evaluate } from "@mdx-js/mdx";
+import { createElement } from "react";
+import type { ComponentProps } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import * as runtime from "react/jsx-runtime";
+import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
-import { describe, expect, test } from "vite-plus/test";
-
+import type { ArticleCompilationFacts } from "@/modules/blog/articles/facts.ts";
 import type { ArticleCodeThemes } from "@/modules/blog/rendering/code-theme-contract.ts";
-
-const require = createRequire(import.meta.url);
-const nextMdxEntry = require.resolve("@next/mdx");
-const loadedNextMdxLoader: unknown = require(
-  path.join(path.dirname(nextMdxEntry), "mdx-js-loader.js")
-);
-const articleContractPlugin = fileURLToPath(
-  new URL("../../../../src/modules/blog/rendering/contract.ts", import.meta.url)
-);
-const articleCodePlugin = fileURLToPath(
-  new URL("../../../../src/modules/blog/rendering/code.ts", import.meta.url)
-);
-
-interface MdxLoaderContext {
-  readonly _compiler: object;
-  readonly context: string;
-  readonly mode: "production";
-  readonly resourcePath: string;
-  readonly sourceMap: false;
-  readonly getOptions: () => {
-    readonly rehypePlugins: readonly [
-      readonly [
-        string,
-        {
-          readonly themes: ArticleCodeThemes;
-        },
-      ],
-    ];
-    readonly remarkPlugins: readonly string[];
-  };
-  readonly async: () => (error?: Error, result?: Uint8Array) => void;
-}
-
-type NextMdxLoader = (this: MdxLoaderContext, source: string) => void;
-
-const isNextMdxLoader = (value: unknown): value is NextMdxLoader =>
-  typeof value === "function";
-
-if (!isNextMdxLoader(loadedNextMdxLoader)) {
-  throw new TypeError("Expected @next/mdx to expose its MDX loader.");
-}
-
-const nextMdxLoader = loadedNextMdxLoader;
+import { loadArticleMdxProcessorOptions } from "@/modules/blog/rendering/compiler.ts";
+import { ArticleCodeBlock } from "@/modules/blog/rendering/components.tsx";
+import { getArticleMdxComponents } from "@/modules/blog/rendering/mdx-components.ts";
 
 const FIXTURE_CODE_THEMES: ArticleCodeThemes = {
   dark: "github-dark",
   light: "github-light",
 };
 
+const articleFixture = (source: string) => ({
+  path: "src/modules/blog/articles/example/example.mdx",
+  value: source,
+});
+
 const compileArticle = async (
   source: string,
   themes: ArticleCodeThemes = FIXTURE_CODE_THEMES
-): Promise<string> =>
-  await new Promise((resolve, reject) => {
-    const context: MdxLoaderContext = {
-      _compiler: {},
-      context: process.cwd(),
-      mode: "production",
-      resourcePath: path.join(
-        process.cwd(),
-        "src/modules/blog/articles/example/example.mdx"
-      ),
-      sourceMap: false,
-      getOptions: () => ({
-        rehypePlugins: [
-          [
-            articleCodePlugin,
-            {
-              themes,
-            },
-          ],
-        ],
-        remarkPlugins: ["remark-gfm", articleContractPlugin],
-      }),
-      async: () => (error, result) => {
-        if (error !== undefined) {
-          reject(error);
-          return;
-        }
-        resolve(Buffer.from(result ?? []).toString("utf-8"));
-      },
-    };
+): Promise<{
+  readonly facts: ArticleCompilationFacts;
+}> => {
+  const file = await compile(
+    articleFixture(source),
+    await loadArticleMdxProcessorOptions(themes)
+  );
+  const facts = file.data.articleFacts as ArticleCompilationFacts | undefined;
+  if (facts === undefined) {
+    throw new TypeError("Expected Article compilation to expose facts.");
+  }
+  return { facts };
+};
 
-    nextMdxLoader.call(context, source);
+const renderArticle = async (
+  source: string,
+  themes: ArticleCodeThemes = FIXTURE_CODE_THEMES
+): Promise<{
+  readonly codeBlocks: readonly ComponentProps<typeof ArticleCodeBlock>[];
+  readonly facts: ArticleCompilationFacts;
+  readonly markup: string;
+}> => {
+  const article = await evaluate(articleFixture(source), {
+    ...runtime,
+    ...(await loadArticleMdxProcessorOptions(themes)),
+    baseUrl: import.meta.url,
   });
+  const facts = article.__articleFacts as ArticleCompilationFacts | undefined;
+  if (facts === undefined) {
+    throw new TypeError("Expected evaluated Article to export facts.");
+  }
+  const codeBlocks: ComponentProps<typeof ArticleCodeBlock>[] = [];
+  const RecordingCodeBlock = (
+    props: ComponentProps<typeof ArticleCodeBlock>
+  ) => {
+    codeBlocks.push(props);
+    return createElement(ArticleCodeBlock, props);
+  };
+  return {
+    codeBlocks,
+    facts,
+    markup: renderToStaticMarkup(
+      createElement(article.default, {
+        components: {
+          ...getArticleMdxComponents(),
+          pre: RecordingCodeBlock,
+        },
+      })
+    ),
+  };
+};
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("Article compilation contract", () => {
   test("compiles semantic prose and deterministic private facts", async () => {
-    const compiled = await compileArticle(`## Intro
+    const article = await renderArticle(`## Intro
 
 Plain **strong** prose with \`inline code\`.
 
@@ -105,11 +94,19 @@ Plain **strong** prose with \`inline code\`.
 ## Intro
 `);
 
-    expect(compiled).toContain('id: "intro"');
-    expect(compiled).toContain('id: "intro-1"');
-    expect(compiled).toContain(
-      'export const __articleFacts = JSON.parse("{\\"headings\\":[{\\"depth\\":2,\\"id\\":\\"intro\\",\\"text\\":\\"Intro\\"},{\\"depth\\":2,\\"id\\":\\"intro-1\\",\\"text\\":\\"Intro\\"}],\\"links\\":[],\\"searchText\\":\\"Intro Plain strong prose with inline code. One Two A useful quote. Intro\\"}")'
-    );
+    expect(article.facts).toEqual({
+      headings: [
+        { depth: 2, id: "intro", text: "Intro" },
+        { depth: 2, id: "intro-1", text: "Intro" },
+      ],
+      links: [],
+      searchText:
+        "Intro Plain strong prose with inline code. One Two A useful quote. Intro",
+    });
+    expect(article.markup).toContain('<h2 id="intro">Intro</h2>');
+    expect(article.markup).toContain('<h2 id="intro-1">Intro</h2>');
+    expect(article.markup).toContain("<strong>strong</strong>");
+    expect(article.markup).toContain("<blockquote>");
   });
 
   test("rejects a body-level h1 with a stable diagnostic", async () => {
@@ -146,7 +143,7 @@ Plain **strong** prose with \`inline code\`.
   });
 
   test("exports ordered link facts and validates local link policy", async () => {
-    const compiled = await compileArticle(`## Section
+    const { facts } = await compileArticle(`## Section
 
 [Same](#section)
 [Article](/blog/another#intro)
@@ -157,9 +154,13 @@ Plain **strong** prose with \`inline code\`.
 [guide]: /blog/another#intro
 `);
 
-    expect(compiled).toContain(
-      '\\"links\\":[{\\"href\\":\\"#section\\"},{\\"href\\":\\"/blog/another#intro\\"},{\\"href\\":\\"/\\"},{\\"href\\":\\"https://example.com/search?q=mdx#result\\"},{\\"href\\":\\"/blog/another#intro\\"}]'
-    );
+    expect(facts.links).toEqual([
+      { href: "#section" },
+      { href: "/blog/another#intro" },
+      { href: "/" },
+      { href: "https://example.com/search?q=mdx#result" },
+      { href: "/blog/another#intro" },
+    ]);
 
     const invalidLinks = [
       ["[Missing](#missing)", "blog/link-fragment"],
@@ -179,7 +180,7 @@ Plain **strong** prose with \`inline code\`.
   });
 
   test("accepts only accessible Figures backed by consumed local imports", async () => {
-    const compiled =
+    const { facts } =
       await compileArticle(`import diagram from "./assets/diagram.png"
 
 ## Diagram
@@ -189,13 +190,11 @@ Plain **strong** prose with \`inline code\`.
 </Figure>
 `);
 
-    expect(compiled).toContain('import diagram from "./assets/diagram.png"');
-    expect(compiled).toContain("src: diagram");
-    expect(compiled).toContain('alt: "Cache request flow"');
-    expect(compiled).toContain(
-      '\\"searchText\\":\\"Diagram A caption with details.\\"'
-    );
-    expect(compiled).not.toContain("Cache request flow\\");
+    expect(facts).toEqual({
+      headings: [{ depth: 2, id: "diagram", text: "Diagram" }],
+      links: [{ href: "https://example.com/details" }],
+      searchText: "Diagram A caption with details.",
+    });
 
     const invalidFigures = [
       [
@@ -234,7 +233,7 @@ Plain **strong** prose with \`inline code\`.
   });
 
   test("compiles validated Accordions and Tabs with searchable hidden content", async () => {
-    const compiled = await compileArticle(`import { Circle } from "lucide-react"
+    const article = await renderArticle(`import { Circle } from "lucide-react"
 
 <Tabs>
   <Tab title="Overview" icon={<Circle />}>
@@ -257,13 +256,19 @@ Plain **strong** prose with \`inline code\`.
 </Tabs>
 `);
 
-    expect(compiled).toContain('import {Circle} from "lucide-react"');
-    expect(compiled).toContain('id: "overview-heading"');
-    expect(compiled).toContain('id: "nested-heading"');
-    expect(compiled).toContain("defaultOpen: true");
-    expect(compiled).toContain(
-      '\\"searchText\\":\\"Overview Overview heading First panel prose. Details Initially open Nested heading Nested searchable prose. Initially closed Closed searchable prose.\\"'
-    );
+    expect(article.facts).toEqual({
+      headings: [
+        { depth: 2, id: "overview-heading", text: "Overview heading" },
+        { depth: 3, id: "nested-heading", text: "Nested heading" },
+      ],
+      links: [],
+      searchText:
+        "Overview Overview heading First panel prose. Details Initially open Nested heading Nested searchable prose. Initially closed Closed searchable prose.",
+    });
+    expect(article.markup).toContain('role="tablist"');
+    expect(article.markup).toContain('id="overview-heading"');
+    expect(article.markup).toContain('id="nested-heading"');
+    expect(article.markup).toContain('aria-expanded="true"');
   });
 
   test("rejects invalid Accordion and Tabs composition with stable diagnostics", async () => {
@@ -421,7 +426,7 @@ Plain **strong** prose with \`inline code\`.
   });
 
   test("compiles approved GFM and excludes code bodies and URLs from search facts", async () => {
-    const compiled = await compileArticle(`## Über & Cache
+    const article = await renderArticle(`## Über & Cache
 
 ~~Removed~~ and [documentation](https://example.com/docs).
 
@@ -439,23 +444,26 @@ const secretCodeBody = true
 \`\`\`
 `);
 
-    expect(compiled).toContain('id: "über--cache"');
-    expect(compiled).toContain("_components.table");
-    expect(compiled).toContain("_components.del");
-    expect(compiled).toContain('type: "checkbox"');
-    expect(compiled).toContain("disabled: true");
-    expect(compiled).toContain("_components.hr");
-    expect(compiled).toContain(
-      '\\"searchText\\":\\"Über & Cache Removed and documentation. Mode Result Static Fast Verified Pending\\"'
-    );
-    expect(compiled).not.toContain(
-      '\\"searchText\\":\\"Über & Cache Removed and documentation. Mode Result Static Fast Verified Pending const secretCodeBody'
+    expect(article.facts).toEqual({
+      headings: [{ depth: 2, id: "über--cache", text: "Über & Cache" }],
+      links: [{ href: "https://example.com/docs" }],
+      searchText:
+        "Über & Cache Removed and documentation. Mode Result Static Fast Verified Pending",
+    });
+    expect(article.markup).toContain('<h2 id="über--cache">');
+    expect(article.markup).toContain("<del>Removed</del>");
+    expect(article.markup).toContain("<table");
+    expect(article.markup).toContain('type="checkbox"');
+    expect(article.markup).toContain("disabled");
+    expect(article.markup).toContain("<hr");
+    expect(article.markup).not.toContain(
+      "Über &amp; Cache Removed and documentation. Mode Result Static Fast Verified Pending const secretCodeBody"
     );
   });
 
   test("compiles the approved static Article compositions and visitor labels", async () => {
-    const compiled =
-      await compileArticle(`import { RocketIcon } from "lucide-react"
+    const article =
+      await renderArticle(`import { RocketIcon } from "lucide-react"
 
 <Callout kind="tip" title="Start here">
   Read the **guide** first.
@@ -493,13 +501,14 @@ package.json
 \`\`\`
 `);
 
-    expect(compiled).toContain(
-      "{Callout, Card, Cards, File, Files, Folder, Kbd, Step, Steps}"
+    expect(article.facts.searchText).toBe(
+      "Start here Read the guide first. Deploy Ship with confidence. Inspect Review the output. app blog page.tsx layout.tsx package.json Install Run Enter. Verify Check the result. src app page.tsx package.json"
     );
-    expect(compiled).toContain("RocketIcon");
-    expect(compiled).toContain(
-      '\\"searchText\\":\\"Start here Read the guide first. Deploy Ship with confidence. Inspect Review the output. app blog page.tsx layout.tsx package.json Install Run Enter. Verify Check the result. src app page.tsx package.json\\"'
-    );
+    expect(article.markup).toContain("<aside");
+    expect(article.markup).toContain('<a href="/blog/deploy"');
+    expect(article.markup).toContain('aria-label="app folder"');
+    expect(article.markup).toContain("layout.tsx");
+    expect(article.markup).toContain("<kbd");
   });
 
   test("rejects invalid static composition props and nesting", async () => {
@@ -616,19 +625,17 @@ package.json
   });
 
   test("accepts the conventional box-drawing files shorthand", async () => {
-    const compiled = await compileArticle(`\`\`\`files
+    const { facts } = await compileArticle(`\`\`\`files
 app/
 ├── components/
 │   └── button.tsx
 └── page.tsx
 \`\`\``);
 
-    expect(compiled).toContain(
-      '\\"searchText\\":\\"app components button.tsx page.tsx\\"'
-    );
+    expect(facts.searchText).toBe("app components button.tsx page.tsx");
   });
 
-  test("highlights the closed language allowlist with a dual-theme output", async () => {
+  test("renders the closed language allowlist as copyable code", async () => {
     const languages = [
       "",
       "text",
@@ -648,48 +655,40 @@ app/
 
     await Promise.all(
       languages.map(async (language) => {
-        const compiled = await compileArticle(
+        const { codeBlocks, markup } = await renderArticle(
           `\`\`\`${language}\nconst answer = 42\n\`\`\``
         );
-        expect(compiled).toContain("data-copy-source");
-        if (language !== "" && language !== "text") {
-          expect(compiled).toContain("--shiki-dark");
-        }
+        expect(markup).toContain('aria-label="Copy code"');
+        expect(codeBlocks).toHaveLength(1);
+        expect(codeBlocks[0]?.["data-copy-source"]).toBe("const answer = 42");
       })
     );
 
     await expect(compileArticle("```python\nprint('no')\n```")).rejects.toThrow(
       /blog\/code-language.*python/u
     );
-
-    const alternateThemes = await compileArticle(
-      "```ts\nconst themed = true\n```",
-      {
-        dark: "vitesse-dark",
-        light: "vitesse-light",
-      }
-    );
-    expect(alternateThemes).toContain(
-      "shiki-themes vitesse-light vitesse-dark"
-    );
   });
 
   test("validates fence metadata and rendering annotations", async () => {
-    const compiled =
-      await compileArticle(`\`\`\`ts title="Example" lineNumbers=3
+    const { codeBlocks, markup } =
+      await renderArticle(`\`\`\`ts title="Example" lineNumbers=3
 const answer = 42 // [!code highlight]
 const focused = answer // [!code focus]
 const changed = focused // [!code ++]
 console.log(changed) // [!code word:changed]
 \`\`\``);
 
-    expect(compiled).toContain("data-code-title");
-    expect(compiled).toContain("data-line-numbers-start");
-    expect(compiled).toContain("highlighted");
-    expect(compiled).toContain("focused");
-    expect(compiled).toContain("diff add");
-    expect(compiled).toContain("highlighted-word");
-    expect(compiled).not.toContain("[!code");
+    expect(markup).toContain("Example");
+    expect(markup).toContain('data-line-numbers-start="3"');
+    expect(markup).not.toContain("[!code");
+    expect(codeBlocks[0]?.["data-copy-source"]).toBe(
+      "const answer = 42\n" +
+        "const focused = answer\n" +
+        "const changed = focused\n" +
+        "console.log(changed)"
+    );
+    expect(codeBlocks[0]?.["data-code-title"]).toBe("Example");
+    expect(codeBlocks[0]?.["data-line-numbers-start"]).toBe("3");
 
     const invalid = [
       ["```ts mystery\nvalue\n```", "blog/code-meta"],
@@ -709,8 +708,8 @@ console.log(changed) // [!code word:changed]
   });
 
   test("groups only valid consecutive tabbed fences", async () => {
-    const compiled =
-      await compileArticle(`\`\`\`ts tab="TypeScript" tab-group="runtime"
+    const { markup } =
+      await renderArticle(`\`\`\`ts tab="TypeScript" tab-group="runtime"
 const language = "ts"
 \`\`\`
 
@@ -727,9 +726,11 @@ echo first
 first
 \`\`\``);
 
-    expect(compiled).toContain("{CodeTabs} = _components");
-    expect(compiled).toContain('groupId: "runtime"');
-    expect(compiled).toContain('labels: "[\\"TypeScript\\",\\"JavaScript\\"]"');
+    expect(markup).toContain('role="tablist"');
+    expect(markup).toContain(">TypeScript<");
+    expect(markup).toContain(">JavaScript<");
+    expect(markup).toContain(">Shell<");
+    expect(markup).toContain(">Text<");
 
     const invalid = [
       ['```ts tab="Only"\nvalue\n```', "blog/code-tabs-size"],
@@ -758,25 +759,25 @@ const highlighted = ordinary // [!code highlight]
 const answer: number = 42
 //    ^?
 \`\`\``;
-    const previousFetch = globalThis.fetch;
-    globalThis.fetch = () => {
+    vi.stubGlobal("fetch", () => {
       throw new Error("Article compilation attempted network access.");
-    };
+    });
 
-    try {
-      const first = await compileArticle(source);
-      const second = await compileArticle(source);
-      expect(first).toBe(second);
-      expect(first).toContain("twoslash");
-      expect(first).toContain("ordinary comment");
-      expect(first).not.toContain("[!code");
-      expect(first).not.toContain("^?");
-      expect(first).toContain(
-        '"data-copy-source": "const ordinary = \\"kept\\" // ordinary comment  \\n'
-      );
-    } finally {
-      globalThis.fetch = previousFetch;
-    }
+    const first = await renderArticle(source);
+    const second = await renderArticle(source);
+    expect(second.facts).toEqual(first.facts);
+    expect(second.markup).toBe(first.markup);
+    expect(second.codeBlocks[0]?.["data-copy-source"]).toBe(
+      first.codeBlocks[0]?.["data-copy-source"]
+    );
+    expect(first.markup).toContain("ordinary comment");
+    expect(first.markup).not.toContain("[!code");
+    expect(first.markup).not.toContain("^?");
+    expect(first.codeBlocks[0]?.["data-copy-source"]).toBe(
+      'const ordinary = "kept" // ordinary comment  \n' +
+        "const highlighted = ordinary\n" +
+        "const answer: number = 42"
+    );
 
     await expect(
       compileArticle("```ts twoslash\nconst value: string = 42\n```")
@@ -795,26 +796,24 @@ const answer: number = 42
       compileArticle('```ts twoslash\nconst value = import("./relative")\n```')
     ).rejects.toThrow(/blog\/twoslash-import/u);
 
-    const teachingError = await compileArticle(`\`\`\`ts twoslash
+    const teachingError = await renderArticle(`\`\`\`ts twoslash
 // @errors: 2322
 const teaching: string = 42
 \`\`\``);
-    expect(teachingError).toContain("twoslash");
-    expect(teachingError).not.toContain("@errors");
+    expect(teachingError.markup).not.toContain("@errors");
 
-    const tsx = await compileArticle(`\`\`\`tsx twoslash
+    const tsx = await renderArticle(`\`\`\`tsx twoslash
 const view = <div>Hello</div>
 \`\`\``);
-    expect(tsx).toContain("twoslash");
-    expect(tsx).toContain("Hello");
+    expect(tsx.markup).toContain("Hello");
 
-    const diffWithFinalNewline = await compileArticle(`\`\`\`diff
+    const diffWithFinalNewline = await renderArticle(`\`\`\`diff
 -old
 +new
 
 \`\`\``);
-    expect(diffWithFinalNewline).toContain(
-      '"data-copy-source": "-old\\n+new\\n"'
+    expect(diffWithFinalNewline.codeBlocks[0]?.["data-copy-source"]).toBe(
+      "-old\n+new\n"
     );
   });
 });

@@ -7,7 +7,7 @@ import type {
   loadArticleSearch,
 } from "@/modules/blog/search";
 
-test("exposes a client-safe search service without engine types", () => {
+test("exposes the client search API without engine types", () => {
   expectTypeOf<
     typeof loadArticleSearch
   >().returns.resolves.toEqualTypeOf<ArticleSearch>();

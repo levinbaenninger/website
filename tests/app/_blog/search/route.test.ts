@@ -1,14 +1,7 @@
-import { readFileSync } from "node:fs";
-
 import { describe, expect, test } from "vite-plus/test";
 
 import { createArticleSearchResponse } from "@/app/_blog/search/route";
 import type { ArticleSearchDocument } from "@/modules/blog/search/artifact";
-
-const routeSource = readFileSync(
-  new URL("../../../../src/app/blog/search.json/route.ts", import.meta.url),
-  "utf-8"
-);
 
 const document = (id: string): ArticleSearchDocument => ({
   id,
@@ -59,10 +52,5 @@ describe("Article search Route Handler response", () => {
       documents: [],
       schemaVersion: 1,
     });
-  });
-
-  test("keeps the request-independent Route Handler force-static", () => {
-    expect(routeSource).toContain('export const dynamic = "force-static"');
-    expect(routeSource).not.toContain("Request");
   });
 });

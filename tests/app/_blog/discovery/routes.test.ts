@@ -6,7 +6,7 @@ import type { ArticleDiscoveryEntry } from "@/modules/blog/articles";
 const listPublishedArticleDiscoveryEntries =
   vi.fn<() => Promise<readonly ArticleDiscoveryEntry[]>>();
 
-vi.mock("@/app/_blog/articles/server", () => ({
+vi.mock(import("@/app/_blog/articles/server"), () => ({
   listPublishedArticleDiscoveryEntries,
 }));
 

@@ -46,31 +46,41 @@ const toBytes = async (input: SocialImageInput): Promise<Buffer> => {
   return Buffer.from(await response.arrayBuffer());
 };
 
-const countTitleLineGroups = async (bytes: Buffer): Promise<number> => {
+interface PixelBounds {
+  readonly maxX: number;
+  readonly maxY: number;
+  readonly minX: number;
+  readonly minY: number;
+}
+
+const getTitleInkBounds = async (bytes: Buffer): Promise<PixelBounds> => {
   const { data, info } = await sharp(bytes)
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  const inkRows: number[] = [];
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
 
   for (let y = 130; y < 510; y += 1) {
-    let hasInk = false;
-    for (let x = 70; x < 1130 && !hasInk; x += 1) {
+    for (let x = 70; x < 1130; x += 1) {
       const offset = (y * info.width + x) * info.channels;
-      hasInk = (data[offset] ?? 0) > 180;
-    }
-    if (hasInk) {
-      inkRows.push(y);
+      if ((data[offset] ?? 0) > 180) {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
     }
   }
 
-  let groups = 0;
-  for (const [index, row] of inkRows.entries()) {
-    if (index === 0 || row > (inkRows[index - 1] ?? row) + 1) {
-      groups += 1;
-    }
+  if (![minX, maxX, minY, maxY].every(Number.isFinite)) {
+    throw new TypeError(
+      "Expected the social-image title region to contain ink."
+    );
   }
-  return groups;
+  return { maxX, maxY, minX, minY };
 };
 
 afterEach(() => {
@@ -121,7 +131,11 @@ describe("social-image renderer", () => {
       height: 630,
       width: 1200,
     });
-    await expect(countTitleLineGroups(bytes)).resolves.toBe(4);
+    const bounds = await getTitleInkBounds(bytes);
+    expect(bounds.minX).toBeGreaterThan(80);
+    expect(bounds.maxX).toBeLessThan(1119);
+    expect(bounds.minY).toBeGreaterThan(135);
+    expect(bounds.maxY).toBeLessThan(504);
   });
 
   test.each([

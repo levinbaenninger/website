@@ -258,17 +258,19 @@ describe("client-safe Article search", () => {
 
     const [result] = search.search("cache");
 
-    expect(result).toBeDefined();
-    expect(result?.title.text).toBe("Cache architecture");
-    expect(result?.title.highlights).toEqual([{ end: 5, start: 0 }]);
-    expect(result?.tags[0]).toEqual({
+    if (result === undefined) {
+      throw new TypeError("Expected the matching Article search result.");
+    }
+    expect(result.title.text).toBe("Cache architecture");
+    expect(result.title.highlights).toEqual([{ end: 5, start: 0 }]);
+    expect(result.tags[0]).toEqual({
       id: "cache",
       label: {
         highlights: [{ end: 5, start: 0 }],
         text: "Cache systems",
       },
     });
-    expect(result?.snippet).toMatchObject({
+    expect(result.snippet).toMatchObject({
       highlights: [{ end: 5, start: 0 }],
       leadingEllipsis: false,
       source: "heading",
@@ -277,9 +279,9 @@ describe("client-safe Article search", () => {
     });
 
     for (const highlighted of [
-      result?.title,
-      ...(result?.tags.map(({ label }) => label) ?? []),
-      result?.snippet,
+      result.title,
+      ...result.tags.map(({ label }) => label),
+      result.snippet,
     ]) {
       if (highlighted === null || highlighted === undefined) {
         continue;
@@ -364,7 +366,10 @@ describe("client-safe Article search", () => {
       const loader = createArticleSearchLoader({ fetchArtifact, loadFuse });
 
       await expect(loader.load()).rejects.toThrow();
-      await expect(loader.load()).resolves.toBeDefined();
+      const recovered = await loader.load();
+      expect(recovered.search("recovered").map(({ id }) => id)).toEqual([
+        "recovered",
+      ]);
       expect(fetchArtifact).toHaveBeenCalledTimes(2);
     };
 
@@ -383,7 +388,10 @@ describe("client-safe Article search", () => {
     await expect(constructorFailure.load()).rejects.toThrow(
       "construction import failed"
     );
-    await expect(constructorFailure.load()).resolves.toBeDefined();
+    const recoveredAfterImportFailure = await constructorFailure.load();
+    expect(
+      recoveredAfterImportFailure.search("recovered").map(({ id }) => id)
+    ).toEqual(["recovered"]);
 
     const constructError = new Error("index construction failed");
     const loadBrokenFuse = async () => {
@@ -408,6 +416,9 @@ describe("client-safe Article search", () => {
         .mockImplementation(loadFuse),
     });
     await expect(constructionFailure.load()).rejects.toThrow(constructError);
-    await expect(constructionFailure.load()).resolves.toBeDefined();
+    const recoveredAfterConstructionFailure = await constructionFailure.load();
+    expect(
+      recoveredAfterConstructionFailure.search("recovered").map(({ id }) => id)
+    ).toEqual(["recovered"]);
   });
 });

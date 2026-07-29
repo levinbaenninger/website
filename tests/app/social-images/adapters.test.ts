@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { describe, expect, test } from "vite-plus/test";
 
 import BlogOpenGraphImage, {
@@ -28,8 +30,17 @@ describe("static social-image adapters", () => {
       size: { height: 630, width: 1200 },
     });
 
+    const golden = await readFile(
+      new URL(
+        "../../shared/social-image/__goldens__/portfolio.png",
+        import.meta.url
+      )
+    );
+    await expect(responseBytes(PortfolioOpenGraphImage())).resolves.toEqual(
+      golden
+    );
     await expect(responseBytes(PortfolioTwitterImage())).resolves.toEqual(
-      await responseBytes(PortfolioOpenGraphImage())
+      golden
     );
   });
 
@@ -44,8 +55,10 @@ describe("static social-image adapters", () => {
       size: { height: 630, width: 1200 },
     });
 
-    await expect(responseBytes(BlogTwitterImage())).resolves.toEqual(
-      await responseBytes(BlogOpenGraphImage())
+    const golden = await readFile(
+      new URL("../../shared/social-image/__goldens__/blog.png", import.meta.url)
     );
+    await expect(responseBytes(BlogOpenGraphImage())).resolves.toEqual(golden);
+    await expect(responseBytes(BlogTwitterImage())).resolves.toEqual(golden);
   });
 });

@@ -6,7 +6,7 @@ import type {
   createArticleServer,
 } from "@/modules/blog/articles";
 
-test("app adapters configure the server-only Article entrypoint", () => {
+test("exposes the Article server API types used by app adapters", () => {
   expectTypeOf<ArticleSummary["slug"]>().toEqualTypeOf<string>();
   expectTypeOf<typeof createArticleServer>()
     .parameter(0)

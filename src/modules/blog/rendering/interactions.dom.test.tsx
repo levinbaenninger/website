@@ -1,4 +1,10 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   afterEach,
@@ -23,16 +29,23 @@ const scrollIntoViewMock = vi.fn(
 describe("Article interactions", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
-    window.requestAnimationFrame = (callback) => {
-      callback(0);
-      return 1;
-    };
-    HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+    window.localStorage.clear();
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
+      window.setTimeout(() => {
+        callback(0);
+      }, 0)
+    );
+    vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(
+      scrollIntoViewMock
+    );
     scrollIntoViewMock.mockClear();
   });
 
   afterEach(() => {
+    cleanup();
+    window.localStorage.clear();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   test("keeps Accordion items independent and honors authored defaults", async () => {
@@ -118,11 +131,11 @@ describe("Article interactions", () => {
           "[data-article-panel='tab']:has(#initial-heading)"
         )?.hidden
       ).toBe(false);
+      expect(scrollIntoViewMock).toHaveBeenCalled();
     });
-    expect(scrollIntoViewMock).toHaveBeenCalled();
   });
 
-  test("reveals nested panels outermost-first on later hash changes", async () => {
+  test("reveals nested panels before scrolling on later hash changes", async () => {
     const { container } = render(
       <ArticleTabs>
         <ArticleTab title="Visible">Visible</ArticleTab>
@@ -135,24 +148,24 @@ describe("Article interactions", () => {
         </ArticleTab>
       </ArticleTabs>
     );
-    const [, tab] = container.querySelectorAll<HTMLElement>("[role='tab']");
-    const accordion = container.querySelector<HTMLElement>(
-      "[data-article-accordion-trigger]"
-    );
-    const revealOrder: string[] = [];
-    tab?.addEventListener("click", () => {
-      revealOrder.push("tab");
-    });
-    accordion?.addEventListener("click", () => {
-      revealOrder.push("accordion");
-    });
     scrollIntoViewMock.mockClear();
+    scrollIntoViewMock.mockImplementation(() => {
+      expect(
+        container.querySelector<HTMLElement>(
+          "[data-article-panel='tab']:has(#deep-heading)"
+        )?.hidden
+      ).toBe(false);
+      expect(
+        container.querySelector<HTMLElement>("[data-article-panel='accordion']")
+          ?.hidden
+      ).toBe(false);
+    });
 
     window.history.replaceState(null, "", "#deep-heading");
     window.dispatchEvent(new HashChangeEvent("hashchange"));
 
     await waitFor(() => {
-      expect(revealOrder).toEqual(["tab", "accordion"]);
+      expect(scrollIntoViewMock).toHaveBeenCalled();
     });
     expect(
       container.querySelector<HTMLElement>(

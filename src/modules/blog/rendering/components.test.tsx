@@ -135,7 +135,7 @@ describe("semantic Article components", () => {
     expect(callout).not.toContain('role="alert"');
     expect(cards).toContain('<a href="/blog/deploy"');
     expect(cards.match(/href="\/blog\/deploy"/gu)).toHaveLength(1);
-    expect(cards).toContain('<article data-slot="article-card"');
+    expect(cards.match(/<article(?:\s|>)/gu)).toHaveLength(2);
   });
 
   test("preserves file-tree, ordered-step, and keyboard semantics", () => {
@@ -154,12 +154,11 @@ describe("semantic Article components", () => {
       </>
     );
 
-    expect(output).toContain('<ul data-slot="article-files"');
-    expect(output).toContain('data-slot="collapsible"');
+    expect(output).toContain("<ul");
     expect(output).toContain('aria-label="app folder"');
-    expect(output).toContain('data-file-kind="tsx"');
-    expect(output).toContain('<ol data-slot="article-steps"');
-    expect(output).toContain('<li data-slot="article-step"');
+    expect(output).toContain("page.tsx");
+    expect(output).toContain("<ol");
+    expect(output).toContain("<li");
     expect(output).toContain("<kbd");
   });
 

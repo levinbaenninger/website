@@ -20,6 +20,9 @@ interface ArticlePosition {
 }
 
 interface ArticleFile {
+  readonly data: {
+    articleFacts?: ArticleCompilationFacts;
+  };
   readonly path: string;
   readonly message: (
     reason: string,
@@ -30,6 +33,17 @@ interface ArticleFile {
     }
   ) => ArticleDiagnostic;
 }
+
+const isArticleFile = (value: unknown): value is ArticleFile =>
+  typeof value === "object" &&
+  value !== null &&
+  "data" in value &&
+  typeof value.data === "object" &&
+  value.data !== null &&
+  "path" in value &&
+  typeof value.path === "string" &&
+  "message" in value &&
+  typeof value.message === "function";
 
 interface ArticleDiagnostic extends Error {
   readonly column?: number;
@@ -2005,7 +2019,11 @@ const validateLinks = (
 };
 
 export default function articleContract() {
-  return (root: Root, file: ArticleFile): void => {
+  return (root: Root, inputFile: unknown): void => {
+    if (!isArticleFile(inputFile)) {
+      throw new TypeError("Expected Article compilation to receive a file.");
+    }
+    const file = inputFile;
     const diagnostics = new ArticleDiagnostics(file);
     transformFileFences(root, diagnostics);
     const imports = collectImports(root, diagnostics);
@@ -2019,6 +2037,7 @@ export default function articleContract() {
     };
 
     diagnostics.throwIfAny();
+    file.data.articleFacts = facts;
     root.children.push(factsExport(facts));
   };
 }

@@ -21,7 +21,7 @@ const documents: readonly ArticleSearchDocument[] = [
   },
 ];
 
-vi.mock("@/app/_blog/articles/server", () => ({
+vi.mock(import("@/app/_blog/articles/server"), () => ({
   listArticleSearchDocuments,
 }));
 

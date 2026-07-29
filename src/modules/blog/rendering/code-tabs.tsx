@@ -94,20 +94,20 @@ export const ArticleCodeTabs = ({
   const panels = useMemo(() => flattenChildren(children), [children]);
   const defaultLabel = labels[0] ?? "";
   const [selected, setSelected] = useState(defaultLabel);
-  const [initializedKey, setInitializedKey] = useState("");
   const id = useId();
-  const preferenceKey = `${groupId ?? ""}:${serializedLabels}`;
 
-  if (preferenceKey !== initializedKey) {
-    setInitializedKey(preferenceKey);
+  useEffect(() => {
     const saved =
       groupId === undefined
         ? undefined
-        : readCodeTabPreference(localStorage, groupId, labels);
-    setSelected(saved ?? defaultLabel);
-  }
+        : readCodeTabPreference(window.localStorage, groupId, labels);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) {
+        setSelected(saved ?? defaultLabel);
+      }
+    });
 
-  useEffect(() => {
     const synchronize = (event: WindowEventMap[typeof CODE_TAB_EVENT]) => {
       if (groupId === undefined) {
         return;
@@ -123,16 +123,17 @@ export const ArticleCodeTabs = ({
     window.addEventListener(CODE_TAB_EVENT, synchronize);
 
     return () => {
+      active = false;
       window.removeEventListener(CODE_TAB_EVENT, synchronize);
     };
-  }, [groupId, labels]);
+  }, [defaultLabel, groupId, labels]);
 
   const select = (label: string) => {
     setSelected(label);
     if (groupId === undefined) {
       return;
     }
-    writeCodeTabPreference(localStorage, groupId, label);
+    writeCodeTabPreference(window.localStorage, groupId, label);
     window.dispatchEvent(
       new CustomEvent<CodeTabChangeDetail>(CODE_TAB_EVENT, {
         detail: { groupId, label },
