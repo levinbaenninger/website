@@ -9,6 +9,8 @@ import { defineConfig } from "vite-plus";
 const blogTool = (subcommand: string): string =>
   `node --experimental-strip-types src/modules/blog/tooling/cli.ts ${subcommand}`;
 
+const source = "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}";
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -81,7 +83,7 @@ export default defineConfig({
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     overrides: [
       {
-        files: ["src/shared/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        files: [`src/shared/**/${source}`],
         rules: {
           "no-restricted-imports": [
             "error",
@@ -109,7 +111,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        files: [`src/modules/**/${source}`],
         rules: {
           "no-restricted-imports": [
             "error",
@@ -136,7 +138,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/portfolio/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        files: [`src/modules/portfolio/**/${source}`],
         rules: {
           "no-restricted-imports": [
             "error",
@@ -176,7 +178,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/modules/blog/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        files: [`src/modules/blog/**/${source}`],
         rules: {
           "no-restricted-imports": [
             "error",
@@ -216,7 +218,7 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/app/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        files: [`src/app/**/${source}`, `tests/app/**/${source}`],
         rules: {
           "no-restricted-imports": [
             "error",
@@ -245,85 +247,30 @@ export default defineConfig({
         },
       },
       {
-        files: ["tests/app/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+        files: [
+          "src/modules/blog/tooling/**/*.ts",
+          "tests/modules/blog/tooling/**/*.ts",
+        ],
         rules: {
-          "no-restricted-imports": [
-            "error",
-            {
-              paths: [
-                {
-                  name: "@/modules",
-                  message:
-                    "App tests must consume a specific product module entrypoint.",
-                },
-              ],
-              patterns: [
-                {
-                  group: [
-                    "@/modules/*/**",
-                    "!@/modules/blog/articles",
-                    "!@/modules/blog/search",
-                    "!@/modules/blog/search/artifact",
-                  ],
-                  message:
-                    "App tests must consume a product module through its public entrypoint.",
-                },
-              ],
-            },
-          ],
+          "no-await-in-loop": "off",
         },
       },
       {
         files: [
-          "src/modules/blog/tooling/cli.ts",
-          "src/modules/blog/tooling/source-manifest.ts",
+          "src/modules/blog/tooling/media.ts",
+          "src/modules/blog/rendering/contract.ts",
         ],
-        rules: {
-          "no-await-in-loop": "off",
-          "prefer-destructuring": "off",
-          "prefer-named-capture-group": "off",
-          "unicorn/no-await-expression-member": "off",
-        },
-      },
-      {
-        files: ["src/modules/blog/tooling/media.ts"],
-        rules: {
-          complexity: "off",
-          "no-negated-condition": "off",
-          "prefer-destructuring": "off",
-          "prefer-named-capture-group": "off",
-          "typescript/no-unsafe-type-assertion": "off",
-          "unicorn/no-negated-condition": "off",
-        },
-      },
-      {
-        files: ["tests/modules/blog/tooling/source-manifest.test.ts"],
-        rules: {
-          "no-await-in-loop": "off",
-          "prefer-destructuring": "off",
-          "typescript/no-unsafe-assignment": "off",
-          "typescript/no-unsafe-type-assertion": "off",
-        },
-      },
-      {
-        files: ["tests/modules/blog/rendering/contract.test.ts"],
-        rules: {
-          "promise/avoid-new": "off",
-        },
-      },
-      {
-        files: ["src/modules/blog/rendering/contract.ts"],
         rules: {
           complexity: "off",
           "no-loop-func": "off",
-          "prefer-named-capture-group": "off",
-          "typescript/no-unsafe-type-assertion": "off",
         },
       },
       {
-        files: ["src/modules/blog/rendering/interactions.dom.test.tsx"],
+        files: [`**/*.{test,spec}.{ts,tsx}`],
         rules: {
-          "promise/prefer-await-to-callbacks": "off",
+          "promise/avoid-new": "off",
+          "typescript/no-unsafe-assignment": "off",
+          "typescript/no-unsafe-type-assertion": "off",
         },
       },
     ],
@@ -331,7 +278,12 @@ export default defineConfig({
       "import/no-relative-parent-imports": "error",
       "typescript/no-require-imports": "error",
       "vite-plus/prefer-vite-plus-imports": "error",
+      "no-negated-condition": "off",
+      "prefer-destructuring": "off",
+      "prefer-named-capture-group": "off",
+      "promise/prefer-await-to-callbacks": "off",
       "sort-keys": "off",
+      "unicorn/no-negated-condition": "off",
     },
     options: { typeAware: true, typeCheck: true },
   },

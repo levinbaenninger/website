@@ -462,7 +462,8 @@ const validateTwoslashSource = (node: Code): void => {
     TWOSLASH_DYNAMIC_IMPORT_PATTERN,
   ]) {
     pattern.lastIndex = 0;
-    for (const matched of node.value.matchAll(pattern)) {
+    const matched = pattern.exec(node.value);
+    if (matched !== null) {
       const [, specifier] = matched;
       throw new Error(
         `[blog/twoslash-import] Twoslash import ${JSON.stringify(specifier)} is outside the isolated type allowlist. Use pinned TypeScript library declarations only.`
@@ -549,8 +550,8 @@ const codeTabsNode = (
             },
           ]),
     ],
-    children,
-  }) as RootContent;
+    children: [...children],
+  }) satisfies RootContent;
 
 const validateAndGroupCode = (
   root: Root,
@@ -565,7 +566,7 @@ const validateAndGroupCode = (
   });
 
   const grouped: RootContent[] = [];
-  for (let index = 0; index < root.children.length; ) {
+  for (let index = 0; index < root.children.length;) {
     const child = root.children[index];
     if (child.type !== "code") {
       grouped.push(child);
@@ -574,8 +575,12 @@ const validateAndGroupCode = (
     }
 
     const run: Code[] = [];
-    while (root.children[index]?.type === "code") {
-      run.push(root.children[index] as Code);
+    while (index < root.children.length) {
+      const codeNode = root.children[index];
+      if (codeNode === undefined || codeNode.type !== "code") {
+        break;
+      }
+      run.push(codeNode);
       index += 1;
     }
     const runMetadata = run.map((node) => metadata.get(node));

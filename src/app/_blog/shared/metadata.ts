@@ -5,12 +5,11 @@ import {
   SITE_IDENTITY,
   toCanonicalUrl,
 } from "@/app/_site/identity";
-import {
+
+export {
   SOCIAL_IMAGE_CONTENT_TYPE,
   SOCIAL_IMAGE_SIZE,
 } from "@/shared/social-image";
-
-export { SOCIAL_IMAGE_CONTENT_TYPE, SOCIAL_IMAGE_SIZE };
 
 export const authorMetadata = {
   name: AUTHOR_IDENTITY.name,

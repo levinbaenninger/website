@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { parseCodeTabLabels } from "./code-tabs-contract.ts";
@@ -66,6 +66,22 @@ interface ArticleCodeTabsProps {
   readonly labels: string;
 }
 
+const flattenChildren = (children: ReactNode): ReactNode[] => {
+  if (
+    children === null ||
+    children === undefined ||
+    typeof children === "boolean"
+  ) {
+    return [];
+  }
+
+  if (Array.isArray(children)) {
+    return children.flatMap((child: ReactNode) => flattenChildren(child));
+  }
+
+  return [children];
+};
+
 export const ArticleCodeTabs = ({
   children,
   groupId,
@@ -75,29 +91,39 @@ export const ArticleCodeTabs = ({
     () => parseCodeTabLabels(serializedLabels),
     [serializedLabels]
   );
-  const panels = Children.toArray(children);
-  const [selected, setSelected] = useState(labels[0] ?? "");
+  const panels = useMemo(() => flattenChildren(children), [children]);
+  const defaultLabel = labels[0] ?? "";
+  const [selected, setSelected] = useState(defaultLabel);
+  const [initializedKey, setInitializedKey] = useState("");
   const id = useId();
+  const preferenceKey = `${groupId ?? ""}:${serializedLabels}`;
+
+  if (preferenceKey !== initializedKey) {
+    setInitializedKey(preferenceKey);
+    const saved =
+      groupId === undefined
+        ? undefined
+        : readCodeTabPreference(localStorage, groupId, labels);
+    setSelected(saved ?? defaultLabel);
+  }
 
   useEffect(() => {
     const synchronize = (event: WindowEventMap[typeof CODE_TAB_EVENT]) => {
+      if (groupId === undefined) {
+        return;
+      }
+
       const { detail } = event;
       const synchronized = matchSynchronizedCodeTab(groupId, labels, detail);
       if (synchronized !== undefined) {
         setSelected(synchronized);
       }
     };
-    if (groupId !== undefined) {
-      const saved = readCodeTabPreference(localStorage, groupId, labels);
-      if (saved !== undefined) {
-        setSelected(saved);
-      }
-      window.addEventListener(CODE_TAB_EVENT, synchronize);
-    }
+
+    window.addEventListener(CODE_TAB_EVENT, synchronize);
+
     return () => {
-      if (groupId !== undefined) {
-        window.removeEventListener(CODE_TAB_EVENT, synchronize);
-      }
+      window.removeEventListener(CODE_TAB_EVENT, synchronize);
     };
   }, [groupId, labels]);
 

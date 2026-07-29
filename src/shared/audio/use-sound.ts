@@ -26,14 +26,25 @@ export const useSound = (
   } = options;
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState<number | null>(
-    sound.duration ?? null
-  );
+  const [playbackDuration, setPlaybackDuration] = useState<{
+    uri: string;
+    duration: number;
+  } | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
   const bufferPromiseRef = useRef<Promise<AudioBuffer> | null>(null);
+  const soundRef = useRef(sound);
   const stopOnUnmountRef = useRef(stopOnUnmount);
+
+  const duration =
+    playbackDuration?.uri === sound.dataUri
+      ? playbackDuration.duration
+      : (sound.duration ?? null);
+
+  useEffect(() => {
+    soundRef.current = sound;
+  }, [sound]);
 
   useEffect(() => {
     stopOnUnmountRef.current = stopOnUnmount;
@@ -42,8 +53,7 @@ export const useSound = (
   useEffect(() => {
     bufferRef.current = null;
     bufferPromiseRef.current = null;
-    setDuration(sound.duration ?? null);
-  }, [sound.dataUri, sound.duration]);
+  }, [sound.dataUri]);
 
   const stop = useCallback(() => {
     if (sourceRef.current) {
@@ -70,15 +80,19 @@ export const useSound = (
 
       void (async () => {
         const ctx = getAudioContext();
+        const currentSound = soundRef.current;
 
         if (ctx.state === "suspended") {
           await ctx.resume();
         }
 
-        bufferPromiseRef.current ??= decodeAudioData(sound.dataUri);
+        bufferPromiseRef.current ??= decodeAudioData(currentSound.dataUri);
         const buffer = await bufferPromiseRef.current;
         bufferRef.current = buffer;
-        setDuration(buffer.duration);
+        setPlaybackDuration({
+          uri: currentSound.dataUri,
+          duration: buffer.duration,
+        });
 
         const source = ctx.createBufferSource();
         const gain = ctx.createGain();
@@ -102,16 +116,7 @@ export const useSound = (
         onPlay?.();
       })();
     },
-    [
-      soundEnabled,
-      interrupt,
-      stop,
-      sound.dataUri,
-      playbackRate,
-      volume,
-      onEnd,
-      onPlay,
-    ]
+    [soundEnabled, interrupt, stop, playbackRate, volume, onEnd, onPlay]
   );
 
   const pause = useCallback(() => {

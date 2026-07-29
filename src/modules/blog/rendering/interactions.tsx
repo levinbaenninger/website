@@ -4,14 +4,7 @@ import {
   Accordion as AccordionPrimitive,
   Tabs as TabsPrimitive,
 } from "radix-ui";
-import {
-  Children,
-  isValidElement,
-  useEffect,
-  useId,
-  useMemo,
-  useState,
-} from "react";
+import { isValidElement, useEffect, useId, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 interface ArticleAccordionItemProps {
@@ -25,6 +18,22 @@ interface ArticleTabProps {
   readonly icon?: ReactElement;
   readonly title: string;
 }
+
+const flattenChildren = (children: ReactNode): ReactNode[] => {
+  if (
+    children === null ||
+    children === undefined ||
+    typeof children === "boolean"
+  ) {
+    return [];
+  }
+
+  if (Array.isArray(children)) {
+    return children.flatMap((child: ReactNode) => flattenChildren(child));
+  }
+
+  return [children];
+};
 
 let hashNavigationConsumers = 0;
 let removeHashNavigationListener: (() => void) | undefined;
@@ -121,9 +130,8 @@ const useArticleHashNavigation = (): void => {
   }, []);
 };
 
-export const ArticleAccordionItem = ({
-  children,
-}: ArticleAccordionItemProps): ReactElement => <>{children}</>;
+export const ArticleAccordionItem = (_props: ArticleAccordionItemProps): null =>
+  null;
 
 export const ArticleAccordion = ({
   children,
@@ -132,9 +140,10 @@ export const ArticleAccordion = ({
 }) => {
   useArticleHashNavigation();
   const baseId = useId();
-  const items = Children.toArray(children).filter(
+  const items = flattenChildren(children).filter(
     (child): child is ReactElement<ArticleAccordionItemProps> =>
-      isValidElement<ArticleAccordionItemProps>(child)
+      isValidElement<ArticleAccordionItemProps>(child) &&
+      child.type === ArticleAccordionItem
   );
   const itemValues = useMemo(
     () => items.map((_, index) => `${baseId}-item-${index}`),
@@ -174,16 +183,14 @@ export const ArticleAccordion = ({
   );
 };
 
-export const ArticleTab = ({ children }: ArticleTabProps): ReactElement => (
-  <>{children}</>
-);
+export const ArticleTab = (_props: ArticleTabProps): null => null;
 
 export const ArticleTabs = ({ children }: { readonly children: ReactNode }) => {
   useArticleHashNavigation();
   const baseId = useId();
-  const tabs = Children.toArray(children).filter(
+  const tabs = flattenChildren(children).filter(
     (child): child is ReactElement<ArticleTabProps> =>
-      isValidElement<ArticleTabProps>(child)
+      isValidElement<ArticleTabProps>(child) && child.type === ArticleTab
   );
   const values = useMemo(
     () => tabs.map((_, index) => `${baseId}-tab-${index}`),

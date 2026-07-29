@@ -81,7 +81,7 @@ export const GitHubContributions = ({
                 className="text-foreground underline decoration-current/30 decoration-1 underline-offset-3 transition-colors hover:decoration-current"
                 href={githubProfileUrl}
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
               >
                 GitHub
               </a>

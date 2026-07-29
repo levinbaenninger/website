@@ -47,12 +47,5 @@ export const ArticleStructuredData = ({
     inLanguage,
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      // JSON-LD is data rather than executable code. Escaping "<" prevents a
-      // metadata value from terminating this element.
-      dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
-    />
-  );
+  return <script type="application/ld+json">{serializeJsonLd(jsonLd)}</script>;
 };

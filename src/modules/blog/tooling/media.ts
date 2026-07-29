@@ -222,6 +222,11 @@ const SVG_ATTRIBUTES = new Set([
   "z",
 ]);
 
+const isXmlElement = (
+  node: XmlNode,
+  elementNodeType: number
+): node is XmlElement => node.nodeType === elementNodeType;
+
 interface MediaInput {
   readonly absolutePath: string;
   readonly source: string;
@@ -574,8 +579,8 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
       );
     }
 
-    if (node.nodeType === node.ELEMENT_NODE) {
-      const element = node as XmlElement;
+    if (isXmlElement(node, node.ELEMENT_NODE)) {
+      const element = node;
       const line = element.lineNumber;
       const column = element.columnNumber;
       if (
@@ -600,8 +605,8 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
         if (attribute === null) {
           continue;
         }
-        const name = attribute.name;
-        const value = attribute.value.trim();
+        const { name, value: rawValue } = attribute;
+        const value = rawValue.trim();
         if (
           name === "style" ||
           name.toLowerCase().startsWith("on") ||
@@ -634,7 +639,9 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
           );
         }
         if (name === "href" || name === "xlink:href") {
-          if (!/^#[A-Za-z_][\w:.-]*$/u.test(value)) {
+          if (/^#[A-Za-z_][\w:.-]*$/u.test(value)) {
+            references.push({ id: value.slice(1), line, column });
+          } else {
             diagnostics.push(
               diagnostic(
                 input,
@@ -646,9 +653,8 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
                 column
               )
             );
-          } else {
-            references.push({ id: value.slice(1), line, column });
           }
+          continue;
         }
         for (const match of value.matchAll(/url\s*\(\s*([^)]*?)\s*\)/giu)) {
           const target = match[1]?.replaceAll(/^["']|["']$/gu, "");

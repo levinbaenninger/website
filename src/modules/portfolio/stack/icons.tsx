@@ -32,7 +32,7 @@ import {
   ShadcnUiLight,
   TailwindCSS,
   TanStack,
-  TRPC,
+  TRPC as TrpcIcon,
   TurborepoDark,
   TurborepoLight,
   TypeScript,
@@ -159,7 +159,7 @@ export const STACK_ICONS = {
   ),
   tailwind: <TailwindCSS aria-hidden />,
   tanstack: <TanStack aria-hidden />,
-  trpc: <TRPC aria-hidden />,
+  trpc: <TrpcIcon aria-hidden />,
   turborepo: themedIcon(
     <TurborepoLight className="dark:hidden" aria-hidden />,
     <TurborepoDark className="hidden dark:block" aria-hidden />

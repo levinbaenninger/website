@@ -163,11 +163,12 @@ const walkAssets = async (
 ): Promise<WalkResult> => {
   const files: string[] = [];
   const diagnostics: BlogDiagnostic[] = [];
-  const entries = (await readdir(absoluteDirectory)).toSorted((left, right) =>
+  const entries = await readdir(absoluteDirectory);
+  const sortedEntries = entries.toSorted((left, right) =>
     compareLexically(left, right)
   );
 
-  for (const name of entries) {
+  for (const name of sortedEntries) {
     const absolutePath = path.join(absoluteDirectory, name);
     const relativePath =
       relativeDirectory === "" ? name : `${relativeDirectory}/${name}`;
@@ -420,12 +421,13 @@ const inspectBundle = async (
     );
   }
 
-  const entries = (await readdir(bundleDirectory)).toSorted((left, right) =>
+  const entries = await readdir(bundleDirectory);
+  const sortedEntries = entries.toSorted((left, right) =>
     compareLexically(left, right)
   );
   const expectedMdx = `${slug}.mdx`;
   const allowed = new Set([expectedMdx, "assets"]);
-  for (const entry of entries) {
+  for (const entry of sortedEntries) {
     if (!allowed.has(entry)) {
       diagnostics.push(
         createDiagnostic(
@@ -578,9 +580,8 @@ export const inspectArticleSource = async (
   const diagnostics: BlogDiagnostic[] = [];
   let entries: string[];
   try {
-    entries = (await readdir(paths.articlesRoot)).toSorted((left, right) =>
-      compareLexically(left, right)
-    );
+    entries = await readdir(paths.articlesRoot);
+    entries = entries.toSorted((left, right) => compareLexically(left, right));
   } catch {
     throw new BlogValidationError([
       createDiagnostic(
@@ -717,8 +718,9 @@ export const checkArticleManifest = async (
 const snapshotArticleSource = async (articlesRoot: string): Promise<string> => {
   const entries: string[] = [];
   const visit = async (absoluteDirectory: string): Promise<void> => {
-    const names = (await readdir(absoluteDirectory)).toSorted(compareLexically);
-    for (const name of names) {
+    const names = await readdir(absoluteDirectory);
+    const sortedNames = names.toSorted(compareLexically);
+    for (const name of sortedNames) {
       const absolutePath = path.join(absoluteDirectory, name);
       const relativePath = path.relative(articlesRoot, absolutePath);
       const metadata = await lstat(absolutePath);

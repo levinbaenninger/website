@@ -1,5 +1,4 @@
 import { ChevronDownIcon } from "lucide-react";
-import { Children } from "react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/shared/ui/button";
@@ -11,6 +10,22 @@ import {
 
 const DEFAULT_MAX_VISIBLE_ITEMS = 3;
 
+const flattenChildren = (children: ReactNode): ReactNode[] => {
+  if (
+    children === null ||
+    children === undefined ||
+    typeof children === "boolean"
+  ) {
+    return [];
+  }
+
+  if (Array.isArray(children)) {
+    return children.flatMap((child: ReactNode) => flattenChildren(child));
+  }
+
+  return [children];
+};
+
 export const TimelineList = ({
   children,
   max = DEFAULT_MAX_VISIBLE_ITEMS,
@@ -18,7 +33,7 @@ export const TimelineList = ({
   children: ReactNode;
   max?: number;
 }) => {
-  const items = Children.toArray(children);
+  const items = flattenChildren(children);
   const visibleCount = Math.max(0, max);
   const visibleItems = items.slice(0, visibleCount);
   const additionalItems = items.slice(visibleCount);

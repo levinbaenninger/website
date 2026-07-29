@@ -25,7 +25,7 @@ export const Biography = ({
 
     <PanelContent className="typeset typeset-body">
       <p>
-        Hi 👋 I'm <strong>{name}</strong>, a{" "}
+        {`Hi 👋 I'm`} <strong>{name}</strong>, a{" "}
         <strong>{role.toLocaleLowerCase("en-US")}</strong> @ {company}.
       </p>
       {paragraphs.map((paragraph) => (
