@@ -1,5 +1,6 @@
 import GithubSlugger from "github-slugger";
-import type { Definition, Heading, Root } from "mdast";
+import { icons as lucideIcons } from "lucide-react";
+import type { Code, Definition, Heading, Root } from "mdast";
 import { toString } from "mdast-util-to-string";
 import { visit } from "unist-util-visit";
 
@@ -98,19 +99,53 @@ const normalizeSearchText = (value: string): string =>
 
 const ASSET_IMPORT_PATTERN =
   /^import\s+[A-Za-z_$][\w$]*\s+from\s+["']\.\/assets\/[^"'?#]+["'];?\s*$/u;
-const ICON_IMPORT_PATTERN =
-  /^import\s*\{\s*([A-Za-z_$][\w$]*(?:\s*,\s*[A-Za-z_$][\w$]*)*)\s*\}\s*from\s*["']lucide-react["'];?\s*$/u;
 const SUPPORTED_ASSET_PATTERN =
   /^\.\/assets\/[a-z0-9]+(?:[/-][a-z0-9]+)*(?:\.avif|\.jpeg|\.jpg|\.png|\.svg|\.webp)$/u;
-// This compile-time list cannot import the React registry without pulling its
-// client module graph into the build-only MDX transform.
-const ARTICLE_COMPONENT_NAMES = new Set([
-  "Accordion",
-  "AccordionItem",
-  "Figure",
-  "Tab",
-  "Tabs",
+const LUCIDE_IMPORT_PATTERN =
+  /^import\s*\{\s*[A-Za-z_$][\w$]*(?:\s*,\s*[A-Za-z_$][\w$]*)*\s*\}\s*from\s*["']lucide-react["'];?\s*$/u;
+const LUCIDE_ICON_NAME_PATTERN = /^[A-Z][A-Za-z0-9]*$/u;
+const approvedLucideIconNames = new Set(
+  Object.keys(lucideIcons).flatMap((name) => [name, `${name}Icon`])
+);
+
+type ArticleNode = Root | Root["children"][number];
+type ArticleElement = Extract<
+  Root["children"][number],
+  { readonly type: "mdxJsxFlowElement" | "mdxJsxTextElement" }
+>;
+type ArticleFlowElement = Extract<
+  Root["children"][number],
+  { readonly type: "mdxJsxFlowElement" }
+>;
+type ArticleAttribute = ArticleElement["attributes"][number];
+
+interface ArticleImports {
+  readonly assets: ReadonlyMap<string, string>;
+  readonly icons: ReadonlySet<string>;
+}
+
+interface CompositionSearchContract {
+  readonly joinsInline?: boolean;
+  readonly label?: "name" | "title";
+}
+
+const compositionSearchContracts = new Map<string, CompositionSearchContract>([
+  ["Accordion", {}],
+  ["AccordionItem", { label: "title" }],
+  ["Callout", { label: "title" }],
+  ["Card", { label: "title" }],
+  ["Cards", {}],
+  ["Figure", {}],
+  ["File", { label: "name" }],
+  ["Files", {}],
+  ["Folder", { label: "name" }],
+  ["Kbd", { joinsInline: true }],
+  ["Step", { joinsInline: true, label: "title" }],
+  ["Steps", {}],
+  ["Tab", { label: "title" }],
+  ["Tabs", {}],
 ]);
+const articleElementNames = new Set(compositionSearchContracts.keys());
 
 const inlineNodeTypes = new Set([
   "delete",
@@ -121,7 +156,28 @@ const inlineNodeTypes = new Set([
   "strong",
 ]);
 
-const searchableText = (node: Root | Root["children"][number]): string => {
+const findStringAttribute = (
+  node: ArticleElement,
+  name: string
+): string | undefined => {
+  const attribute = node.attributes.find(
+    (candidate) =>
+      candidate.type === "mdxJsxAttribute" && candidate.name === name
+  );
+  return attribute?.type === "mdxJsxAttribute" &&
+    typeof attribute.value === "string"
+    ? attribute.value
+    : undefined;
+};
+
+const visibleLabel = (node: ArticleElement): string => {
+  const labelAttribute = compositionSearchContracts.get(node.name ?? "")?.label;
+  return labelAttribute === undefined
+    ? ""
+    : (findStringAttribute(node, labelAttribute) ?? "");
+};
+
+const searchableText = (node: ArticleNode): string => {
   if (node.type === "text" || node.type === "inlineCode") {
     return node.value;
   }
@@ -138,21 +194,21 @@ const searchableText = (node: Root | Root["children"][number]): string => {
   }
 
   if ("children" in node && Array.isArray(node.children)) {
-    const separator = inlineNodeTypes.has(node.type) ? "" : " ";
-    const title =
-      (node.type === "mdxJsxFlowElement" ||
+    const separator =
+      inlineNodeTypes.has(node.type) ||
+      ((node.type === "mdxJsxFlowElement" ||
         node.type === "mdxJsxTextElement") &&
-      (node.name === "AccordionItem" || node.name === "Tab")
-        ? node.attributes.find(
-            (attribute) =>
-              attribute.type === "mdxJsxAttribute" &&
-              attribute.name === "title" &&
-              typeof attribute.value === "string"
-          )?.value
-        : undefined;
-    return [title, ...node.children.map(searchableText)]
-      .filter((value): value is string => value !== undefined && value !== "")
-      .join(separator);
+        compositionSearchContracts.get(node.name ?? "")?.joinsInline === true)
+        ? ""
+        : " ";
+    const children = node.children.map(searchableText).join(separator);
+    if (
+      node.type === "mdxJsxFlowElement" ||
+      node.type === "mdxJsxTextElement"
+    ) {
+      return [visibleLabel(node), children].filter(Boolean).join(" ");
+    }
+    return children;
   }
 
   return "";
@@ -256,26 +312,21 @@ const assignHeadingIds = (
   return headings;
 };
 
-interface ArticleImports {
-  readonly assets: ReadonlyMap<string, string>;
-  readonly icons: ReadonlySet<string>;
-}
-
-const assertImportDoesNotShadowRegistry = (localName: string): void => {
-  if (ARTICLE_COMPONENT_NAMES.has(localName)) {
-    throw new Error(
-      `[blog/import-shadow] Import ${JSON.stringify(localName)} shadows an Article registry component. Choose a local name other than ${[...ARTICLE_COMPONENT_NAMES].map((componentName) => JSON.stringify(componentName)).join(", ")}.`
-    );
-  }
-};
-
-const collectArticleImports = (
+const collectImports = (
   root: Root,
   diagnostics: ArticleDiagnostics
 ): ArticleImports => {
   const assets = new Map<string, string>();
   const icons = new Set<string>();
-  const importedAssets = new Set<string>();
+  const importedSpecifiers = new Set<string>();
+
+  const assertDoesNotShadowRegistry = (localName: string): void => {
+    if (articleElementNames.has(localName)) {
+      throw new Error(
+        `[blog/import-shadow] Import ${JSON.stringify(localName)} shadows an Article registry component. Choose a local name other than ${[...articleElementNames].map((name) => JSON.stringify(name)).join(", ")}.`
+      );
+    }
+  };
 
   visit(root, "mdxjsEsm", (node) => {
     diagnostics.capture(node, () => {
@@ -283,32 +334,48 @@ const collectArticleImports = (
         return;
       }
 
-      const iconMatch = ICON_IMPORT_PATTERN.exec(node.value);
-      if (iconMatch !== null) {
-        const names = iconMatch[1]?.split(",").map((name) => name.trim()) ?? [];
-        for (const name of names) {
-          assertImportDoesNotShadowRegistry(name);
-          if (icons.has(name) || assets.has(name)) {
-            throw new Error(
-              `[blog/icon-import] Lucide icon ${JSON.stringify(name)} is imported more than once. Keep one unaliased named import.`
-            );
+      const assetMatch = ASSET_IMPORT_PATTERN.exec(node.value);
+      if (assetMatch === null) {
+        const lucideMatch = LUCIDE_IMPORT_PATTERN.exec(node.value);
+        if (lucideMatch !== null) {
+          const openBrace = node.value.indexOf("{");
+          const closeBrace = node.value.indexOf("}");
+          const importedNames = node.value.slice(openBrace + 1, closeBrace);
+          for (const iconName of importedNames.trim().split(/\s*,\s*/u)) {
+            assertDoesNotShadowRegistry(iconName);
+            if (!LUCIDE_ICON_NAME_PATTERN.test(iconName)) {
+              throw new Error(
+                `[blog/icon-import] ${JSON.stringify(iconName)} is not an approved Lucide icon import. Import one unaliased PascalCase icon name.`
+              );
+            }
+            if (!approvedLucideIconNames.has(iconName)) {
+              throw new Error(
+                `[blog/icon-import] ${JSON.stringify(iconName)} is not exported by the approved Lucide icon registry.`
+              );
+            }
+            if (icons.has(iconName)) {
+              throw new Error(
+                `[blog/import-duplicate] Lucide icon ${JSON.stringify(iconName)} is imported more than once. Keep one named import.`
+              );
+            }
+            icons.add(iconName);
           }
-          icons.add(name);
+          return;
         }
-        return;
-      }
 
-      if (!ASSET_IMPORT_PATTERN.test(node.value)) {
-        if (node.value.includes("lucide-react")) {
-          throw new Error(
-            '[blog/icon-import] Lucide icons require unaliased named imports from "lucide-react". Use import { IconName } from "lucide-react".'
-          );
+        const isLucideImport =
+          node.value.includes('"lucide-react"') ||
+          node.value.includes("'lucide-react'");
+        let ruleId = "blog/export";
+        if (isLucideImport) {
+          ruleId = "blog/icon-import";
+        } else if (node.value.trimStart().startsWith("import")) {
+          ruleId = "blog/import";
         }
-        const ruleId = node.value.trimStart().startsWith("import")
-          ? "blog/import"
-          : "blog/export";
         throw new Error(
-          `[${ruleId}] Article-authored modules are limited to default local image imports and unaliased named Lucide imports.`
+          isLucideImport
+            ? `[${ruleId}] Lucide imports must be unaliased named icon imports such as import { RocketIcon } from "lucide-react".`
+            : `[${ruleId}] Article-authored modules are limited to default local image imports and approved named Lucide icons.`
         );
       }
 
@@ -317,7 +384,7 @@ const collectArticleImports = (
       const localName = normalizedImport
         .slice("import ".length, fromIndex)
         .trim();
-      assertImportDoesNotShadowRegistry(localName);
+      assertDoesNotShadowRegistry(localName);
       const quotedSpecifier = normalizedImport.slice(
         fromIndex + " from ".length
       );
@@ -330,7 +397,7 @@ const collectArticleImports = (
       if (
         assets.has(localName) ||
         icons.has(localName) ||
-        importedAssets.has(specifier)
+        importedSpecifiers.has(specifier)
       ) {
         throw new Error(
           `[blog/import-duplicate] ${JSON.stringify(specifier)} is imported more than once. Reuse one binding.`
@@ -338,11 +405,334 @@ const collectArticleImports = (
       }
 
       assets.set(localName, specifier);
-      importedAssets.add(specifier);
+      importedSpecifiers.add(specifier);
     });
   });
 
   return { assets, icons };
+};
+
+const textLength = (value: string): number =>
+  [
+    ...new Intl.Segmenter(undefined, {
+      granularity: "grapheme",
+    }).segment(value),
+  ].length;
+
+const isValidLabel = (value: string, maximum: number): boolean =>
+  value.length > 0 &&
+  value === value.trim() &&
+  !/[\r\n]/u.test(value) &&
+  value.isWellFormed() &&
+  value.normalize("NFC") === value &&
+  textLength(value) <= maximum;
+
+const isElement = (
+  node: ArticleNode | undefined,
+  name?: string
+): node is ArticleElement =>
+  node !== undefined &&
+  (node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement") &&
+  (name === undefined || node.name === name);
+
+const isNamedElement = (
+  node: ArticleNode,
+  names: ReadonlySet<string>
+): node is ArticleElement => isElement(node) && names.has(node.name ?? "");
+
+const validateAllowedAttributes = (
+  node: ArticleElement,
+  allowed: ReadonlySet<string>,
+  ruleId: string,
+  diagnostics: ArticleDiagnostics
+): ReadonlyMap<string, ArticleAttribute> => {
+  const attributes = new Map<string, ArticleAttribute>();
+
+  for (const attribute of node.attributes) {
+    diagnostics.capture(attribute, () => {
+      if (
+        attribute.type !== "mdxJsxAttribute" ||
+        typeof attribute.name !== "string"
+      ) {
+        throw new Error(
+          `[${ruleId}] ${node.name} received a spread attribute. Use only ${[...allowed].join(", ") || "no props"}.`
+        );
+      }
+      if (!allowed.has(attribute.name)) {
+        throw new Error(
+          `[${ruleId}] ${node.name} does not accept ${JSON.stringify(attribute.name)}. Use only ${[...allowed].join(", ") || "no props"}.`
+        );
+      }
+      if (attributes.has(attribute.name)) {
+        throw new Error(
+          `[${ruleId}] ${node.name} prop ${JSON.stringify(attribute.name)} appears more than once. Keep one literal value.`
+        );
+      }
+      attributes.set(attribute.name, attribute);
+    });
+  }
+
+  return attributes;
+};
+
+const requireStringAttribute = (
+  node: ArticleElement,
+  attributes: ReadonlyMap<string, ArticleAttribute>,
+  name: string,
+  maximum: number,
+  ruleId: string,
+  diagnostics: ArticleDiagnostics,
+  required = true
+): string | undefined => {
+  let value: string | undefined;
+  diagnostics.capture(node, () => {
+    const attribute = attributes.get(name);
+    if (attribute === undefined && !required) {
+      return;
+    }
+    if (
+      attribute?.type !== "mdxJsxAttribute" ||
+      typeof attribute.value !== "string" ||
+      !isValidLabel(attribute.value, maximum)
+    ) {
+      let authoredValue: unknown;
+      if (attribute?.type === "mdxJsxAttribute") {
+        authoredValue =
+          typeof attribute.value === "object" && attribute.value !== null
+            ? attribute.value.value
+            : attribute.value;
+      }
+      throw new Error(
+        `[${ruleId}] ${node.name} ${name} ${JSON.stringify(authoredValue)} is invalid. Use one ${required ? "" : "optional "}literal, trimmed, single-line NFC string of 1–${maximum} characters.`
+      );
+    }
+    const { value: attributeValue } = attribute;
+    value = attributeValue;
+  });
+  return value;
+};
+
+const validateBareBooleanAttribute = (
+  node: ArticleElement,
+  attributes: ReadonlyMap<string, ArticleAttribute>,
+  name: string,
+  ruleId: string,
+  diagnostics: ArticleDiagnostics
+): void => {
+  const attribute = attributes.get(name);
+  if (attribute === undefined) {
+    return undefined;
+  }
+  diagnostics.capture(attribute, () => {
+    if (attribute.type !== "mdxJsxAttribute" || attribute.value !== null) {
+      throw new Error(
+        `[${ruleId}] ${node.name}.${name} is an optional bare boolean prop.`
+      );
+    }
+  });
+};
+
+const validateNoNamedChildren = (
+  node: ArticleElement,
+  ruleId: string,
+  diagnostics: ArticleDiagnostics
+): void => {
+  visit({ type: "root", children: node.children } as Root, (child) => {
+    if (isNamedElement(child, articleElementNames)) {
+      diagnostics.capture(child, () => {
+        throw new Error(
+          `[${ruleId}] ${node.name} children are ordinary Markdown and cannot contain ${child.name}.`
+        );
+      });
+    }
+  });
+};
+
+const validateOnlyChildren = (
+  node: ArticleElement,
+  allowedNames: ReadonlySet<string>,
+  minimum: number,
+  ruleId: string,
+  diagnostics: ArticleDiagnostics
+): void => {
+  const validChildren = node.children.filter(
+    (child) => isElement(child) && allowedNames.has(child.name ?? "")
+  );
+  for (const child of node.children) {
+    if (!isElement(child) || !allowedNames.has(child.name ?? "")) {
+      diagnostics.capture(child, () => {
+        throw new Error(
+          `[${ruleId}] ${node.name} contains ${isElement(child) ? JSON.stringify(child.name) : JSON.stringify(child.type)}. Use only ${[...allowedNames].join(" or ")} children.`
+        );
+      });
+    }
+  }
+  diagnostics.capture(node, () => {
+    if (validChildren.length < minimum) {
+      throw new Error(
+        `[${ruleId}] ${node.name} requires at least ${minimum} ${[...allowedNames].join(" or ")} child.`
+      );
+    }
+  });
+};
+
+const expressionIconName = (
+  attribute: ArticleAttribute
+): string | undefined => {
+  if (
+    attribute.type !== "mdxJsxAttribute" ||
+    typeof attribute.value !== "object" ||
+    attribute.value === null ||
+    !("data" in attribute.value)
+  ) {
+    return undefined;
+  }
+
+  const program = attribute.value.data?.estree;
+  const statement = program?.body[0];
+  if (
+    program?.body.length !== 1 ||
+    statement?.type !== "ExpressionStatement" ||
+    statement.expression.type !== "JSXElement"
+  ) {
+    return undefined;
+  }
+  const element = statement.expression;
+  if (
+    element.openingElement.name.type !== "JSXIdentifier" ||
+    element.openingElement.attributes.length !== 0 ||
+    element.children.length !== 0 ||
+    element.closingElement !== null
+  ) {
+    return undefined;
+  }
+  return element.openingElement.name.name;
+};
+
+interface FileTreeEntry {
+  readonly children: FileTreeEntry[];
+  readonly folder: boolean;
+  readonly name: string;
+}
+
+const parseFileTreeLine = (
+  line: string
+): { readonly depth: number; readonly name: string } | undefined => {
+  const teeIndex = line.indexOf("├── ");
+  const elbowIndex = line.indexOf("└── ");
+  const branchIndex = teeIndex === -1 ? elbowIndex : teeIndex;
+  if (branchIndex !== -1) {
+    const prefix = line.slice(0, branchIndex);
+    if (!/^(?:│   |    )*$/u.test(prefix)) {
+      return undefined;
+    }
+    return {
+      depth: prefix.length / 4 + 1,
+      name: line.slice(branchIndex + 4),
+    };
+  }
+  const indentation = line.length - line.trimStart().length;
+  if (!/^ *$/u.test(line.slice(0, indentation))) {
+    return undefined;
+  }
+  if (indentation % 2 !== 0) {
+    return undefined;
+  }
+  return { depth: indentation / 2, name: line.slice(indentation) };
+};
+
+const fileTreeElement = (entry: FileTreeEntry): ArticleFlowElement => ({
+  type: "mdxJsxFlowElement",
+  name: entry.folder ? "Folder" : "File",
+  attributes: [
+    {
+      type: "mdxJsxAttribute",
+      name: "name",
+      value: entry.name,
+    },
+  ],
+  children: entry.children.map(fileTreeElement),
+});
+
+const parseFileTree = (node: Code): readonly FileTreeEntry[] => {
+  if (node.meta !== null && node.meta !== undefined) {
+    throw new Error("[blog/files-fence] files fences do not accept metadata.");
+  }
+  const roots: FileTreeEntry[] = [];
+  const stack: FileTreeEntry[] = [];
+  const siblingNames = new Map<FileTreeEntry[], Set<string>>();
+
+  for (const line of node.value.split("\n")) {
+    const parsed = parseFileTreeLine(line);
+    if (parsed === undefined || parsed.name.length === 0) {
+      throw new Error(
+        `[blog/files-fence] ${JSON.stringify(line)} is not a valid two-space-indented file-tree entry.`
+      );
+    }
+    const folder = parsed.name.endsWith("/");
+    const name = folder ? parsed.name.slice(0, -1) : parsed.name;
+    if (!isValidLabel(name, 120) || /[/\\]/u.test(name)) {
+      throw new Error(
+        `[blog/files-fence] ${JSON.stringify(parsed.name)} is not a valid trimmed file or folder name.`
+      );
+    }
+    if (parsed.depth > stack.length) {
+      throw new Error(
+        `[blog/files-fence] ${JSON.stringify(line)} skips a tree level. Indent one level at a time.`
+      );
+    }
+    stack.length = parsed.depth;
+    const siblings =
+      parsed.depth === 0 ? roots : stack[parsed.depth - 1]?.children;
+    const parent = parsed.depth === 0 ? undefined : stack[parsed.depth - 1];
+    if (siblings === undefined || (parent !== undefined && !parent.folder)) {
+      throw new Error(
+        `[blog/files-fence] ${JSON.stringify(line)} is nested beneath a file. Only folders contain entries.`
+      );
+    }
+    const names = siblingNames.get(siblings) ?? new Set<string>();
+    siblingNames.set(siblings, names);
+    if (names.has(name)) {
+      throw new Error(
+        `[blog/files-fence] ${JSON.stringify(name)} appears more than once in the same folder.`
+      );
+    }
+    names.add(name);
+    const entry: FileTreeEntry = { children: [], folder, name };
+    siblings.push(entry);
+    stack.push(entry);
+  }
+  if (roots.length === 0) {
+    throw new Error(
+      "[blog/files-fence] files fences require at least one entry."
+    );
+  }
+  return roots;
+};
+
+const transformFileFences = (
+  root: Root,
+  diagnostics: ArticleDiagnostics
+): void => {
+  visit(root, "code", (node: Code) => {
+    if (node.lang !== "files") {
+      return;
+    }
+    diagnostics.capture(node, () => {
+      const entries = parseFileTree(node);
+      const replacement: ArticleFlowElement = {
+        type: "mdxJsxFlowElement",
+        name: "Files",
+        attributes: [],
+        children: entries.map(fileTreeElement),
+        position: node.position,
+      };
+      Object.assign(node, replacement);
+      delete (node as Partial<Code>).lang;
+      delete (node as Partial<Code>).meta;
+      delete (node as Partial<Code>).value;
+    });
+  });
 };
 
 const captionNodeTypes = new Set([
@@ -369,13 +759,13 @@ const validateFigureCaption = (
   });
 };
 
-type ArticleComponentNode = Extract<
+type FigureNode = Extract<
   Root["children"][number],
   { readonly type: "mdxJsxFlowElement" | "mdxJsxTextElement" }
 >;
 
 const validateFigure = (
-  node: ArticleComponentNode,
+  node: FigureNode,
   imports: ReadonlyMap<string, string>,
   consumedImports: Set<string>,
   diagnostics: ArticleDiagnostics
@@ -492,262 +882,509 @@ const validateFigure = (
   );
 };
 
-const meaningfulComponentChildren = (
-  node: ArticleComponentNode
-): readonly Root["children"][number][] =>
-  node.children.filter(
-    (child) => child.type !== "text" || child.value.trim() !== ""
-  );
+const noProps = new Set<string>();
+const titleProp = new Set(["title"]);
+const calloutProps = new Set(["kind", "title"]);
+const cardProps = new Set(["href", "icon", "title"]);
+const fileProps = new Set(["name"]);
+const folderProps = new Set(["defaultOpen", "name"]);
+const accordionItemProps = new Set(["defaultOpen", "title"]);
+const tabProps = new Set(["icon", "title"]);
 
-const authoredAttributeValue = (
-  attribute: ArticleComponentNode["attributes"][number] | undefined
-): unknown => {
-  if (attribute === undefined) {
-    return undefined;
-  }
-  if (attribute.type !== "mdxJsxAttribute") {
-    return "spread";
-  }
-  if (attribute.value !== null && typeof attribute.value === "object") {
-    return attribute.value.value;
-  }
-  return attribute.value;
-};
-
-const validateLiteralTitle = (
-  node: ArticleComponentNode,
-  component: "AccordionItem" | "Tab",
-  attribute: ArticleComponentNode["attributes"][number] | undefined,
-  diagnostics: ArticleDiagnostics
-): string | undefined => {
-  let title: string | undefined;
-  diagnostics.capture(attribute ?? node, () => {
-    const ruleId =
-      component === "Tab" ? "blog/tab-title" : "blog/accordion-item-title";
-    const maximum = component === "Tab" ? 40 : 120;
-    if (
-      attribute?.type !== "mdxJsxAttribute" ||
-      attribute.name !== "title" ||
-      typeof attribute.value !== "string" ||
-      attribute.value.length === 0 ||
-      attribute.value !== attribute.value.trim() ||
-      /[\n\r\u2028\u2029]/u.test(attribute.value) ||
-      !attribute.value.isWellFormed() ||
-      attribute.value.normalize("NFC") !== attribute.value ||
-      [
-        ...new Intl.Segmenter(undefined, {
-          granularity: "grapheme",
-        }).segment(attribute.value),
-      ].length > maximum
-    ) {
-      throw new Error(
-        `[${ruleId}] ${component} title ${JSON.stringify(authoredAttributeValue(attribute))} is invalid. Use one literal, trimmed, single-line NFC title of 1–${maximum} characters.`
-      );
-    }
-    title = attribute.value;
-  });
-  return title;
-};
-
-const validateNoComponentProps = (
-  node: ArticleComponentNode,
-  component: "Accordion" | "Tabs",
+const validateCallout = (
+  node: ArticleElement,
   diagnostics: ArticleDiagnostics
 ): void => {
-  for (const attribute of node.attributes) {
-    diagnostics.capture(attribute, () => {
-      const ruleId =
-        component === "Tabs" ? "blog/tabs-prop" : "blog/accordion-prop";
-      const name =
-        attribute.type === "mdxJsxAttribute" ? attribute.name : "spread";
+  diagnostics.capture(node, () => {
+    if (node.type !== "mdxJsxFlowElement") {
       throw new Error(
-        `[${ruleId}] ${component} does not accept author-controlled prop ${JSON.stringify(name)}.`
+        "[blog/callout-position] Callout is a body-level composition."
+      );
+    }
+  });
+  const attributes = validateAllowedAttributes(
+    node,
+    calloutProps,
+    "blog/callout-prop",
+    diagnostics
+  );
+  const kind = requireStringAttribute(
+    node,
+    attributes,
+    "kind",
+    7,
+    "blog/callout-kind",
+    diagnostics
+  );
+  if (kind !== undefined) {
+    diagnostics.capture(node, () => {
+      if (!new Set(["danger", "note", "tip", "warning"]).has(kind)) {
+        throw new Error(
+          `[blog/callout-kind] Callout kind ${JSON.stringify(kind)} is invalid. Use note, tip, warning, or danger.`
+        );
+      }
+    });
+  }
+  requireStringAttribute(
+    node,
+    attributes,
+    "title",
+    120,
+    "blog/callout-title",
+    diagnostics,
+    false
+  );
+  diagnostics.capture(node, () => {
+    if (node.children.length === 0) {
+      throw new Error(
+        "[blog/callout-children] Callout requires Markdown children."
+      );
+    }
+  });
+  validateNoNamedChildren(node, "blog/callout-children", diagnostics);
+};
+
+const validateCards = (
+  node: ArticleElement,
+  diagnostics: ArticleDiagnostics
+): void => {
+  diagnostics.capture(node, () => {
+    if (node.type !== "mdxJsxFlowElement") {
+      throw new Error(
+        "[blog/cards-position] Cards is a body-level composition."
+      );
+    }
+  });
+  validateAllowedAttributes(node, noProps, "blog/cards-prop", diagnostics);
+  validateOnlyChildren(
+    node,
+    new Set(["Card"]),
+    1,
+    "blog/cards-children",
+    diagnostics
+  );
+};
+
+const validateCard = (
+  node: ArticleElement,
+  parent: ArticleNode | undefined,
+  iconImports: ReadonlySet<string>,
+  consumedIcons: Set<string>,
+  diagnostics: ArticleDiagnostics
+): void => {
+  diagnostics.capture(node, () => {
+    if (!isElement(parent, "Cards")) {
+      throw new Error(
+        "[blog/card-position] Card must be a direct child of Cards."
+      );
+    }
+  });
+  const attributes = validateAllowedAttributes(
+    node,
+    cardProps,
+    "blog/card-prop",
+    diagnostics
+  );
+  requireStringAttribute(
+    node,
+    attributes,
+    "title",
+    120,
+    "blog/card-title",
+    diagnostics
+  );
+  const href = requireStringAttribute(
+    node,
+    attributes,
+    "href",
+    2048,
+    "blog/card-href",
+    diagnostics,
+    false
+  );
+  const iconAttribute = attributes.get("icon");
+  if (iconAttribute !== undefined) {
+    diagnostics.capture(iconAttribute, () => {
+      const iconName = expressionIconName(iconAttribute);
+      if (iconName === undefined || !iconImports.has(iconName)) {
+        const offendingValue =
+          iconAttribute.type === "mdxJsxAttribute" &&
+          typeof iconAttribute.value === "object" &&
+          iconAttribute.value !== null
+            ? iconAttribute.value.value
+            : iconAttribute;
+        throw new Error(
+          `[blog/card-icon] Card.icon ${JSON.stringify(offendingValue)} is invalid. Use one imported, zero-prop Lucide icon element such as icon={<RocketIcon />}.`
+        );
+      }
+      consumedIcons.add(iconName);
+    });
+  }
+  validateNoNamedChildren(node, "blog/card-children", diagnostics);
+  if (href !== undefined) {
+    visit({ type: "root", children: node.children } as Root, (child) => {
+      if (
+        child.type === "link" ||
+        child.type === "linkReference" ||
+        (child.type === "listItem" &&
+          child.checked !== null &&
+          child.checked !== undefined)
+      ) {
+        const offendingContent =
+          child.type === "listItem" ? "a task-list input" : "a nested link";
+        diagnostics.capture(child, () => {
+          throw new Error(
+            `[blog/card-interactive] A linked Card is one link and cannot contain ${offendingContent}. Use ordinary non-interactive Markdown children.`
+          );
+        });
+      }
+    });
+  }
+};
+
+const validateFiles = (
+  node: ArticleElement,
+  diagnostics: ArticleDiagnostics
+): void => {
+  diagnostics.capture(node, () => {
+    if (node.type !== "mdxJsxFlowElement") {
+      throw new Error(
+        "[blog/files-position] Files is a body-level composition."
+      );
+    }
+  });
+  validateAllowedAttributes(node, noProps, "blog/files-prop", diagnostics);
+  validateOnlyChildren(
+    node,
+    new Set(["File", "Folder"]),
+    1,
+    "blog/files-children",
+    diagnostics
+  );
+};
+
+const validateFileTreeEntry = (
+  node: ArticleElement,
+  parent: ArticleNode | undefined,
+  allowedProps: ReadonlySet<string>,
+  entryName: "File" | "Folder",
+  diagnostics: ArticleDiagnostics
+): ReadonlyMap<string, ArticleAttribute> => {
+  const rulePrefix = `blog/${entryName.toLowerCase()}`;
+  diagnostics.capture(node, () => {
+    if (
+      !isElement(parent) ||
+      (parent.name !== "Files" && parent.name !== "Folder")
+    ) {
+      throw new Error(
+        `[${rulePrefix}-position] ${entryName} must be a direct child of Files or Folder.`
+      );
+    }
+  });
+  const attributes = validateAllowedAttributes(
+    node,
+    allowedProps,
+    `${rulePrefix}-prop`,
+    diagnostics
+  );
+  const name = requireStringAttribute(
+    node,
+    attributes,
+    "name",
+    120,
+    `${rulePrefix}-name`,
+    diagnostics
+  );
+  if (name !== undefined) {
+    diagnostics.capture(node, () => {
+      if (/[/\\]/u.test(name)) {
+        throw new Error(
+          `[${rulePrefix}-name] ${entryName} name ${JSON.stringify(name)} cannot contain a path separator. Express hierarchy with nested Folder elements.`
+        );
+      }
+    });
+  }
+  return attributes;
+};
+
+const validateFolder = (
+  node: ArticleElement,
+  parent: ArticleNode | undefined,
+  diagnostics: ArticleDiagnostics
+): void => {
+  const attributes = validateFileTreeEntry(
+    node,
+    parent,
+    folderProps,
+    "Folder",
+    diagnostics
+  );
+  validateBareBooleanAttribute(
+    node,
+    attributes,
+    "defaultOpen",
+    "blog/folder-prop",
+    diagnostics
+  );
+  validateOnlyChildren(
+    node,
+    new Set(["File", "Folder"]),
+    0,
+    "blog/folder-children",
+    diagnostics
+  );
+};
+
+const validateFile = (
+  node: ArticleElement,
+  parent: ArticleNode | undefined,
+  diagnostics: ArticleDiagnostics
+): void => {
+  validateFileTreeEntry(node, parent, fileProps, "File", diagnostics);
+  for (const child of node.children) {
+    diagnostics.capture(child, () => {
+      throw new Error(
+        `[blog/file-children] File contains ${isElement(child) ? JSON.stringify(child.name) : JSON.stringify(child.type)}. File accepts no children; use a self-closing File element.`
       );
     });
   }
 };
 
-const validateAccordion = (
-  node: ArticleComponentNode,
+const validateSteps = (
+  node: ArticleElement,
   diagnostics: ArticleDiagnostics
 ): void => {
-  validateNoComponentProps(node, "Accordion", diagnostics);
-  const children = meaningfulComponentChildren(node);
+  diagnostics.capture(node, () => {
+    if (node.type !== "mdxJsxFlowElement") {
+      throw new Error(
+        "[blog/steps-position] Steps is a body-level composition."
+      );
+    }
+  });
+  validateAllowedAttributes(node, noProps, "blog/steps-prop", diagnostics);
+  validateOnlyChildren(
+    node,
+    new Set(["Step"]),
+    1,
+    "blog/steps-children",
+    diagnostics
+  );
+};
+
+const validateStep = (
+  node: ArticleElement,
+  parent: ArticleNode | undefined,
+  diagnostics: ArticleDiagnostics
+): void => {
+  diagnostics.capture(node, () => {
+    if (!isElement(parent, "Steps")) {
+      throw new Error(
+        "[blog/step-position] Step must be a direct child of Steps."
+      );
+    }
+  });
+  const attributes = validateAllowedAttributes(
+    node,
+    titleProp,
+    "blog/step-prop",
+    diagnostics
+  );
+  requireStringAttribute(
+    node,
+    attributes,
+    "title",
+    120,
+    "blog/step-title",
+    diagnostics
+  );
+  diagnostics.capture(node, () => {
+    if (node.children.length === 0) {
+      throw new Error("[blog/step-children] Step requires Article content.");
+    }
+  });
+};
+
+const validateKbd = (
+  node: ArticleElement,
+  diagnostics: ArticleDiagnostics
+): void => {
+  diagnostics.capture(node, () => {
+    if (node.type !== "mdxJsxTextElement") {
+      throw new Error(
+        "[blog/kbd-position] Kbd is inline-only. Place it inside Markdown prose."
+      );
+    }
+  });
+  validateAllowedAttributes(node, noProps, "blog/kbd-prop", diagnostics);
   diagnostics.capture(node, () => {
     if (
-      children.length === 0 ||
-      children.some(
-        (child) =>
-          (child.type !== "mdxJsxFlowElement" &&
-            child.type !== "mdxJsxTextElement") ||
-          child.name !== "AccordionItem"
-      )
+      node.children.length !== 1 ||
+      node.children[0].type !== "text" ||
+      !isValidLabel(node.children[0].value, Number.MAX_SAFE_INTEGER)
     ) {
       throw new Error(
-        "[blog/accordion-children] Accordion requires one or more direct AccordionItem children and no other content."
+        "[blog/kbd-children] Kbd accepts exactly one trimmed literal text child."
       );
     }
   });
 };
 
+const meaningfulChildren = (
+  node: ArticleElement
+): readonly ArticleElement["children"][number][] =>
+  node.children.filter(
+    (child) => child.type !== "text" || child.value.trim() !== ""
+  );
+
+const validateAccordion = (
+  node: ArticleElement,
+  diagnostics: ArticleDiagnostics
+): void => {
+  validateAllowedAttributes(node, noProps, "blog/accordion-prop", diagnostics);
+  validateOnlyChildren(
+    node,
+    new Set(["AccordionItem"]),
+    1,
+    "blog/accordion-children",
+    diagnostics
+  );
+};
+
 const validateAccordionItem = (
-  node: ArticleComponentNode,
-  parent: ArticleComponentNode | undefined,
+  node: ArticleElement,
+  parent: ArticleNode | undefined,
   diagnostics: ArticleDiagnostics
 ): void => {
   diagnostics.capture(node, () => {
-    if (parent?.name !== "Accordion") {
+    if (!isElement(parent, "Accordion")) {
       throw new Error(
         "[blog/accordion-item-parent] AccordionItem must be a direct child of Accordion."
       );
     }
   });
-
-  let titleAttribute: ArticleComponentNode["attributes"][number] | undefined;
-  let defaultOpenCount = 0;
-  for (const attribute of node.attributes) {
-    if (
-      attribute.type === "mdxJsxAttribute" &&
-      attribute.name === "title" &&
-      titleAttribute === undefined
-    ) {
-      titleAttribute = attribute;
-      continue;
-    }
-    diagnostics.capture(attribute, () => {
-      if (
-        attribute.type === "mdxJsxAttribute" &&
-        attribute.name === "defaultOpen"
-      ) {
-        defaultOpenCount += 1;
-        if (defaultOpenCount > 1 || attribute.value !== null) {
-          throw new Error(
-            `[blog/accordion-item-default] AccordionItem defaultOpen received ${JSON.stringify(authoredAttributeValue(attribute))}. Use an optional bare defaultOpen boolean prop that appears once.`
-          );
-        }
-        return;
-      }
-      const name =
-        attribute.type === "mdxJsxAttribute" ? attribute.name : "spread";
-      throw new Error(
-        `[blog/accordion-item-prop] AccordionItem does not accept ${JSON.stringify(name)}. Use only title and optional bare defaultOpen.`
-      );
-    });
-  }
-  validateLiteralTitle(node, "AccordionItem", titleAttribute, diagnostics);
+  const attributes = validateAllowedAttributes(
+    node,
+    accordionItemProps,
+    "blog/accordion-item-prop",
+    diagnostics
+  );
+  requireStringAttribute(
+    node,
+    attributes,
+    "title",
+    120,
+    "blog/accordion-item-title",
+    diagnostics
+  );
+  validateBareBooleanAttribute(
+    node,
+    attributes,
+    "defaultOpen",
+    "blog/accordion-item-default",
+    diagnostics
+  );
   diagnostics.capture(node, () => {
-    if (meaningfulComponentChildren(node).length === 0) {
+    if (meaningfulChildren(node).length === 0) {
       throw new Error(
         "[blog/accordion-item-children] AccordionItem requires Markdown children."
       );
     }
   });
+  validateNoNamedChildren(node, "blog/accordion-item-children", diagnostics);
 };
 
 const validateTabs = (
-  node: ArticleComponentNode,
-  ancestors: readonly ArticleComponentNode[],
+  node: ArticleElement,
   diagnostics: ArticleDiagnostics
 ): void => {
-  validateNoComponentProps(node, "Tabs", diagnostics);
-  diagnostics.capture(node, () => {
-    if (ancestors.some((ancestor) => ancestor.name === "Tabs")) {
-      throw new Error(
-        "[blog/tabs-nested] General Tabs cannot be nested inside other general Tabs."
-      );
-    }
-  });
-  const children = meaningfulComponentChildren(node);
-  diagnostics.capture(node, () => {
-    if (
-      children.length < 2 ||
-      children.some(
-        (child) =>
-          (child.type !== "mdxJsxFlowElement" &&
-            child.type !== "mdxJsxTextElement") ||
-          child.name !== "Tab"
-      )
-    ) {
-      throw new Error(
-        "[blog/tabs-count] Tabs requires at least two direct Tab children and no other content."
-      );
-    }
-  });
-};
+  validateAllowedAttributes(node, noProps, "blog/tabs-prop", diagnostics);
+  validateOnlyChildren(
+    node,
+    new Set(["Tab"]),
+    2,
+    "blog/tabs-count",
+    diagnostics
+  );
 
-const validateTabIcon = (
-  attribute: ArticleComponentNode["attributes"][number],
-  importedIcons: ReadonlySet<string>,
-  consumedIcons: Set<string>,
-  diagnostics: ArticleDiagnostics
-): void => {
-  diagnostics.capture(attribute, () => {
-    const expression =
-      attribute.type === "mdxJsxAttribute" &&
-      attribute.name === "icon" &&
-      attribute.value !== null &&
-      typeof attribute.value === "object"
-        ? attribute.value.value.trim()
-        : "";
-    const match = /^<([A-Za-z_$][\w$]*)\s*\/>$/u.exec(expression);
-    const iconName = match?.[1];
-    if (iconName === undefined || !importedIcons.has(iconName)) {
-      throw new Error(
-        `[blog/tab-icon] Tab icon ${JSON.stringify(expression)} is invalid. Use one imported Lucide icon rendered as a zero-prop self-closing element.`
-      );
+  const titles = new Set<string>();
+  for (const child of node.children) {
+    if (!isElement(child, "Tab")) {
+      continue;
     }
-    consumedIcons.add(iconName);
-  });
+    const title = findStringAttribute(child, "title");
+    if (title !== undefined) {
+      diagnostics.capture(child, () => {
+        if (titles.has(title)) {
+          throw new Error(
+            `[blog/tab-title-duplicate] Tab title ${JSON.stringify(title)} appears more than once in the same Tabs. Use unique titles.`
+          );
+        }
+        titles.add(title);
+      });
+    }
+    visit({ type: "root", children: child.children } as Root, (descendant) => {
+      if (isElement(descendant, "Tabs")) {
+        diagnostics.capture(descendant, () => {
+          throw new Error(
+            "[blog/tabs-nested] General Tabs cannot be nested inside other general Tabs."
+          );
+        });
+      }
+    });
+  }
 };
 
 const validateTab = (
-  node: ArticleComponentNode,
-  parent: ArticleComponentNode | undefined,
-  importedIcons: ReadonlySet<string>,
+  node: ArticleElement,
+  parent: ArticleNode | undefined,
+  iconImports: ReadonlySet<string>,
   consumedIcons: Set<string>,
   diagnostics: ArticleDiagnostics
-): string | undefined => {
+): void => {
   diagnostics.capture(node, () => {
-    if (parent?.name !== "Tabs") {
+    if (!isElement(parent, "Tabs")) {
       throw new Error("[blog/tab-parent] Tab must be a direct child of Tabs.");
     }
   });
-
-  let titleAttribute: ArticleComponentNode["attributes"][number] | undefined;
-  let iconCount = 0;
-  for (const attribute of node.attributes) {
-    if (
-      attribute.type === "mdxJsxAttribute" &&
-      attribute.name === "title" &&
-      titleAttribute === undefined
-    ) {
-      titleAttribute = attribute;
-      continue;
-    }
-    if (attribute.type === "mdxJsxAttribute" && attribute.name === "icon") {
-      iconCount += 1;
-      if (iconCount === 1) {
-        validateTabIcon(attribute, importedIcons, consumedIcons, diagnostics);
-        continue;
+  const attributes = validateAllowedAttributes(
+    node,
+    tabProps,
+    "blog/tab-prop",
+    diagnostics
+  );
+  requireStringAttribute(
+    node,
+    attributes,
+    "title",
+    40,
+    "blog/tab-title",
+    diagnostics
+  );
+  const iconAttribute = attributes.get("icon");
+  if (iconAttribute !== undefined) {
+    diagnostics.capture(iconAttribute, () => {
+      const iconName = expressionIconName(iconAttribute);
+      if (iconName === undefined || !iconImports.has(iconName)) {
+        const offendingValue =
+          iconAttribute.type === "mdxJsxAttribute" &&
+          typeof iconAttribute.value === "object" &&
+          iconAttribute.value !== null
+            ? iconAttribute.value.value
+            : iconAttribute;
+        throw new Error(
+          `[blog/tab-icon] Tab icon ${JSON.stringify(offendingValue)} is invalid. Use one imported Lucide icon rendered as a zero-prop self-closing element.`
+        );
       }
-    }
-    diagnostics.capture(attribute, () => {
-      const name =
-        attribute.type === "mdxJsxAttribute" ? attribute.name : "spread";
-      throw new Error(
-        `[blog/tab-prop] Tab does not accept ${JSON.stringify(name)}. Use only title and one optional icon.`
-      );
+      consumedIcons.add(iconName);
     });
   }
-  const title = validateLiteralTitle(node, "Tab", titleAttribute, diagnostics);
   diagnostics.capture(node, () => {
-    if (meaningfulComponentChildren(node).length === 0) {
+    if (meaningfulChildren(node).length === 0) {
       throw new Error(
         "[blog/tab-children] Tab requires Markdown or approved component children."
       );
     }
   });
-  return title;
 };
 
 const validateClosedLanguage = (
@@ -757,12 +1394,8 @@ const validateClosedLanguage = (
 ): void => {
   const consumedAssets = new Set<string>();
   const consumedIcons = new Set<string>();
-  const tabTitles = new Map<ArticleComponentNode, Set<string>>();
 
-  const validateNode = (
-    node: Root | Root["children"][number],
-    ancestors: readonly ArticleComponentNode[]
-  ): void => {
+  visit(root, (node, _index, parent) => {
     diagnostics.capture(node, () => {
       if (node.type === "html") {
         throw new Error(
@@ -781,10 +1414,19 @@ const validateClosedLanguage = (
         node.type === "mdxJsxFlowElement" ||
         node.type === "mdxJsxTextElement"
       ) {
-        const parent = ancestors.at(-1);
-        if (ancestors.some((ancestor) => ancestor.name === "AccordionItem")) {
+        if (typeof node.name === "string" && imports.icons.has(node.name)) {
           throw new Error(
-            `[blog/accordion-item-children] AccordionItem children may contain Markdown but not Article component ${node.name}.`
+            `[blog/icon-position] Lucide icon ${JSON.stringify(node.name)} is allowed only as a zero-prop Card.icon or Tab.icon value.`
+          );
+        }
+        if (!articleElementNames.has(node.name ?? "")) {
+          const ruleId =
+            typeof node.name === "string" &&
+            node.name === node.name.toLowerCase()
+              ? "blog/raw-html"
+              : "blog/element";
+          throw new Error(
+            `[${ruleId}] ${JSON.stringify(node.name)} is not an approved Article element.`
           );
         }
         if (node.name === "Figure") {
@@ -794,37 +1436,29 @@ const validateClosedLanguage = (
         } else if (node.name === "AccordionItem") {
           validateAccordionItem(node, parent, diagnostics);
         } else if (node.name === "Tabs") {
-          validateTabs(node, ancestors, diagnostics);
-          tabTitles.set(node, new Set());
+          validateTabs(node, diagnostics);
         } else if (node.name === "Tab") {
-          const title = validateTab(
-            node,
-            parent,
-            imports.icons,
-            consumedIcons,
-            diagnostics
-          );
-          if (parent?.name === "Tabs" && title !== undefined) {
-            const titles = tabTitles.get(parent);
-            diagnostics.capture(node, () => {
-              if (titles?.has(title) === true) {
-                throw new Error(
-                  `[blog/tab-title-duplicate] Tab title ${JSON.stringify(title)} appears more than once in the same Tabs. Use unique titles.`
-                );
-              }
-              titles?.add(title);
-            });
-          }
-        } else {
-          const ruleId =
-            typeof node.name === "string" &&
-            node.name === node.name.toLowerCase()
-              ? "blog/raw-html"
-              : "blog/element";
-          throw new Error(
-            `[${ruleId}] ${JSON.stringify(node.name)} is not an approved Article element. Use Figure, Accordion, Tabs, or approved Markdown.`
-          );
+          validateTab(node, parent, imports.icons, consumedIcons, diagnostics);
+        } else if (node.name === "Callout") {
+          validateCallout(node, diagnostics);
+        } else if (node.name === "Cards") {
+          validateCards(node, diagnostics);
+        } else if (node.name === "Card") {
+          validateCard(node, parent, imports.icons, consumedIcons, diagnostics);
+        } else if (node.name === "Files") {
+          validateFiles(node, diagnostics);
+        } else if (node.name === "Folder") {
+          validateFolder(node, parent, diagnostics);
+        } else if (node.name === "File") {
+          validateFile(node, parent, diagnostics);
+        } else if (node.name === "Steps") {
+          validateSteps(node, diagnostics);
+        } else if (node.name === "Step") {
+          validateStep(node, parent, diagnostics);
+        } else if (node.name === "Kbd") {
+          validateKbd(node, diagnostics);
         }
+        return;
       }
       if (node.type === "image" || node.type === "imageReference") {
         throw new Error(
@@ -849,19 +1483,7 @@ const validateClosedLanguage = (
         );
       }
     });
-
-    if ("children" in node && Array.isArray(node.children)) {
-      const nextAncestors =
-        node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement"
-          ? [...ancestors, node]
-          : ancestors;
-      for (const child of node.children) {
-        validateNode(child, nextAncestors);
-      }
-    }
-  };
-
-  validateNode(root, []);
+  });
 
   for (const localName of imports.assets.keys()) {
     if (!consumedAssets.has(localName)) {
@@ -876,7 +1498,7 @@ const validateClosedLanguage = (
     if (!consumedIcons.has(iconName)) {
       diagnostics.capture(root, () => {
         throw new Error(
-          `[blog/import-unused] Imported Lucide icon ${JSON.stringify(iconName)} is not consumed by a general Tab icon. Add it to Tab.icon or remove the import.`
+          `[blog/import-unused] Imported Lucide icon ${JSON.stringify(iconName)} is not consumed by Card.icon or Tab.icon. Add it to an approved icon position or remove the import.`
         );
       });
     }
@@ -948,6 +1570,12 @@ const validateLinks = (
             `[blog/link-reference] Link reference ${JSON.stringify(node.identifier)} has no definition. Add its definition.`
           );
         }
+      } else if (
+        (node.type === "mdxJsxFlowElement" ||
+          node.type === "mdxJsxTextElement") &&
+        node.name === "Card"
+      ) {
+        href = findStringAttribute(node, "href");
       }
 
       if (href !== undefined) {
@@ -963,7 +1591,8 @@ const validateLinks = (
 export default function articleContract() {
   return (root: Root, file: ArticleFile): void => {
     const diagnostics = new ArticleDiagnostics(file);
-    const imports = collectArticleImports(root, diagnostics);
+    transformFileFences(root, diagnostics);
+    const imports = collectImports(root, diagnostics);
     validateClosedLanguage(root, imports, diagnostics);
     const headings = assignHeadingIds(root, diagnostics);
     const facts: ArticleCompilationFacts = {

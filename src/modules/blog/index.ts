@@ -1,6 +1,12 @@
 import type { MDXComponents } from "mdx/types";
 
 import {
+  ArticleCallout,
+  ArticleCard,
+  ArticleCards,
+  ArticleFile,
+  ArticleFiles,
+  ArticleFolder,
   ArticleFigure,
   ArticleHeading2,
   ArticleHeading3,
@@ -8,6 +14,7 @@ import {
   ArticleHeading5,
   ArticleHeading6,
   ArticleLink,
+  ArticleKbd,
   ArticleQuote,
   ArticleTable,
   ArticleTableBody,
@@ -17,6 +24,8 @@ import {
   ArticleTableRow,
   ArticleTaskInput,
   ArticleThematicBreak,
+  ArticleStep,
+  ArticleSteps,
 } from "./article-components";
 import {
   ArticleAccordion,
@@ -25,10 +34,19 @@ import {
   ArticleTabs,
 } from "./article-interactions";
 
-const articleMdxComponents: MDXComponents = {
+const articleMdxComponents: MDXComponents = Object.freeze({
   Accordion: ArticleAccordion,
   AccordionItem: ArticleAccordionItem,
+  Callout: ArticleCallout,
+  Card: ArticleCard,
+  Cards: ArticleCards,
+  File: ArticleFile,
+  Files: ArticleFiles,
+  Folder: ArticleFolder,
   Figure: ArticleFigure,
+  Kbd: ArticleKbd,
+  Step: ArticleStep,
+  Steps: ArticleSteps,
   Tab: ArticleTab,
   Tabs: ArticleTabs,
   a: ArticleLink,
@@ -46,7 +64,7 @@ const articleMdxComponents: MDXComponents = {
   th: ArticleTableHeading,
   thead: ArticleTableHead,
   tr: ArticleTableRow,
-};
+});
 
 export const getArticleMdxComponents = (): MDXComponents =>
   articleMdxComponents;

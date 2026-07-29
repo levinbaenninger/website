@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import ultracite from "ultracite/oxfmt";
 import core from "ultracite/oxlint/core";
 import next from "ultracite/oxlint/next";
@@ -5,6 +7,11 @@ import react from "ultracite/oxlint/react";
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("src", import.meta.url)),
+    },
+  },
   staged: {
     "*": "vp check --fix",
   },
@@ -193,7 +200,6 @@ export default defineConfig({
         rules: {
           complexity: "off",
           "no-loop-func": "off",
-          "prefer-named-capture-group": "off",
         },
       },
       {
