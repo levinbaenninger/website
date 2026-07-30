@@ -173,6 +173,16 @@
     @apply scroll-pt-12 font-sans;
   }
 
+  /* Dialog scroll locks set `overflow: hidden` on <body>, which only reaches
+     the viewport when the root element's own overflow is visible. `overflow-x:
+     clip` on <html> blocks that propagation, so the scrollbar would survive
+     the lock while the lock's compensating body margin still applies — moving
+     the page sideways by half the scrollbar width. Lock the root instead, on
+     the vertical axis only, so horizontal content stays clipped. */
+  html:has(body[data-scroll-locked]) {
+    overflow-y: hidden;
+  }
+
   /* Set only once the custom cursor is actually running, so touch, reduced
      motion, and a failed hydration all keep the native cursor. */
   html[data-custom-cursor],
