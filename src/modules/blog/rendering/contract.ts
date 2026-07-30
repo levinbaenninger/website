@@ -251,7 +251,7 @@ const CODE_LANGUAGES = new Set([
 const CODE_TEXT_PATTERN = /^[^\r\n]+$/u;
 const CODE_TAB_GROUP_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const CODE_ANNOTATION_PATTERN =
-  /\[!code (?:(?:\+\+|--|focus|highlight)(?::[1-9]\d*)?|word:(?:\\.|[^:\]])+(?::[1-9]\d*)?)\]/gu;
+  /\[!code (?:(?:\+\+|--|focus|highlight)(?::[1-9]\d*)?|word:(?:\\.|[^:\\\]])+(?::[1-9]\d*)?)\]/gu;
 const CODE_ANNOTATION_CANDIDATE_PATTERN = /\[!code[^\]]*(?:\]|$)/gu;
 const TWOSLASH_IMPORT_PATTERN =
   /^\s*(?:import|export)\s+(?:[^"']*\s+from\s+)?["']([^"']+)["']/gmu;

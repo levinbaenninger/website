@@ -707,6 +707,16 @@ console.log(changed) // [!code word:changed]
     );
   });
 
+  test("rejects long malformed rendering annotations promptly", async () => {
+    const ambiguousEscapePairs = String.raw`\9`.repeat(4096);
+
+    await expect(
+      compileArticle(
+        `\`\`\`ts\nvalue // [!code word:${ambiguousEscapePairs}\n\`\`\``
+      )
+    ).rejects.toThrow("blog/code-annotation");
+  });
+
   test("groups only valid consecutive tabbed fences", async () => {
     const { markup } =
       await renderArticle(`\`\`\`ts tab="TypeScript" tab-group="runtime"
