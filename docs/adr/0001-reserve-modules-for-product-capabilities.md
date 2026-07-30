@@ -20,11 +20,11 @@ Module-specific content and configuration remain owned by their module even when
 
 Navigation ownership follows the destinations it describes. Cross-module navigation belongs to the app shell, while navigation within a product capability belongs to that module and is exposed through its public API for the shell to compose.
 
-Shared owns reusable mechanisms and deliberately foundational assets, while the consuming responsibility owns feature-specific policy, configuration, and assets. The generic audio engine, types, hook, and reusable interaction sounds belong to `src/shared/audio`; a feature-specific sound remains owned by its consuming responsibility until broader reuse is deliberate. Reusable UI icons and their shared animation behavior belong to `src/shared/ui/icons`, while capability-specific icons remain with their owning module.
+Shared owns reusable mechanisms and deliberately foundational assets, while the consuming responsibility owns feature-specific policy, configuration, and assets. Sound assets are an exception: the audio engine, types, hook, and every sound asset belong to `src/shared/audio` regardless of consumer count, because sounds are a generic palette rather than feature semantics; the consuming responsibility owns only the usage policy — which sound plays, at what volume and playback rate, and on which gesture. Reusable UI icons and their shared animation behavior belong to `src/shared/ui/icons`, while capability-specific icons remain with their owning module.
 
 Shared code is organized primarily by cohesive technical responsibility, such as `ui`, `audio`, or `browser`, rather than by artifact-type buckets such as `hooks`, `utils`, or `types`. Hooks, utilities, and types live beside the shared concept they support.
 
-The initial product modules are Portfolio and Blog. Existing Site, Theme, Devtools, Socials, and Sounds folders are not peer product modules: shell, theme, and development wiring are app-owned; social profiles are Portfolio-owned; and reusable sound mechanisms and assets are shared.
+The initial product modules are Portfolio and Blog. Existing Site, Theme, Devtools, Socials, and Sounds folders are not peer product modules: shell, theme, and development wiring are app-owned; social profiles are Portfolio-owned; and sound mechanisms and assets are shared.
 
 Whether a concern serves an independently meaningful visitor goal remains a design and review judgment. Linting enforces the normal dependency boundaries by requiring aliases across parent folders, prohibiting CommonJS imports, restricting app and module aliases by source zone, and allowing external consumers to access modules only through their designated public entrypoints. The rare literal dynamic import remains a review concern.
 
