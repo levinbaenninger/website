@@ -22,6 +22,7 @@ Built-in Vite+ commands (not task-runner aliases):
 
 - `vp check` — format, lint, and type-check.
 - `vp test` — run tests.
+- `vp test --coverage` — run tests and write informational coverage reports to `coverage/`.
 - `vp install` — install dependencies after pulling lockfile changes.
 
 Do not use `vp build` or `vp dev` for this Next.js app. Those invoke Vite's built-in dev/build commands. Use `vp run dev` and `vp run build` instead.

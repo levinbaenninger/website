@@ -44,9 +44,12 @@ Use the project runner:
 ```bash
 vp test path/to/file.test.ts
 vp test
+vp test --coverage
 ```
 
 Unlike raw Vitest, `vp test` runs once by default; `vp test watch` is explicitly interactive. Before finishing a code change, also follow the full validation sequence in [Toolchain](toolchain.md).
+
+Coverage is informational and has no pass/fail threshold. It uses the V8 provider and includes all eligible TypeScript and TSX files under `src`, including files that no test imports. Reports are written to `coverage/` in text, JSON summary, JSON detail, and HTML formats.
 
 Review every AI-generated test as a first draft:
 
