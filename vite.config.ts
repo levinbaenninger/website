@@ -288,6 +288,17 @@ export default defineConfig({
     options: { typeAware: true, typeCheck: true },
   },
   test: {
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "**/*.{test,spec}.{ts,tsx}",
+        "**/*.d.ts",
+        "**/*.generated.{ts,tsx}",
+      ],
+      reporter: ["text", "json-summary", "json", "html"],
+      reportOnFailure: true,
+    },
     projects: [
       {
         extends: true,
