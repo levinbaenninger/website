@@ -6,9 +6,10 @@ import { useEffect, useRef } from "react";
 const DOT_SMOOTHING = 0.2;
 const RING_SMOOTHING = 0.1;
 
+// No `img`: decorative photos aren't targets; linked ones still match via `a`.
+// `.cursor-pointer` covers non-control hit targets while the native cursor is hidden.
 const INTERACTIVE_SELECTOR =
-  "a, button, img, input, textarea, select, [role='button'], [contenteditable='true']";
-
+  "a, button, input, textarea, select, [role='button'], [contenteditable='true'], .cursor-pointer";
 const lerp = (from: number, to: number, factor: number) =>
   from + (to - from) * factor;
 
