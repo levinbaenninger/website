@@ -8,26 +8,25 @@
 // so `manifest.generated.ts`, the catalog, the search artifact, the sitemap and
 // the social images are all untouched.
 //
-// The MDX tree is created here, on the server, because that is the production
-// path: `ArticleView` renders `Content` as a server component. Rendering it on
-// the client instead would work — Shiki runs at compile time, not render time —
-// but it would also hide the panel defect in NOTES finding 1.
+// This module reads the specimen's compilation facts — frontmatter for the
+// header, headings for the table of contents — and hands the body itself to
+// `SpecimenContent`, which renders it client-side. See NOTES finding 1 for why.
 
 import { z } from "zod";
 
 import { resolveTag } from "@/modules/blog/articles/tags";
 import type { Tag } from "@/modules/blog/articles/tags";
 
-import { createPrototypeMdxComponents } from "./mdx-components";
 import type { LanguageSelection, Specimen } from "./params";
 import { SpecimenReader } from "./reader";
+import { SpecimenContent } from "./specimen-content";
 
 // Imported lazily, not statically. `src/modules/blog/index.ts` re-exports this
 // module, and Vitest resolves that entrypoint's whole static graph without an
 // MDX transform — a static `import … from "./specimen.mdx"` fails the suite for
 // every test that reaches the Blog entrypoint. A dynamic import is only
 // resolved when it runs, which is never under test.
-const loadSpecimen = async (specimen: Specimen) =>
+const loadSpecimenFacts = async (specimen: Specimen) =>
   specimen === "stress"
     ? await import("./stress.mdx")
     : await import("./specimen.mdx");
@@ -53,19 +52,21 @@ export const ArticleLanguagePrototype = async ({
 }: {
   readonly selection: LanguageSelection;
 }) => {
-  const specimen = await loadSpecimen(selection.specimen);
+  const facts = await loadSpecimenFacts(selection.specimen);
   const { description, tags, title } = specimenFrontmatter.parse(
-    specimen.frontmatter
+    facts.frontmatter
   );
-  const Content = specimen.default;
 
   return (
     <SpecimenReader
       article={{ description, tags: resolveTags(tags), title }}
-      headings={specimen.__articleFacts.headings}
+      headings={facts.__articleFacts.headings}
       selection={selection}
     >
-      <Content components={createPrototypeMdxComponents(selection.anchor)} />
+      <SpecimenContent
+        anchor={selection.anchor}
+        specimen={selection.specimen}
+      />
     </SpecimenReader>
   );
 };

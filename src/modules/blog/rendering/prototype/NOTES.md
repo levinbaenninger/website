@@ -12,7 +12,7 @@ Throwaway artifact for [issue #34](https://github.com/levinbaenninger/website/is
 
 Unlayered is load-bearing: Tailwind v4 puts its utilities in `@layer utilities` and `.typeset` in `@layer components`, and an unlayered rule beats every layered rule regardless of specificity. That is how a stylesheet overrides components that ship their own classes (`ArticleCallout`, the shared `Card`, `Kbd`) without a single `!important` — except where Shiki writes an inline `style`, which is finding 3.
 
-Four places genuinely need markup the production components do not emit, and each is a finding rather than a design choice: headings (finding 6), the code block's copy control (finding 4), tables (finding 5), and the Accordion/Tabs hand-off across the server boundary (finding 1).
+Three places genuinely need markup the production components do not emit, and each is a finding rather than a design choice: headings (finding 6), the code block's copy control (finding 4) and tables (finding 5). A fourth — the Accordion and Tabs panels — needs something the boundary itself breaks, which is finding 1.
 
 ## The specimen is real
 
@@ -29,18 +29,21 @@ Everything the reference already answers is held identical across all three lang
 - links: body weight, 1 px underline at 3 px offset, `currentColor / 30%` → `currentColor` on hover
 - inline code: 1 px border, `muted / 50%`, `radius * 0.8`, 14 px, wraps rather than clips
 - blockquote: one 1 px `line` rule, muted, upright, no quote marks
-- `hr` on `line`; `ul` markers at 12 px/1
+- `hr` on `line`; `ul` markers at `0.75em`, muted, sharing the text's line box
 - headings: the reference's own anchor shape — the heading text _is_ the link, and a copy-link button fades in beside it
-- tables: 14 px, one rule per row on `line`, none under the last, `p-2`, `first:ps-0`, 150 px minimum cells inside a horizontal scroll container
-- code frame: `radius * 1.4`, `surface`, 4 px padding, `inset 0 0 0 1px border/64`; `pre` 16 px block padding, no scrollbar; `.line` 16 px inline padding; 14/20 mono
+- tables: 14 px, a rule between every cell on `line`, none under the last row or after the last column, 8/12 px cells, `first:ps-0`, 150 px minimum cells inside a horizontal scroll container
+- code frame: `radius * 1.4`, `surface`, 4 px padding, `inset 0 0 0 1px border/64`; `pre` 16 px block padding, no scrollbar; `.line` 16 px inline padding; 14/18 mono; inside a panel the fill drops to `background` so the frame stays a distinct object
 - code title row: 10/12 px padding, mono, muted, truncating; with no title the control is lifted out of flow to the top-right and the lines gain 56 px of end padding, which is the reference's own geometry
 - line numbers: sticky 64 px gutter, 24 px end padding, right-aligned, `code-number`
 - highlight / word-highlight on `code-highlight`; focus blurs everything else 2 px and restores on hover
 - Steps: 28 px indent with a `line` rule at `md`, 40 px and no rule below it; counter 24 px, `radius * 1.4`, `muted`, 13/24 regular
-- Callout: the reference's one surface — `radius * 1.4`, `surface`, `inset-ring border/64`, no border
+- Callout: the reference's one surface — `radius * 1.4`, `surface`, `inset-ring border/64`, no border; the mark is `1.15em` square, 12 px from the text, optically centred on the title's line box
 - tab strips: 32 px, `radius`, `surface`, `inset-ring border/64`, 2 px padding; triggers `radius * 0.8`, 4/16 px, 14 px medium; the active one white in light and `muted` in dark, `inset-ring foreground/10`
+- body typography: the `.typeset-blog` preset — 14 px, 1.75 leading, `--typeset-flow: 1em`. Every block in the language takes its leading margin from that one variable, so prose, lists, quotes, code, tables, Callouts, Cards, Files, Steps, Figures and tab groups all move together.
 
-Diff notation is also held constant, and it is the one held-constant item with no reference at all: the reference Blog never renders a diff, and a diff without colour is unreadable, so the conventional green/red plus a `+`/`-` gutter mark is used in all three rather than made an axis.
+Two of those are deliberate departures from the reference rather than transpositions, and both are Levin's calls from the first review: the typeset preset (the reference sets 16/28 and `1.25em` of flow) and the table's column rules (the reference draws row rules only, which stops working on the seven-column table in `stress.mdx`). Code leading is a third: 14/18 against the reference's 14/20, because code is scanned in columns rather than read in lines.
+
+Diff notation is the one held-constant item with no reference at all: the reference Blog never renders a diff, and a diff without colour is unreadable, so the conventional green/red plus a `+`/`-` gutter mark is used in all three rather than made an axis.
 
 ## What the languages disagree about
 
@@ -50,13 +53,15 @@ The reference answers prose, code and tab strips. It has **no Accordion, no Card
 | --- | --- | --- | --- |
 | Thesis | every unanswered construct gets the reference's one surface recipe | every unanswered construct gets the shell's other idiom: rules, not fills | the documentation-site reading: kind means colour |
 | Callout | one surface, `kind` picks the icon only | left rule, no fill, muted body | kind-tinted surface, ring, icon and title |
-| Cards | surface cards in a 2-column grid | a lined grid with cell rules, no fill | surface cards that take `accent` on hover |
+| Cards | Fumadocs' shape on `card`: boxed icon above a 14 px title, muted body | the same shape stripped to a lined grid with cell rules, no fill | Fumadocs' shape, plus `accent` on hover and coloured marks |
 | Files | surface frame, plain rows | lined band with an indent guide rule | surface frame, coloured file-type marks, row hover |
 | Accordion | surface panels, stacked with gaps | lined rows, flush, no fill | surface panels that take `accent` on hover |
 | Figure | 14 px radius, inset ring | flush, top and bottom rules, no radius | as A |
 | Tab strips | reference exactly | underline strip on `line` | reference exactly |
 
-A is the most faithful and the price is legibility under nesting: measured at `specimen=stress`, a Callout, a file tree and a code block inside one Tab panel all render `oklch(0.985 0 0)` — three different constructs, one flat surface, no boundary between them. B never has that problem and pays for it by having no way to say "this is an aside" other than a rule it shares with blockquotes. C is the deliberate deviation and should be chosen knowingly: **the reference carries no colour in prose anywhere**.
+Cards are the one construct where the reference is not the model at all. Its `Card` is a docs-navigation tile it never uses in prose, and the first cut — shadcn's `Card` with the icon floated top-right — read badly at Article width. All three languages now take [Fumadocs' shape](https://www.fumadocs.dev/docs/markdown#cards): a small boxed mark above the title, a 14 px medium title, a muted 14 px body, and hover only when the Card is actually a link. They differ only in the frame around it.
+
+A is the most faithful and the price is legibility under nesting: measured at `specimen=stress`, the Callout, the file tree, the Accordion and the tab strip all render the same fill — `lab(98.26 0 0)` in light, `lab(8.31 …)` in dark. Four different constructs, one flat surface, and inside a Tab panel three of them sit adjacent with no boundary between them. The code frame used to make it five; it now drops to `background` inside a panel, which is the same problem solved once rather than a reason to think A does not have it. B never has that problem and pays for it by having no way to say "this is an aside" other than a rule it shares with blockquotes. C is the deliberate deviation and should be chosen knowingly: **the reference carries no colour in prose anywhere**.
 
 Every axis follows its language; the four independent pills below are orthogonal to all three.
 
@@ -83,8 +88,9 @@ The key is `language=`, not `variant=`: `?variant=` still mounts #33's reader pr
 
 ## What is real and what is fake
 
-- **Real:** both specimens, compiled by the production pipeline through `contract.ts` and `code.ts`. Every Callout, Cards/Card, Files/Folder/File, Steps/Step, CodeTabs, Figure, Kbd, link, list, quote, table cell, thematic break and task input on screen is the production component from `rendering/components.tsx`, and the Accordion and Tabs panels are the production ones from `rendering/interactions.tsx` — `forceMount`, `hidden`, `hashchange` reveal and all.
-- **Prototype-local, and each one is a finding:** `h2`–`h6` (no anchor exists in production), `pre` (production's copy control is a bare `<button>Copy</button>`), `table` (production emits no scroll wrapper), and the `Accordion`/`Tabs` hand-off (finding 1).
+- **Real:** both specimens, compiled by the production pipeline through `contract.ts` and `code.ts`. Every Callout, Cards/Card, Files/Folder/File, Steps/Step, Accordion/AccordionItem, Tabs/Tab, CodeTabs, Figure, Kbd, link, list, quote, table cell, thematic break and task input on screen is the production component from `rendering/components.tsx` and `rendering/interactions.tsx` — `forceMount`, `hidden`, `hashchange` reveal and all.
+- **Prototype-local, and each one is a finding:** `h2`–`h6` (no anchor exists in production), `pre` (production's copy control is a bare `<button>Copy</button>`), and `table` (production emits no scroll wrapper).
+- **The body renders client-side**, which production does not do. That is finding 1, not a shortcut: the server path renders the panels empty. It costs nothing visually — Shiki, Twoslash, the GFM classes and the contract all run at compile time, so the markup is byte-identical either way — and the frontmatter and heading facts are still read on the server, where the table of contents needs them.
 - **Chrome:** #33's accepted composition, reduced to the pieces the prose column has to be judged inside — the lined rail, the sticky toolbar with the title cross-fade, the title, the metadata band, the gutter minimap opened by click, the mobile "On this page" card. Share, previous/next and the focus control are left out; they say nothing about what an Article reads like. The chrome primitives are imported from `articles/prototype/` rather than re-derived, so the rail width, the opening offset and the `--doc-cols-top` measurement stay the ones #33 measured. **The two directories therefore have to be deleted together.**
 - **Blog-local tokens:** `--surface`, `--surface-foreground`, `--code`, `--code-number`, `--code-highlight` do not exist in this repository. They are defined in `language.css` and are a specification input, not something to inline in shipped code. The surface pair reuses the exact values #33 already inlined for its mobile card, so the tree carries one definition and not two.
 
@@ -100,16 +106,30 @@ The key is `language=`, not `variant=`: `?variant=` still mounts #33's reader pr
 
 **1. `Accordion` and `Tabs` render empty in production today.** This is the important one, and it is not a presentation question.
 
-`ArticleAccordion` selects its children with `child.type === ArticleAccordionItem`, and `ArticleTabs` does the same with `ArticleTab`. That holds when the whole tree is client code — which is how #33's prototype and `interactions.dom.test.tsx` exercise them. It does **not** hold when the Article renders as a server component, which is exactly what `ArticleView` does: the server holds a _client reference_ for `AccordionItem`, and a client reference is never `===` the function the client component compares against. Every child is filtered out.
+`ArticleAccordion` selects its children with `child.type === ArticleAccordionItem`, and `ArticleTabs` does the same with `ArticleTab`. That comparison holds when the whole tree is client code — which is how #33's prototype and `interactions.dom.test.tsx` exercise them, and why it has never been caught. It does **not** survive the server/client boundary, and `ArticleView` is a plain server component that renders `<Content />` with the registry wired through `src/mdx-components.tsx`. Every child is filtered out.
 
-Measured on the same panels:
+This was verified on the real route, not inferred from the prototype. An `Accordion` and a `Tabs` were appended to `content/understanding-cache-components`, `/blog/understanding-cache-components` was requested with no prototype parameters, and the probe was reverted. The Article renders:
+
+```html
+<div data-orientation="vertical"></div>
+<div dir="ltr" data-orientation="horizontal"><div role="tablist" …></div></div>
+```
+
+Zero `data-article-accordion-trigger`, zero `role="tab"`, zero `data-article-panel`. The authored text survives only in the Flight payload. Against the same panels rendered client-side by #33's prototype:
 
 | Route | Accordion panels | Tab panels |
 | --- | --- | --- |
 | `?variant=a&content=panels` (#33, client all the way down) | 3 | 3 |
-| `?language=a` without the bridge (server-rendered, production path) | 0 | 0 |
+| `/blog/understanding-cache-components` (the real Article, probed) | 0 | 0 |
+| `?language=a` rendered on the server (this prototype, first cut) | 0 | 0 |
 
-`panels.tsx` re-creates each child with the reference the client module actually holds, so the panels below are still the production components. The production fix belongs in `rendering/interactions.tsx`: drop the identity filter — `contract.ts` already guarantees only `AccordionItem` children under `Accordion` and only `Tab` under `Tabs`, so accepting every valid element child is both sufficient and boundary-safe.
+The first cut tried to bridge it: a client component that read `child.props` and re-created each child with the reference the client module actually holds. **That does not work either, and the reason sharpens the finding.** Across the RSC boundary a child is not a plain element at all — during SSR it is still an unresolved lazy reference, so `isValidElement` is `false`; after hydration the module is loaded and it is `true`. The bridge therefore rendered an empty tab strip on the server and a full one on the client, i.e. a hydration mismatch stacked on top of the original defect:
+
+> Hydration failed because the server rendered HTML didn't match the client. `at ArticleTabs (src/modules/blog/rendering/interactions.tsx:205:14)`
+
+So the prototype stopped rendering the body on the server. `specimen-content.tsx` renders it inside one client module graph, where the production components behave exactly as `interactions.dom.test.tsx` exercises them. That costs nothing visually — Shiki, Twoslash and the contract all run at compile time — and the defect is already proven on the real route, so there is nothing left for the prototype to reproduce.
+
+The production fix belongs in `rendering/interactions.tsx`: **stop introspecting children entirely.** Dropping the identity filter is not enough, because `isValidElement` is itself unreliable here. `contract.ts` already guarantees only `AccordionItem` children under `Accordion` and only `Tab` under `Tabs`, so the panel data has to come from somewhere the boundary cannot mangle — a compiler-supplied prop, or `AccordionItem`/`Tab` rendering their own markup and the parent coordinating through context instead of reading `props.children`.
 
 **2. Dark-mode code blocks render the light theme.** `code.ts` compiles with a light/dark theme pair, and Shiki emits `--shiki-dark` on every token — but nothing in this repository consumes it. There is no `.dark .shiki { color: var(--shiki-dark) }` anywhere. `language.css` adds it; without that rule every code block on the site is `github-light` in dark mode.
 
@@ -131,9 +151,17 @@ Measured on the same panels:
 
 **11. `.typeset` fights the reference in four specific places**, all handled in `language.css` and all worth writing into the specification rather than rediscovering: `pre` (`bg-muted`, radius, `.75em 1em` padding), `kbd` (a border and a 2 px bottom border on top of the shared `Kbd`), `table` (wrap, not scroll), and links (weight 500 against the reference's body weight).
 
+**12. Nothing marks an external destination.** `ArticleLink` already sets `target="_blank"` and `rel="noopener noreferrer"` on every `https://` href, so the information exists — it just never reaches the reader. The prototype draws the mark with a CSS mask on `a[target="_blank"]`, which is enough to judge it and not enough to ship: a mask is invisible to assistive technology, so the component has to carry a real icon with an accessible name.
+
+**13. `ArticleTabs` emits no slot attribute.** Radix's `Tabs.Root` renders a bare `<div dir data-orientation>`, so there is nothing to select it by — which is why a `Tabs` placed directly after an `Accordion` had no gap at all: every other block in the language owns its own leading margin and the tab root owned none. The prototype matches it structurally (`div[dir]:has(> [role="tablist"])`). Presentation should not have to guess at shape; `ArticleTabs` should emit `data-slot`, as every other Blog component already does.
+
 ## What was verified, and what was not
 
-Measured at 1280 in light and in a genuinely dark render (`localStorage.theme = "dark"`, fresh document — a class toggle mid-session is not reliable in this harness): both specimens, all three languages, every axis value, both Twoslash states, all six annotation kinds, the sticky line-number gutter under horizontal scroll, panel nesting two deep, and the 1050 px table.
+Measured at 1280 in light: both specimens, all three languages, every axis value, both Twoslash states, all six annotation kinds, the sticky line-number gutter under horizontal scroll, panel nesting two deep, and the 1050 px table. `vp check`, `vp test` and `vp run build` all pass, and `/blog/[slug]` is still prerendered.
+
+Measured in dark: all three languages, on a page loaded with `localStorage.theme = "dark"` and a fresh document. A class toggle mid-session is **not** reliable in this harness — it produced one phantom result that took a while to unpick — so every dark number here comes from a page that rendered dark from the start. A's six surfaces, B's rules, C's four tints, both Shiki themes and the `--surface` / `--code-*` tokens all flip correctly.
+
+One thing worth knowing about B in dark: its rules resolve to `oklab(0.271 … / 0.424)` over an `L≈2.5` background, i.e. an effective lightness around 13. Visible, but faint. That is `--line` behaving exactly as the shell defines it and the reference defines it, not a defect — but B is the language that leans on `--line` for everything, so it is the one where the token's dark weight actually decides legibility.
 
 Not measured: **the `md` and `lg` breakpoint branches at a real 390 px viewport.** The automation harness in this session could not resize the browser. What was measured instead is a 327 px prose column at a 1280 px viewport, which exercises wrapping and overflow — nothing escapes the rail, code and tables scroll, tab strips fit — but leaves the Steps `md:` rule, the Cards `sm:` grid and the `lg:` table-of-contents switch unchecked. **Worth a look at 390 px before deciding.**
 
@@ -149,4 +177,28 @@ Not measured: **the `md` and `lg` breakpoint branches at a real 390 px viewport.
 2. `anchor` — the reference's whole-heading link, a leading `#`, or no anchor; and whether the copy-link control may be hover-only given finding 6.
 3. `copy` — hover (the reference), always, or coarse-pointer-and-focus, given finding 4.
 4. Whether `Callout.kind` earns colour (finding 7), independently of 1 — C's tints can be grafted onto A.
-5. Whether findings 1, 2, 3, 9 and 10 are folded into the #37 specification or split out as infrastructure defects against `interactions.tsx`, `code.ts` and `contract.ts`. Finding 1 in particular is shipping-broken today, not a design question.
+5. Whether findings 1, 2, 3, 9, 10 and 13 are folded into the #37 specification or split out as infrastructure defects against `interactions.tsx`, `code.ts` and `contract.ts`. Finding 1 in particular is shipping-broken today, not a design question.
+6. Whether the `.typeset-blog` preset holds at Article length (Revision 1) — it is the one change that moves everything at once, and it is a departure from the reference rather than a transposition.
+
+## Revision 1 — Levin's first review
+
+Thirteen points of feedback. Everything below is applied to **all three languages**, because none of it is an axis: a control with no feedback, a marker sitting low, or an unreachable Twoslash popup is broken in A, B and C alike. Where a fix needed markup rather than CSS it became a finding, and the findings list above grew from eleven to thirteen.
+
+**The tabs were not a styling problem.** They were empty, and the compiler error came with them. This turned out to be finding 1 wearing a second face: the bridge that re-created panel children across the RSC boundary works after hydration and not during SSR, because a child arriving from the server is an unresolved lazy reference rather than an element — so `isValidElement` is `false` on the server and `true` on the client, and the server rendered an empty tab strip into a client that rendered a full one. The body now renders inside one client module graph and the bridge is gone. Finding 1 is rewritten around this; it is a stronger statement than the first cut made, and it changes the recommended production fix from "drop the identity filter" to "stop reading `props.children` at all".
+
+**Applied as CSS, in the held-constant set:**
+
+- **The copy control kept its feedback.** Both the heading anchor's and the code block's stay visible while `data-state` is not `idle`, so the copied/failed state survives the pointer leaving.
+- **List markers and task checkboxes sat low.** Both were tuned for a tighter leading than 1.75. The marker now takes `line-height: inherit` so it shares the text's line box; the checkbox is centred with `calc((1em - 1lh) / 2 + 0.2em)` rather than the stock `-0.1em`.
+- **The Callout mark.** 12 px from the text rather than 8, sized `1.15em` against the title's cap height rather than a flat 16 px, and optically centred on the title's line box — shadcn's `Alert` proportions rather than a fixed nudge. A Callout with no title no longer spans two grid rows.
+- **Cards are Fumadocs' shape now.** Boxed 24 px mark above the title, 14 px medium title, muted 14 px body, `card` fill on `border`, hover only when the Card is a link.
+- **Spacing.** The `.typeset-blog` preset is in — 14 px, 1.75, `--typeset-flow: 1em` — and every block in the language now takes its leading margin from that one variable instead of a hard-coded `1.25em`. That is what fixes both "a list has too much spacing at the top" and the same gap above code blocks, and it makes the whole rhythm one number to turn.
+- **Tables gained column rules.** A rule between every cell, none after the last column.
+- **Code leading is 14/18**, down from the reference's 14/20.
+- **Twoslash popups escape the frame.** The scrolling `pre` clipped them and grew its scrollable area instead, so the popup ended up below the code behind a scrollbar. There is no `overflow-x: auto` with `overflow-y: visible` — the axes are locked — so the frame stops clipping while a token is hovered and starts again when it is not. The popup also gained `z-index: 20`.
+- **Twoslash `^?` queries and error lines align with the code**, 16 px in, or 64 px where a line-number gutter is present. They were starting at the code element's edge.
+- **External links carry a mark** (finding 12).
+- **A code frame inside a panel drops to `background`**, so it stops sharing the panel's own fill.
+- **A `Tabs` directly after an `Accordion` has a gap** (finding 13).
+
+**Not applied, and worth saying why:** the `script` tag warning in `ThemeProvider` comes from `next-themes` writing its blocking theme script, and predates this prototype — it appears on every route.
