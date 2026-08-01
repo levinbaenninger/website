@@ -18,3 +18,8 @@ export type {
   VariantKey,
 } from "./catalog/prototype/params";
 export { BlogCatalogPrototype } from "./catalog/prototype/prototype-view";
+
+// PROTOTYPE — issue #33. Remove these two exports together with
+// `articles/prototype/` once a reader composition is chosen.
+export { readPrototypeSelection } from "./articles/prototype/params";
+export { ArticleReaderPrototype } from "./articles/prototype/view";
