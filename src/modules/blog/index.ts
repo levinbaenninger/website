@@ -23,3 +23,8 @@ export { BlogCatalogPrototype } from "./catalog/prototype/prototype-view";
 // `articles/prototype/` once a reader composition is chosen.
 export { readPrototypeSelection } from "./articles/prototype/params";
 export { ArticleReaderPrototype } from "./articles/prototype/view";
+
+// PROTOTYPE — issue #34. Remove these two exports together with
+// `rendering/prototype/` once a presentation language is chosen.
+export { readLanguageSelection } from "./rendering/prototype/params";
+export { ArticleLanguagePrototype } from "./rendering/prototype/view";
