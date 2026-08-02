@@ -29,9 +29,9 @@ Everything the reference already answers is held identical across all three lang
 - links: body weight, 1 px underline at 3 px offset, `currentColor / 30%` → `currentColor` on hover
 - inline code: 1 px border, `muted / 50%`, `radius * 0.8`, 14 px, wraps rather than clips
 - blockquote: one 1 px `line` rule, muted, upright, no quote marks
-- `hr` on `line`; list markers at `0.875em`, muted
+- `hr` on `line`; ordered markers at text size, unordered ones drawn as a 6 px dot centred on the first line box — disc, circle, square by depth
 - headings: `h2`–`h4` only, in the reference's own anchor shape — the heading text _is_ the link, and a copy-link button fades in beside it. Laid out inline rather than as a flex row, and wrapped `pretty` rather than `balance`
-- tables: 14 px, a rule under every row on `line`, none under the last, 8/12 px cells, `first:ps-0`, 150 px minimum cells inside a horizontal scroll container
+- tables: 14 px, `min-width: 100%` so a narrow one fills the column, a rule under every row on `line`, none under the last, 8/12 px cells, `first:ps-0`, 150 px minimum cells inside a horizontal scroll container
 - code frame: `radius * 1.4`, `surface`, 4 px padding, `inset 0 0 0 1px border/64`; `pre` 16 px block padding, no scrollbar; `.line` 16 px inline padding; 14/17 mono; inside a panel the fill drops to `background` so the frame stays a distinct object
 - code title row: Fumadocs' shape without its language icon — a full-bleed bar ruled off from the code, 8/14 px padding, mono, muted, truncating. With no title the control is lifted out of flow to the top-right and the lines gain 56 px of end padding, which is the reference's own geometry
 - line numbers: sticky 64 px gutter, 24 px end padding, right-aligned, `code-number`
@@ -41,7 +41,7 @@ Everything the reference already answers is held identical across all three lang
 - tab strips: 32 px, `radius`, `surface`, `inset-ring border/64`, 2 px padding; triggers fill the strip's inner height, `radius * 0.8`, 16 px inline, 14/20 medium; the active one white in light and `muted` in dark, `inset-ring foreground/10`; panels open 8 px under the strip
 - body typography: the `.typeset-blog` preset at 16 px — 16/28, `--typeset-flow: 1em`. Every block in the language takes its leading margin from that one variable, so prose, lists, quotes, code, tables, Callouts, Cards, Files, Steps, Figures and tab groups all move together.
 
-The measure is the reference's own 16/28. Five things depart from it deliberately, all Levin's calls from review: `--typeset-flow` at `1em` against the reference's `1.25em`; list markers at `0.875em` against the reference's `text-xs`, which made them read small _and_ sit low; code at 14/17 against the reference's 14/20, because code is scanned in columns rather than read in lines; the code title as a ruled-off bar rather than a first line; and body headings wrapped `pretty` rather than `balance`, because balancing a two-line heading empties half the column.
+The measure is the reference's own 16/28. Five things depart from it deliberately, all Levin's calls from review: `--typeset-flow` at `1em` against the reference's `1.25em`; unordered markers drawn rather than set, because `::marker` takes a size and nothing else; code at 14/17 against the reference's 14/20, because code is scanned in columns rather than read in lines; the code title as a ruled-off bar rather than a first line; and body headings wrapped `pretty` rather than `balance`, because balancing a two-line heading empties half the column.
 
 Diff notation is the one held-constant item with no reference at all: the reference Blog never renders a diff, and a diff without colour is unreadable, so the conventional green/red plus a `+`/`-` gutter mark is used in all three rather than made an axis.
 
@@ -251,3 +251,13 @@ Four points, and three of them were my own regressions from Revision 3 rather th
 - **The checkbox** measures 0.4 px from the centre of its own label text, on the same rule.
 
 The lesson, for the specification as much as for me: `overflow-wrap: anywhere` and `break-word` are not interchangeable — one changes intrinsic sizing and one does not — and anything positioned shrink-to-fit will collapse under the first.
+
+## Revision 5 — Levin's fifth review
+
+Six points. Two were this stylesheet's own rules reaching markup they were never written for, which is the recurring hazard of styling a third-party renderer by selector.
+
+- **The Twoslash signature looked like a separate box from its documentation** because it _was_ one: `rendererRich` prints a hover signature as a bare `<code>` outside any `<pre>`, so the "inline code" rule dressed it as an inline chip — border, radius, fill — on top of the popup's own frame. `:not(.twoslash-popup-code, .twoslash-popup-docs code)` excludes it. Measured: no border, no radius, transparent.
+- **The error message wrapped early** for the same class of reason: an error line carries _both_ `twoslash-meta-line` and `twoslash-error-line`, so the 36 rem popup clamp was reaching it and breaking the message inside a 46 rem column. An error belongs to the code block rather than to a hover card, so it takes `max-width: none` and fills the frame. Measured 710 px wide against 707 px of content.
+- **Tables fill the column.** `.typeset-scroll` sets `width: max-content` so a wide table can scroll, and on its own that also let a three-column table sit at half the rail. `min-width: 100%` — the reference's `min-w-full` — is the other half of the pair. Measured: the three-column table is 734 px, the seven-column one still scrolls 734 → 1050.
+- **Unordered markers are drawn, not set.** `::marker` accepts a font size and nothing else — no `vertical-align`, no offset — so a small bullet is stuck wherever its glyph's baseline lands, which on a 28 px line box is low. Three passes at `font-size` could not fix that because size was never the axis the problem lived on. Each item paints its own 6 px dot at `top: calc(1lh / 2)`, measured 0.3 px from the text's optical middle, and `.typeset`'s depth vocabulary is kept: disc, circle, square. Ordered lists keep `::marker` at text size, because a number is read rather than seen.
+- **4 px between a heading and its copy control**, stated in pixels rather than `em` so it does not scale with the control's own font size.

@@ -133,8 +133,18 @@
   margin-inline-start: 0;
 }
 
-/* `code-inline`: bordered rather than filled, and it wraps rather than clips. */
-[data-article-language] :not(pre) > code {
+/*
+ * `code-inline`: bordered rather than filled, and it wraps rather than clips.
+ *
+ * The `:not()` list matters. Twoslash's rich renderer prints a hover signature
+ * as a bare `<code>` — not inside a `<pre>` — so an unqualified "inline code"
+ * rule dressed the signature up as an inline chip: its own border, its own
+ * radius, its own fill, sitting on top of the popup's. That is what made the
+ * signature and the documentation under it look like two unrelated boxes.
+ */
+[data-article-language]
+  :not(pre)
+  > code:not(.twoslash-popup-code, .twoslash-popup-docs code) {
   border: 1px solid var(--border);
   border-radius: calc(var(--radius) * 0.8);
   background-color: color-mix(in oklab, var(--muted) 50%, transparent);
@@ -158,15 +168,54 @@
 }
 
 /*
- * The reference's `prose-ul:marker:text-xs/none` is the cause of the marker
- * complaints, not the cure: a 12 px bullet on a 28 px line box is small *and*
- * sits low, because the shrunken glyph is still aligned to the full line box.
- * Full text size then read too heavy, so the marker sits between the two.
- * Deviation from the reference, on purpose.
+ * Ordered lists keep `::marker` at text size — a number is read, so it wants to
+ * match the prose it numbers.
  */
-[data-article-language] :is(ul, ol) > li::marker {
-  font-size: 0.875em;
+[data-article-language] ol > li::marker {
   color: var(--muted-foreground);
+}
+
+/*
+ * Unordered markers are drawn rather than set. `::marker` accepts a font size
+ * and nothing else — no `vertical-align`, no offset — so a 12 px bullet is
+ * stuck wherever the glyph's own baseline puts it, which on a 28 px line box is
+ * visibly low. Three passes at `font-size` could not fix that, because size was
+ * never the axis the problem lived on.
+ *
+ * So the list drops `list-style` and each item paints its own bullet, centred on
+ * the first line box with `top: calc(1lh / 2)`. Exact at any size or leading,
+ * and it keeps `.typeset`'s depth vocabulary: disc, then circle, then square.
+ */
+[data-article-language] ul:not(.contains-task-list) {
+  list-style: none;
+}
+
+[data-article-language] ul:not(.contains-task-list) > li {
+  position: relative;
+}
+
+[data-article-language] ul:not(.contains-task-list) > li::before {
+  content: "";
+  position: absolute;
+  left: -1em;
+  top: calc(1lh / 2);
+  width: 0.375em;
+  height: 0.375em;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background-color: var(--muted-foreground);
+}
+
+/* Depth 2 is hollow, depth 3 is square — `.typeset`'s own progression. */
+[data-article-language] ul ul:not(.contains-task-list) > li::before {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--muted-foreground);
+}
+
+[data-article-language] ul ul ul:not(.contains-task-list) > li::before {
+  border-radius: 0;
+  background-color: var(--muted-foreground);
+  box-shadow: none;
 }
 
 /* GFM task lists. The input is `disabled`, so it must not read as broken. */
@@ -219,7 +268,7 @@
   display: inline-flex;
   vertical-align: middle;
   margin-block-end: 0.2em;
-  margin-inline-start: 0.125em;
+  margin-inline-start: 4px;
 }
 
 /*
@@ -292,7 +341,14 @@
  * painted. Only cells can carry it. That is also why the first attempt at "lines
  * between each thing" came out as column rules and no row rules at all.
  */
+/*
+ * `min-width: 100%` is the reference's `min-w-full`, and it is what makes a
+ * narrow table fill the column instead of shrinking to its content.
+ * `.typeset-scroll` sets `width: max-content` so a wide table can overflow and
+ * scroll; on its own that also let a three-column table sit at half the rail.
+ */
 [data-article-language] table {
+  min-width: 100%;
   border-block-end: 0;
   font-size: 0.875em;
 }
@@ -615,9 +671,24 @@
  * natural width outright so only `max-width` clamps it.
  */
 [data-article-language] .twoslash .twoslash-popup-container,
-[data-article-language] .twoslash .twoslash-meta-line {
+[data-article-language]
+  .twoslash
+  .twoslash-meta-line:not(.twoslash-error-line) {
   width: max-content;
   max-width: min(36rem, calc(100vw - 2rem));
+}
+
+/*
+ * An error line carries both `twoslash-meta-line` and `twoslash-error-line`, so
+ * the popup clamp above was reaching it and breaking the message at 36 rem
+ * inside a 46 rem column. An error belongs to the code block, not to a hover
+ * card: it fills the frame and wraps only when it runs out of it.
+ */
+[data-article-language] .twoslash .twoslash-error-line {
+  width: auto;
+  max-width: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 /*
