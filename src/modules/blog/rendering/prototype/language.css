@@ -746,10 +746,18 @@
 /*
  * `^?` queries and error lines are block-level children of the code, so they
  * start at the code element's edge while every real line starts 16 px in.
+ *
+ * The end margin only matters for the error line, which is the one that fills
+ * the frame — a query popup is `max-content` and never reaches the far edge. Its
+ * absence read as a box with a left inset and none on the right.
  */
 [data-article-language] .twoslash .twoslash-meta-line,
 [data-article-language] .twoslash .twoslash-error-line {
   margin-inline-start: 1rem;
+}
+
+[data-article-language] .twoslash .twoslash-error-line {
+  margin-inline-end: 1rem;
 }
 
 [data-article-language]
