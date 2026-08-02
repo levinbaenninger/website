@@ -1,7 +1,6 @@
 import { GitHubIcon } from "@/modules/portfolio/icons/github-icon";
-
-import { LinkedIn } from "./icons/linkedin";
-import { X } from "./icons/x";
+import { LinkedInIcon } from "@/shared/ui/icons/linkedin-icon";
+import { XIcon } from "@/shared/ui/icons/x-icon";
 
 export interface SocialProfile {
   name: string;
@@ -23,14 +22,14 @@ export const SOCIAL_PROFILES = [
   GITHUB_PROFILE,
   {
     name: "x",
-    icon: <X />,
+    icon: <XIcon />,
     title: "X",
     handle: "@levinbaenninger",
     href: "https://x.com/levinbaenninger",
   },
   {
     name: "linkedin",
-    icon: <LinkedIn />,
+    icon: <LinkedInIcon />,
     title: "LinkedIn",
     handle: "levinbaenninger",
     href: "https://linkedin.com/in/levinbaenninger",

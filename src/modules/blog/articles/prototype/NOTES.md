@@ -161,7 +161,7 @@ The one thing left unequal is the title, which has no vertical padding at all an
 
 **Share menu marks.** The trigger was `Share2Icon`, the three connected dots; it is now lucide's `ShareIcon`, the box with the arrow out of it. Both social items used that same generic mark; each target now carries its own, so the menu and the dialog stay one projection instead of drifting.
 
-lucide ships no brand marks and the repository's own X and LinkedIn glyphs live in `src/modules/portfolio/about/social/icons/`, which the lint boundary forbids the Blog module from importing. Both are copied verbatim into `brand-icons.tsx` **as a prototype-local workaround**. The specification should promote them to `src/shared/ui/icons/` rather than duplicate them.
+lucide ships no brand marks. The repository's X and LinkedIn glyphs now live behind product-neutral contracts in `src/shared/ui/icons/`, so Portfolio and this Blog prototype consume the same marks without a cross-module dependency.
 
 ### Measured while checking, no change needed
 

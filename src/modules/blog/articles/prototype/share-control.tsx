@@ -21,6 +21,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/shared/ui/dialog";
+import { LinkedInIcon } from "@/shared/ui/icons/linkedin-icon";
+import { XIcon } from "@/shared/ui/icons/x-icon";
 import {
   InputGroup,
   InputGroupAddon,
@@ -28,7 +30,6 @@ import {
 } from "@/shared/ui/input-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 
-import { LinkedInIcon, XIcon } from "./brand-icons";
 import type { ShareSurface } from "./params";
 
 interface ShareTarget {

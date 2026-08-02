@@ -9,7 +9,7 @@ interface BlogViewProps {
 }
 
 export const BlogView = ({ articles, tags }: BlogViewProps) => (
-  <main>
+  <div>
     <h1>Blog</h1>
     {tags.length > 0 ? (
       <ul aria-label="Tags">
@@ -32,5 +32,5 @@ export const BlogView = ({ articles, tags }: BlogViewProps) => (
         ))}
       </ul>
     )}
-  </main>
+  </div>
 );
