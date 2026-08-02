@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vite-plus/test";
 
@@ -28,6 +29,14 @@ import {
   ArticleTabs,
 } from "./interactions";
 import { getArticleMdxComponents } from "./mdx-components";
+
+const ServerTabSlot = (props: ComponentProps<typeof ArticleTab>) => (
+  <ArticleTab {...props} />
+);
+
+const ServerAccordionSlot = (
+  props: ComponentProps<typeof ArticleAccordionItem>
+) => <ArticleAccordionItem {...props} />;
 
 describe("semantic Article components", () => {
   test("owns every approved semantic Markdown mapping", () => {
@@ -162,19 +171,19 @@ describe("semantic Article components", () => {
     expect(output).toContain("<kbd");
   });
 
-  test("server-renders every interactive panel while preserving defaults", () => {
+  test("server-renders opaque active and inactive panel slots", () => {
     const markup = renderToStaticMarkup(
       <ArticleTabs panels='[{"label":"First","value":"tab-0"},{"label":"Second","value":"tab-1"}]'>
-        <ArticleTab value="tab-0">
+        <ServerTabSlot value="tab-0">
           <h2 id="visible-heading">Visible heading</h2>
-        </ArticleTab>
-        <ArticleTab value="tab-1">
+        </ServerTabSlot>
+        <ServerTabSlot value="tab-1">
           <ArticleAccordion panels='[{"label":"Closed","value":"accordion-item-0","defaultOpen":false}]'>
-            <ArticleAccordionItem value="accordion-item-0">
+            <ServerAccordionSlot value="accordion-item-0">
               <h2 id="hidden-heading">Hidden heading</h2>
-            </ArticleAccordionItem>
+            </ServerAccordionSlot>
           </ArticleAccordion>
-        </ArticleTab>
+        </ServerTabSlot>
       </ArticleTabs>
     );
 
@@ -186,6 +195,7 @@ describe("semantic Article components", () => {
     expect(markup).toMatch(
       /<article-panel(?=[^>]*role="region")(?=[^>]*hidden="until-found")(?=[^>]*data-article-panel="accordion")[^>]*>/u
     );
+    expect(markup).not.toMatch(/<h[1-6][^>]*>Closed/u);
   });
 
   test("renders clean code copy controls and line-number metadata", () => {

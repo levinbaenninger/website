@@ -12,6 +12,11 @@ import {
   ArticleTab,
   ArticleTabs,
 } from "@/modules/blog/rendering/interactions";
+import {
+  createArticleAccordionPanels,
+  createArticleTabPanels,
+  serializeArticlePanels,
+} from "@/modules/blog/rendering/panel-contract";
 
 import type { ResolvedBlock } from "./fixtures";
 
@@ -48,21 +53,22 @@ const Blocks = ({ blocks }: { blocks: readonly ResolvedBlock[] }) => (
       }
 
       if (block.kind === "accordion") {
-        const panels = block.items.map((item, itemIndex) => ({
-          defaultOpen: false,
-          label: item.title,
-          value: `accordion-item-${itemIndex}`,
-        }));
+        const panels = createArticleAccordionPanels(
+          block.items.map((item) => ({
+            defaultOpen: false,
+            label: item.title,
+          }))
+        );
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: fixture order is stable
           <ArticleAccordion
             key={`accordion-${index}`}
-            panels={JSON.stringify(panels)}
+            panels={serializeArticlePanels(panels)}
           >
             {block.items.map((item, itemIndex) => (
               <ArticleAccordionItem
                 key={item.title}
-                value={`accordion-item-${itemIndex}`}
+                value={panels[itemIndex]?.value ?? ""}
               >
                 <Blocks blocks={item.blocks} />
               </ArticleAccordionItem>
@@ -72,15 +78,17 @@ const Blocks = ({ blocks }: { blocks: readonly ResolvedBlock[] }) => (
       }
 
       if (block.kind === "tabs") {
-        const panels = block.tabs.map((tab, tabIndex) => ({
-          label: tab.title,
-          value: `tab-${tabIndex}`,
-        }));
+        const panels = createArticleTabPanels(
+          block.tabs.map((tab) => ({ label: tab.title }))
+        );
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: fixture order is stable
-          <ArticleTabs key={`tabs-${index}`} panels={JSON.stringify(panels)}>
+          <ArticleTabs
+            key={`tabs-${index}`}
+            panels={serializeArticlePanels(panels)}
+          >
             {block.tabs.map((tab, tabIndex) => (
-              <ArticleTab key={tab.title} value={`tab-${tabIndex}`}>
+              <ArticleTab key={tab.title} value={panels[tabIndex]?.value ?? ""}>
                 <Blocks blocks={tab.blocks} />
               </ArticleTab>
             ))}

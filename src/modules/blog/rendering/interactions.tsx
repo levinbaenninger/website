@@ -191,10 +191,12 @@ export const ArticleAccordionItem = ({
 
   return (
     <AccordionPrimitive.Item value={value}>
-      <AccordionPrimitive.Header>
-        <AccordionPrimitive.Trigger data-article-accordion-trigger>
-          {panel.label}
-        </AccordionPrimitive.Trigger>
+      <AccordionPrimitive.Header asChild>
+        <div data-article-accordion-header>
+          <AccordionPrimitive.Trigger data-article-accordion-trigger>
+            {panel.label}
+          </AccordionPrimitive.Trigger>
+        </div>
       </AccordionPrimitive.Header>
       <AccordionPrimitive.Content asChild forceMount>
         <article-panel

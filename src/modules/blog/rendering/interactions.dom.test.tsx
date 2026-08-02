@@ -133,14 +133,20 @@ describe("Article interactions", () => {
 
   test("synchronizes until-found reveals with panel state", async () => {
     render(
-      <ArticleAccordion panels='[{"label":"Open","value":"accordion-item-0","defaultOpen":true},{"label":"Found","value":"accordion-item-1","defaultOpen":false}]'>
-        <ArticleAccordionItem value="accordion-item-0">
-          Open body
-        </ArticleAccordionItem>
-        <ArticleAccordionItem value="accordion-item-1">
-          Found body
-        </ArticleAccordionItem>
-      </ArticleAccordion>
+      <>
+        <ArticleAccordion panels='[{"label":"Open","value":"accordion-item-0","defaultOpen":true},{"label":"Found","value":"accordion-item-1","defaultOpen":false}]'>
+          <ArticleAccordionItem value="accordion-item-0">
+            Open body
+          </ArticleAccordionItem>
+          <ArticleAccordionItem value="accordion-item-1">
+            Found body
+          </ArticleAccordionItem>
+        </ArticleAccordion>
+        <ArticleTabs panels='[{"label":"Visible","value":"tab-0"},{"label":"Found","value":"tab-1"}]'>
+          <ArticleTab value="tab-0">Visible body</ArticleTab>
+          <ArticleTab value="tab-1">Found tab body</ArticleTab>
+        </ArticleTabs>
+      </>
     );
     const panels = document.querySelectorAll<HTMLElement>(
       "[data-article-panel='accordion']"
@@ -153,6 +159,17 @@ describe("Article interactions", () => {
       expect(panels[1]?.hidden).toBe(false);
     });
     expect(panels[0]?.hidden).toBe(false);
+
+    const tabPanels = document.querySelectorAll<HTMLElement>(
+      "[data-article-panel='tab']"
+    );
+    expect(tabPanels[1]?.getAttribute("hidden")).toBe("until-found");
+    tabPanels[1]?.dispatchEvent(new Event("beforematch"));
+
+    await waitFor(() => {
+      expect(tabPanels[1]?.hidden).toBe(false);
+    });
+    expect(tabPanels[0]?.hidden).toBe(true);
   });
 
   test("reveals a hash target during initial navigation", async () => {
@@ -182,14 +199,24 @@ describe("Article interactions", () => {
       <ArticleTabs panels='[{"label":"Visible","value":"tab-0"},{"label":"Hidden","value":"tab-1"}]'>
         <ArticleTab value="tab-0">Visible</ArticleTab>
         <ArticleTab value="tab-1">
-          <ArticleAccordion panels='[{"label":"Closed","value":"accordion-item-0","defaultOpen":false}]'>
+          <ArticleAccordion panels='[{"label":"Unrelated","value":"accordion-item-0","defaultOpen":true},{"label":"Closed","value":"accordion-item-1","defaultOpen":false}]'>
             <ArticleAccordionItem value="accordion-item-0">
+              Unrelated open body
+            </ArticleAccordionItem>
+            <ArticleAccordionItem value="accordion-item-1">
               <h2 id="deep-heading">Deep heading</h2>
             </ArticleAccordionItem>
           </ArticleAccordion>
         </ArticleTab>
       </ArticleTabs>
     );
+    const revealedControls: string[] = [];
+    const recordReveal = (event: Event) => {
+      if (event.target instanceof HTMLButtonElement) {
+        revealedControls.push(event.target.textContent ?? "");
+      }
+    };
+    document.addEventListener("click", recordReveal);
     scrollIntoViewMock.mockClear();
     scrollIntoViewMock.mockImplementation(() => {
       expect(
@@ -197,10 +224,11 @@ describe("Article interactions", () => {
           "[data-article-panel='tab']:has(#deep-heading)"
         )?.hidden
       ).toBe(false);
-      expect(
-        container.querySelector<HTMLElement>("[data-article-panel='accordion']")
-          ?.hidden
-      ).toBe(false);
+      const accordionPanels = container.querySelectorAll<HTMLElement>(
+        "[data-article-panel='accordion']"
+      );
+      expect(accordionPanels[0]?.hidden).toBe(false);
+      expect(accordionPanels[1]?.hidden).toBe(false);
     });
 
     window.history.replaceState(null, "", "#deep-heading");
@@ -209,15 +237,18 @@ describe("Article interactions", () => {
     await waitFor(() => {
       expect(scrollIntoViewMock).toHaveBeenCalled();
     });
+    document.removeEventListener("click", recordReveal);
     expect(
       container.querySelector<HTMLElement>(
         "[data-article-panel='tab']:has(#deep-heading)"
       )?.hidden
     ).toBe(false);
-    expect(
-      container.querySelector<HTMLElement>("[data-article-panel='accordion']")
-        ?.hidden
-    ).toBe(false);
+    const accordionPanels = container.querySelectorAll<HTMLElement>(
+      "[data-article-panel='accordion']"
+    );
+    expect(accordionPanels[0]?.hidden).toBe(false);
+    expect(accordionPanels[1]?.hidden).toBe(false);
+    expect(revealedControls).toEqual(["Hidden", "Closed"]);
     expect(scrollIntoViewMock).toHaveBeenCalled();
   });
 });

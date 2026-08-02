@@ -25,6 +25,30 @@ const hasUniqueValues = (
 const accordionKeys = new Set(["defaultOpen", "label", "value"]);
 const tabKeys = new Set(["iconSlot", "label", "value"]);
 
+export const createArticleAccordionPanels = (
+  items: readonly {
+    readonly defaultOpen: boolean;
+    readonly label: string;
+  }[]
+): readonly ArticleAccordionPanel[] =>
+  items.map(({ defaultOpen, label }, index) => ({
+    defaultOpen,
+    label,
+    value: `accordion-item-${index}`,
+  }));
+
+export const createArticleTabPanels = (
+  tabs: readonly {
+    readonly iconSlot?: string;
+    readonly label: string;
+  }[]
+): readonly ArticleTabPanel[] =>
+  tabs.map(({ iconSlot, label }, index) => ({
+    ...(iconSlot === undefined ? {} : { iconSlot }),
+    label,
+    value: `tab-${index}`,
+  }));
+
 export const serializeArticlePanels = (
   panels: readonly (ArticleAccordionPanel | ArticleTabPanel)[]
 ): string => JSON.stringify(panels);

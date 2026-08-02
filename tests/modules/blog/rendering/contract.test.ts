@@ -1,4 +1,5 @@
 import { compile, evaluate } from "@mdx-js/mdx";
+import type { MDXComponents } from "mdx/types";
 import { createElement } from "react";
 import type { ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -9,6 +10,10 @@ import type { ArticleCompilationFacts } from "@/modules/blog/articles/facts.ts";
 import type { ArticleCodeThemes } from "@/modules/blog/rendering/code-theme-contract.ts";
 import { loadArticleMdxProcessorOptions } from "@/modules/blog/rendering/compiler.ts";
 import { ArticleCodeBlock } from "@/modules/blog/rendering/components.tsx";
+import {
+  ArticleAccordion,
+  ArticleTabs,
+} from "@/modules/blog/rendering/interactions.tsx";
 import { getArticleMdxComponents } from "@/modules/blog/rendering/mdx-components.ts";
 
 const FIXTURE_CODE_THEMES: ArticleCodeThemes = {
@@ -25,7 +30,6 @@ const compileArticle = async (
   source: string,
   themes: ArticleCodeThemes = FIXTURE_CODE_THEMES
 ): Promise<{
-  readonly compiledSource: string;
   readonly facts: ArticleCompilationFacts;
 }> => {
   const file = await compile(
@@ -36,12 +40,13 @@ const compileArticle = async (
   if (facts === undefined) {
     throw new TypeError("Expected Article compilation to expose facts.");
   }
-  return { compiledSource: String(file), facts };
+  return { facts };
 };
 
 const renderArticle = async (
   source: string,
-  themes: ArticleCodeThemes = FIXTURE_CODE_THEMES
+  themes: ArticleCodeThemes = FIXTURE_CODE_THEMES,
+  componentOverrides: MDXComponents = {}
 ): Promise<{
   readonly codeBlocks: readonly ComponentProps<typeof ArticleCodeBlock>[];
   readonly facts: ArticleCompilationFacts;
@@ -70,6 +75,7 @@ const renderArticle = async (
       createElement(article.default, {
         components: {
           ...getArticleMdxComponents(),
+          ...componentOverrides,
           pre: RecordingCodeBlock,
         },
       })
@@ -83,8 +89,21 @@ afterEach(() => {
 
 describe("Article compilation contract", () => {
   test("lowers authored panels into stable compiler-owned models", async () => {
-    const { compiledSource } =
-      await compileArticle(`import { RocketIcon } from "lucide-react"
+    let accordionProps: ComponentProps<typeof ArticleAccordion> | undefined;
+    let tabsProps: ComponentProps<typeof ArticleTabs> | undefined;
+    const RecordingAccordion = (
+      props: ComponentProps<typeof ArticleAccordion>
+    ) => {
+      accordionProps = props;
+      return createElement(ArticleAccordion, props);
+    };
+    const RecordingTabs = (props: ComponentProps<typeof ArticleTabs>) => {
+      tabsProps = props;
+      return createElement(ArticleTabs, props);
+    };
+
+    const article = await renderArticle(
+      `import { RocketIcon } from "lucide-react"
 
 <Accordion>
   <AccordionItem title="First" defaultOpen>First body</AccordionItem>
@@ -94,17 +113,20 @@ describe("Article compilation contract", () => {
 <Tabs>
   <Tab title="Alpha" icon={<RocketIcon />}>Alpha body</Tab>
   <Tab title="Beta">Beta body</Tab>
-</Tabs>`);
+</Tabs>`,
+      FIXTURE_CODE_THEMES,
+      { Accordion: RecordingAccordion, Tabs: RecordingTabs }
+    );
 
-    expect(compiledSource).toContain(
-      'panels: "[{\\"defaultOpen\\":true,\\"label\\":\\"First\\",\\"value\\":\\"accordion-item-0\\"},{\\"defaultOpen\\":false,\\"label\\":\\"Second\\",\\"value\\":\\"accordion-item-1\\"}]"'
-    );
-    expect(compiledSource).toContain('value: "accordion-item-0"');
-    expect(compiledSource).toContain(
-      'panels: "[{\\"iconSlot\\":\\"tabIcon0\\",\\"label\\":\\"Alpha\\",\\"value\\":\\"tab-0\\"},{\\"label\\":\\"Beta\\",\\"value\\":\\"tab-1\\"}]"'
-    );
-    expect(compiledSource).toContain("tabIcon0: _jsx(RocketIcon, {})");
-    expect(compiledSource).toContain('value: "tab-1"');
+    expect(JSON.parse(accordionProps?.panels ?? "null")).toEqual([
+      { defaultOpen: true, label: "First", value: "accordion-item-0" },
+      { defaultOpen: false, label: "Second", value: "accordion-item-1" },
+    ]);
+    expect(JSON.parse(tabsProps?.panels ?? "null")).toEqual([
+      { iconSlot: "tabIcon0", label: "Alpha", value: "tab-0" },
+      { label: "Beta", value: "tab-1" },
+    ]);
+    expect(article.markup).toContain('class="lucide lucide-rocket"');
   });
 
   test("compiles semantic prose and deterministic private facts", async () => {
