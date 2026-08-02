@@ -8,12 +8,10 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const { Content } = article;
 
   return (
-    <main>
-      <article>
-        {article.status === "draft" ? <p>Draft</p> : null}
-        <h1>{article.title}</h1>
-        <Content />
-      </article>
-    </main>
+    <article>
+      {article.status === "draft" ? <p>Draft</p> : null}
+      <h1>{article.title}</h1>
+      <Content />
+    </article>
   );
 };
