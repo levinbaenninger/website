@@ -173,15 +173,26 @@ Measured at a real 390 px viewport (Revision 2 — the harness could not resize 
 
 `src/app/blog/[slug]/page.tsx` (a `NODE_ENV`-gated branch on `?language=`, ahead of #33's `?variant=` branch; `searchParams` is still only awaited outside production so the real route stays statically prerendered) and `src/modules/blog/index.ts` (two exports, needed because the repo lint rule forbids app code from reaching into a module's internals). Both are marked `PROTOTYPE — issue #34` and go away with this directory.
 
-## What Levin needs to decide
+## Accepted
 
-1. Which language — A, B or C — i.e. whether the constructs the reference never had to answer for get its one surface, the shell's rules, or semantic colour.
-2. `anchor` — the reference's whole-heading link, a leading `#`, or no anchor; and whether the copy-link control may be hover-only given finding 6.
-3. `copy` — hover (the reference), always, or coarse-pointer-and-focus, given finding 4.
-4. Whether `Callout.kind` earns colour (finding 7), independently of 1 — C's tints can be grafted onto A.
-5. Whether findings 1, 2, 3, 9, 10 and 13 are folded into the #37 specification or split out as infrastructure defects against `interactions.tsx`, `code.ts` and `contract.ts`. Finding 1 in particular is shipping-broken today, not a design question.
-6. Whether `--typeset-flow: 1em` holds at Article length (Revision 1) — it is the one number that moves every block at once.
-7. **`h5` and `h6` leave the language** (Revision 2). Decided, not open — but it reverses a decision from an earlier grilling session, so #37 has to carry it explicitly: `contract.ts` should reject depth > 4 the way it already rejects `h1`, and `ArticleHeadingFact["depth"]` narrows from `2 | 3 | 4 | 5 | 6` to `2 | 3 | 4`.
+```
+?language=c&specimen=full&anchor=wrap&copy=hover&motion=system
+```
+
+**C — Semantic tint.** Callout kinds carry their conventional colour, file-type marks are coloured, and Cards and Accordion items react to the pointer. This is the deliberate deviation, chosen knowingly: the reference carries no colour in prose anywhere. Everything C does sits on top of the held-constant set, so what it changes is exactly the set of constructs the reference never had to answer for — nothing it _did_ answer moves.
+
+**`copy=hover`, the reference's own behaviour — and it overrides #31's acceptance checklist**, which says no copy or heading-link control may be hover-only. That is a decision, not an oversight; findings 4 and 6 are the argument against it and were on the table. #38 owns cross-cutting quality contracts and should carry the override explicitly rather than rediscover the conflict.
+
+`anchor=wrap` is the reference's shape — the heading text is the link, with the copy-link control beside it — and is what every review round was conducted against.
+
+### What #37 and #38 inherit
+
+1. **The language: C.** Its rules are the `[data-article-language="c"]` block of `language.css`; the rest of that file is the held-constant set and belongs to the specification whichever language had won.
+2. **`copy=hover` overrides #31's checklist**, as above.
+3. **`h5` and `h6` leave the language** (Revision 2). Reverses an earlier grilling decision, so `contract.ts` should reject depth > 4 the way it already rejects `h1`, and `ArticleHeadingFact["depth"]` narrows from `2 | 3 | 4 | 5 | 6` to `2 | 3 | 4`.
+4. **Nested tabbed code should group, not error** (finding 9, Revision 3): the grouping pass walks into `Steps`, `Tabs` and `Accordion` children and brings its two diagnostics with it.
+5. **`--typeset-flow: 1em`** — the one number that moves every block at once — and the four other deliberate departures from the reference listed under "What is _not_ variable".
+6. **Findings 1, 2, 3, 9, 10 and 13 are infrastructure, not presentation.** Whether they become part of #37 or separate tickets against `interactions.tsx`, `code.ts` and `contract.ts` is an open call — but finding 1 is shipping-broken on `main` today and is not a design question at all.
 
 ## Revision 1 — Levin's first review
 
