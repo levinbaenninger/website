@@ -29,19 +29,19 @@ Everything the reference already answers is held identical across all three lang
 - links: body weight, 1 px underline at 3 px offset, `currentColor / 30%` → `currentColor` on hover
 - inline code: 1 px border, `muted / 50%`, `radius * 0.8`, 14 px, wraps rather than clips
 - blockquote: one 1 px `line` rule, muted, upright, no quote marks
-- `hr` on `line`; `ul` markers at `0.75em`, muted, sharing the text's line box
-- headings: the reference's own anchor shape — the heading text _is_ the link, and a copy-link button fades in beside it
-- tables: 14 px, a rule between every cell on `line`, none under the last row or after the last column, 8/12 px cells, `first:ps-0`, 150 px minimum cells inside a horizontal scroll container
-- code frame: `radius * 1.4`, `surface`, 4 px padding, `inset 0 0 0 1px border/64`; `pre` 16 px block padding, no scrollbar; `.line` 16 px inline padding; 14/18 mono; inside a panel the fill drops to `background` so the frame stays a distinct object
+- `hr` on `line`; list markers at text size, muted
+- headings: `h2`–`h4` only, in the reference's own anchor shape — the heading text _is_ the link, and a copy-link button fades in beside it
+- tables: 14 px, a rule under every row on `line`, none under the last, 8/12 px cells, `first:ps-0`, 150 px minimum cells inside a horizontal scroll container
+- code frame: `radius * 1.4`, `surface`, 4 px padding, `inset 0 0 0 1px border/64`; `pre` 16 px block padding, no scrollbar; `.line` 16 px inline padding; 14/17 mono; inside a panel the fill drops to `background` so the frame stays a distinct object
 - code title row: 10/12 px padding, mono, muted, truncating; with no title the control is lifted out of flow to the top-right and the lines gain 56 px of end padding, which is the reference's own geometry
 - line numbers: sticky 64 px gutter, 24 px end padding, right-aligned, `code-number`
 - highlight / word-highlight on `code-highlight`; focus blurs everything else 2 px and restores on hover
 - Steps: 28 px indent with a `line` rule at `md`, 40 px and no rule below it; counter 24 px, `radius * 1.4`, `muted`, 13/24 regular
 - Callout: the reference's one surface — `radius * 1.4`, `surface`, `inset-ring border/64`, no border; the mark is `1.15em` square, 12 px from the text, optically centred on the title's line box
-- tab strips: 32 px, `radius`, `surface`, `inset-ring border/64`, 2 px padding; triggers `radius * 0.8`, 4/16 px, 14 px medium; the active one white in light and `muted` in dark, `inset-ring foreground/10`
-- body typography: the `.typeset-blog` preset — 14 px, 1.75 leading, `--typeset-flow: 1em`. Every block in the language takes its leading margin from that one variable, so prose, lists, quotes, code, tables, Callouts, Cards, Files, Steps, Figures and tab groups all move together.
+- tab strips: 32 px, `radius`, `surface`, `inset-ring border/64`, 2 px padding; triggers fill the strip's inner height, `radius * 0.8`, 16 px inline, 14/20 medium; the active one white in light and `muted` in dark, `inset-ring foreground/10`; panels open 8 px under the strip
+- body typography: the `.typeset-blog` preset at 16 px — 16/28, `--typeset-flow: 1em`. Every block in the language takes its leading margin from that one variable, so prose, lists, quotes, code, tables, Callouts, Cards, Files, Steps, Figures and tab groups all move together.
 
-Two of those are deliberate departures from the reference rather than transpositions, and both are Levin's calls from the first review: the typeset preset (the reference sets 16/28 and `1.25em` of flow) and the table's column rules (the reference draws row rules only, which stops working on the seven-column table in `stress.mdx`). Code leading is a third: 14/18 against the reference's 14/20, because code is scanned in columns rather than read in lines.
+The measure is the reference's own 16/28. Three things depart from it deliberately, all Levin's calls from review: `--typeset-flow` at `1em` against the reference's `1.25em`; list markers at text size against the reference's `text-xs` (which is what made them read small _and_ sit low); and code at 14/17 against the reference's 14/20, because code is scanned in columns rather than read in lines.
 
 Diff notation is the one held-constant item with no reference at all: the reference Blog never renders a diff, and a diff without colour is unreadable, so the conventional green/red plus a `+`/`-` gutter mark is used in all three rather than made an axis.
 
@@ -163,7 +163,7 @@ Measured in dark: all three languages, on a page loaded with `localStorage.theme
 
 One thing worth knowing about B in dark: its rules resolve to `oklab(0.271 … / 0.424)` over an `L≈2.5` background, i.e. an effective lightness around 13. Visible, but faint. That is `--line` behaving exactly as the shell defines it and the reference defines it, not a defect — but B is the language that leans on `--line` for everything, so it is the one where the token's dark weight actually decides legibility.
 
-Not measured: **the `md` and `lg` breakpoint branches at a real 390 px viewport.** The automation harness in this session could not resize the browser. What was measured instead is a 327 px prose column at a 1280 px viewport, which exercises wrapping and overflow — nothing escapes the rail, code and tables scroll, tab strips fit — but leaves the Steps `md:` rule, the Cards `sm:` grid and the `lg:` table-of-contents switch unchecked. **Worth a look at 390 px before deciding.**
+Measured at a real 390 px viewport (Revision 2 — the harness could not resize the browser in the earlier sessions, and can now). The rail is 329 px, which matches #31's live measurement of the reference. Both specimens: Steps drop to a 40 px indent with the rule off, Cards fall to one column, the inline "On this page" card appears and the gutter minimap goes, the seven-column table scrolls 329 → 1050, five code blocks scroll, both tab strips fit without scrolling, the Figure fills the column, and **nothing escapes the rail** — no element's box crosses either edge outside a scroll container.
 
 `motion=reduced` reaches CSS transitions only. The shared `CopyButton` animates through `motion/react` and follows the real media query, so its reduced branch needs the OS setting.
 
@@ -178,7 +178,8 @@ Not measured: **the `md` and `lg` breakpoint branches at a real 390 px viewport.
 3. `copy` — hover (the reference), always, or coarse-pointer-and-focus, given finding 4.
 4. Whether `Callout.kind` earns colour (finding 7), independently of 1 — C's tints can be grafted onto A.
 5. Whether findings 1, 2, 3, 9, 10 and 13 are folded into the #37 specification or split out as infrastructure defects against `interactions.tsx`, `code.ts` and `contract.ts`. Finding 1 in particular is shipping-broken today, not a design question.
-6. Whether the `.typeset-blog` preset holds at Article length (Revision 1) — it is the one change that moves everything at once, and it is a departure from the reference rather than a transposition.
+6. Whether `--typeset-flow: 1em` holds at Article length (Revision 1) — it is the one number that moves every block at once.
+7. **`h5` and `h6` leave the language** (Revision 2). Decided, not open — but it reverses a decision from an earlier grilling session, so #37 has to carry it explicitly: `contract.ts` should reject depth > 4 the way it already rejects `h1`, and `ArticleHeadingFact["depth"]` narrows from `2 | 3 | 4 | 5 | 6` to `2 | 3 | 4`.
 
 ## Revision 1 — Levin's first review
 
@@ -202,3 +203,24 @@ Thirteen points of feedback. Everything below is applied to **all three language
 - **A `Tabs` directly after an `Accordion` has a gap** (finding 13).
 
 **Not applied, and worth saying why:** the `script` tag warning in `ThemeProvider` comes from `next-themes` writing its blocking theme script, and predates this prototype — it appears on every route.
+
+## Revision 2 — Levin's second review
+
+Eleven points. Same rule as Revision 1: none of it is an axis, so all of it lands in the held-constant set.
+
+**The language decision.** `h5` and `h6` are out. Both specimens stop at `h4`, the prototype no longer maps them, and the table of contents' depth handling — which only ever styled 2, 3 and 4 — is now complete rather than incidentally short. This is what "the minimap shows 5 and 6 deep but on the first level" was: depths past 4 fell through to the base line width, so a `h6` drew the same 24 px line as an `h2`. Recorded as decision 7 above because it reverses an earlier grilling decision.
+
+**One question, answered rather than fixed.** The two stacked code blocks under Step 2 of `stress.mdx` are not a mistake in the specimen — they are finding 9 on screen. The fences are authored as one tabbed run, exactly like the working pair in `specimen.mdx`, and nested inside a `Step` the grouping pass never reaches them, so the labels are discarded and the tabs never form. The Step is now titled after the defect so the page says so without needing NOTES open.
+
+**Applied:**
+
+- **The active tab spilled out of its strip.** The trigger had no stated height, so it inherited the body's 1.75 leading and came out 32.5 px tall inside a 28 px slot. It now fills the strip's inner height outright, at 14/20.
+- **Twoslash popups overflowed the page.** An inferred `Map.get` signature is wider than the rail. Popups are bounded to `min(36rem, 100vw − 2rem)` and their code wraps.
+- **16 px body.** The measure is now the reference's own 16/28; only the flow still departs from it.
+- **Tables draw row rules, not column rules.** The first cut put the border on `tr`, and `.typeset` sets `border-collapse: separate`, where a row border is never painted — so what appeared was column rules and no row rules at all. Cells carry it now.
+- **Code leading is 14/17**, down from 14/18.
+- **The external Card carries the mark**, in its top-right corner rather than trailing the title.
+- **A `Tab` holding a single sentence had no top padding.** MDX leaves a bare text node for one inline sentence, so a rule on `> :first-child` reached nothing. The gap is the panel's padding now.
+- **List markers and checkboxes, again.** The cause was the reference's own `marker:text-xs/none`: a 12 px bullet on a 28 px line box reads small _and_ sits low, because the shrunken glyph is still aligned to the full line box. The override is gone — markers take the text's size, muted. Checkboxes are `1em` and `vertical-align: middle`, which is independent of the leading.
+
+**Verified this round at a real 390 px viewport for the first time** — see "What was verified".

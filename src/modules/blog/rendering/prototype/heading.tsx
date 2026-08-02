@@ -15,7 +15,8 @@ import type { ComponentPropsWithoutRef } from "react";
 import { HeadingCopyLink } from "./heading-copy";
 import type { HeadingAnchor } from "./params";
 
-type HeadingLevel = "h2" | "h3" | "h4" | "h5" | "h6";
+// The language stops at h4; see NOTES, Revision 2.
+type HeadingLevel = "h2" | "h3" | "h4";
 
 export const createPrototypeHeading = (
   level: HeadingLevel,

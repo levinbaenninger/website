@@ -23,11 +23,11 @@ export const createPrototypeMdxComponents = (
   anchor: HeadingAnchor
 ): MDXComponents => ({
   ...getArticleMdxComponents(),
+  // h5 and h6 are deliberately not overridden: the language now stops at h4.
+  // See NOTES, Revision 2.
   h2: createPrototypeHeading("h2", anchor),
   h3: createPrototypeHeading("h3", anchor),
   h4: createPrototypeHeading("h4", anchor),
-  h5: createPrototypeHeading("h5", anchor),
-  h6: createPrototypeHeading("h6", anchor),
   pre: PrototypeCodeBlock,
   table: PrototypeTable,
 });

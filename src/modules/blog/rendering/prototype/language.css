@@ -51,31 +51,23 @@
 
 /*
  * The `.typeset-blog` preset Levin configured on shadcn, applied to the Article
- * body. `--typeset-flow` is what "a list has too much spacing at the top" was
- * about: the stock 1.25em is the distance between every block, so dropping it to
- * 1em tightens lists, code blocks, quotes and tables in one move.
+ * body, at 16 px. `--typeset-flow` is what "a list has too much spacing at the
+ * top" was about: the stock 1.25em is the distance between *every* block, so
+ * dropping it to 1em tightens lists, code blocks, quotes and tables in one move.
  *
- * This is an intentional deviation from the reference, which sets 16/28. At
- * 14 px × 1.75 the body is 14/24.5. The headings stay at the reference's
- * absolute sizes (20 / 18 / 16), so the ratio between prose and headings widens
- * — that is the thing to look at when judging it.
+ * At 16 px × 1.75 the body is 16/28 — the reference's own measure — so the only
+ * departure left is the flow, which the reference sets at 1.25em.
  *
  * `.typeset` applies its own font size to the column, so the scope has to
  * restate it rather than only setting the variable.
  */
 [data-article-language] {
-  --typeset-size: 14px;
+  --typeset-size: 16px;
   --typeset-leading: 1.75;
   --typeset-flow: 1em;
 
-  font-size: calc(var(--typeset-size) * 1.125);
+  font-size: var(--typeset-size);
   line-height: var(--typeset-leading);
-}
-
-@media (min-width: 48rem) {
-  [data-article-language] {
-    font-size: var(--typeset-size);
-  }
 }
 
 /* --------------------------------------------------------------- PROSE --- */
@@ -122,9 +114,23 @@
   opacity: 1;
 }
 
-/* Not on a Card, which is a whole block rather than a run of text. */
-[data-article-language] [data-slot="article-cards"] > a::after {
-  content: none;
+/*
+ * A Card is a block, not a run of text, so the mark goes to its top-right corner
+ * rather than trailing the title.
+ */
+[data-article-language] [data-slot="article-cards"] > a[target="_blank"] {
+  position: relative;
+}
+
+[data-article-language]
+  [data-slot="article-cards"]
+  > a[target="_blank"]::after {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-inline-start: 0;
 }
 
 /* `code-inline`: bordered rather than filled, and it wraps rather than clips. */
@@ -152,14 +158,13 @@
 }
 
 /*
- * `prose-ul:marker:text-xs/none` makes the bullet small, and a small marker on a
- * 1.75 leading sits low: the marker box is aligned to the line box, not to the
- * text's optical centre, so shrinking it drops it. `line-height: inherit` puts
- * the marker back on the same line box as the text it labels.
+ * The reference's `prose-ul:marker:text-xs/none` is the cause of both marker
+ * complaints, not the cure: a 12 px bullet on a 28 px line box is small *and*
+ * sits low, because the shrunken glyph is still aligned to the full line box.
+ * The override is gone — the marker takes the text's own size and only its
+ * colour is muted. Deviation from the reference, on purpose.
  */
-[data-article-language] ul > li::marker {
-  font-size: 0.75em;
-  line-height: inherit;
+[data-article-language] :is(ul, ol) > li::marker {
   color: var(--muted-foreground);
 }
 
@@ -173,17 +178,19 @@
 }
 
 /*
- * Same problem as the marker, and the same cause: `.typeset` sets
- * `vertical-align: -0.1em`, which is tuned for a tighter leading. On 1.75 the
- * box has to come up to the text's optical centre instead.
+ * Same problem as the marker. `.typeset` sets `vertical-align: -0.1em`, which is
+ * tuned for a tighter leading and lands the box low on 1.75. `middle` aligns the
+ * box's centre to the baseline plus half the x-height, which is independent of
+ * the line height — so it stays put whatever the leading does. Full text size,
+ * because a 14 px box next to 16 px text read as an afterthought.
  */
 [data-article-language] li.task-list-item > input[type="checkbox"] {
   accent-color: var(--foreground);
   opacity: 1;
-  width: 0.875em;
-  height: 0.875em;
+  width: 1em;
+  height: 1em;
   margin-inline-end: 0.5em;
-  vertical-align: calc((1em - 1lh) / 2 + 0.2em);
+  vertical-align: middle;
 }
 
 /* ------------------------------------------------------------- HEADINGS -- */
@@ -249,10 +256,12 @@
 }
 
 /*
- * A rule between every cell, not only between rows. The reference draws rows
- * only, which reads fine on its two- and three-column tables and stops reading
- * on the seven-column one in `stress.mdx` — with no column rule the eye has
- * nothing to track along. Deviation from the reference, on purpose.
+ * A rule under every row, which is the reference's own treatment.
+ *
+ * The first cut put the rule on `tr` and nothing appeared: `.typeset` sets
+ * `border-collapse: separate`, and in separate mode a border on a row is never
+ * painted. Only cells can carry it. That is also why the first attempt at "lines
+ * between each thing" came out as column rules and no row rules at all.
  */
 [data-article-language] table {
   border-block-end: 0;
@@ -260,20 +269,20 @@
 }
 
 [data-article-language] :is(thead, tbody) tr {
-  border-block-end: 1px solid var(--line);
-}
-
-[data-article-language] tbody tr:last-child {
   border-block-end: 0;
 }
 
 [data-article-language] :is(th, td) {
   border-block-start: 0;
-  border-inline-end: 1px solid var(--line);
+  border-block-end: 1px solid var(--line);
   padding: 0.5rem 0.75rem;
   min-width: 9.375rem;
   vertical-align: top;
   white-space: normal;
+}
+
+[data-article-language] tbody tr:last-child :is(th, td) {
+  border-block-end: 0;
 }
 
 [data-article-language] :is(th, td):first-child {
@@ -281,7 +290,6 @@
 }
 
 [data-article-language] :is(th, td):last-child {
-  border-inline-end: 0;
   padding-inline-end: 0;
 }
 
@@ -335,7 +343,7 @@
 }
 
 /*
- * 14/18 rather than the reference's 14/20. Code is scanned in columns, not read
+ * 14/17 rather than the reference's 14/20. Code is scanned in columns, not read
  * in lines, so it wants tighter leading than prose — and against the body's 1.75
  * the reference's 1.43 still reads loose.
  */
@@ -344,7 +352,7 @@
   min-width: 100%;
   width: max-content;
   font-size: 0.875rem;
-  line-height: 1.125rem;
+  line-height: 1.0625rem;
 }
 
 [data-article-language] figure[data-code-block] .line {
@@ -548,6 +556,24 @@
 
 [data-article-language] .twoslash .twoslash-popup-container {
   z-index: 20;
+}
+
+/*
+ * A hover popup is as wide as the type it prints, and an inferred `Map.get`
+ * signature is wider than the page. The popup is bounded to the frame and its
+ * code wraps — a type nobody can read is worse than a type on three lines.
+ */
+[data-article-language] .twoslash .twoslash-popup-container,
+[data-article-language] .twoslash .twoslash-meta-line {
+  max-width: min(36rem, calc(100vw - 2rem));
+}
+
+[data-article-language]
+  .twoslash
+  :is(.twoslash-popup-code, .twoslash-popup-docs),
+[data-article-language] .twoslash .twoslash-meta-line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /*
@@ -973,16 +999,24 @@
   scrollbar-width: none;
 }
 
+/*
+ * The trigger's height is the strip's, minus its 2 px padding — stated outright
+ * rather than left to `padding` plus an inherited line height. The Article body
+ * runs at 1.75, so an unstated trigger came out 32.5 px tall inside a 28 px slot
+ * and the active fill spilled over the strip.
+ */
 [data-article-language] [role="tab"] {
   display: flex;
   flex: 1 0 auto;
+  height: 100%;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border-radius: calc(var(--radius) * 0.8);
-  padding: 0.25rem 1rem;
+  padding: 0 1rem;
   font-family: var(--font-sans);
   font-size: 0.875rem;
+  line-height: 1.25rem;
   font-weight: 500;
   white-space: nowrap;
   color: var(--muted-foreground);
@@ -1024,12 +1058,19 @@
   flex-shrink: 0;
 }
 
+/*
+ * The gap under the strip is the panel's padding, not the first child's margin.
+ * A `Tab` holding a single sentence has no element child at all — MDX leaves a
+ * bare text node — so a rule on `> :first-child` reaches nothing and the text
+ * sits flush against the strip.
+ */
 [data-article-language] [role="tabpanel"] {
   outline: none;
+  padding-block-start: 0.5rem;
 }
 
 [data-article-language] [role="tabpanel"] > :first-child {
-  margin-block-start: 0.5rem;
+  margin-block-start: 0;
 }
 
 /*
@@ -1052,7 +1093,7 @@
   [data-code-tabs]
   [role="tabpanel"]
   figure[data-code-block] {
-  margin-block-start: 0.5rem;
+  margin-block-start: 0;
 }
 
 /* ------------------------------------------------------------ ACCORDION -- */

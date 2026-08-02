@@ -103,7 +103,12 @@ A decorative Figure inside a panel, so the caption sits over a nested surface.
 Steps have no child restriction, so a Callout can sit inside one.
 </Callout>
 </Step>
-<Step title="A Step holding synchronized code tabs">
+<Step title="Two tabbed fences that never became a CodeTabs">
+Authored as one tabbed run, exactly like the working pair under "Code tabs" in
+the other specimen. Nested inside a Step it renders as two independent blocks
+and the labels are discarded, because grouping only walks the document's top
+level — see finding 9. The two blocks below are the defect, not the design.
+
 ```ts tab="TypeScript" tab-group="language"
 export const runtime = "nodejs";
 ```
