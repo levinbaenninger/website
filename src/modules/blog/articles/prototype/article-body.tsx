@@ -12,6 +12,11 @@ import {
   ArticleTab,
   ArticleTabs,
 } from "@/modules/blog/rendering/interactions";
+import {
+  createArticleAccordionPanels,
+  createArticleTabPanels,
+  serializeArticlePanels,
+} from "@/modules/blog/rendering/panel-contract";
 
 import type { ResolvedBlock } from "./fixtures";
 
@@ -48,11 +53,23 @@ const Blocks = ({ blocks }: { blocks: readonly ResolvedBlock[] }) => (
       }
 
       if (block.kind === "accordion") {
+        const panels = createArticleAccordionPanels(
+          block.items.map((item) => ({
+            defaultOpen: false,
+            label: item.title,
+          }))
+        );
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: fixture order is stable
-          <ArticleAccordion key={`accordion-${index}`}>
-            {block.items.map((item) => (
-              <ArticleAccordionItem key={item.title} title={item.title}>
+          <ArticleAccordion
+            key={`accordion-${index}`}
+            panels={serializeArticlePanels(panels)}
+          >
+            {block.items.map((item, itemIndex) => (
+              <ArticleAccordionItem
+                key={item.title}
+                value={panels[itemIndex]?.value ?? ""}
+              >
                 <Blocks blocks={item.blocks} />
               </ArticleAccordionItem>
             ))}
@@ -61,11 +78,17 @@ const Blocks = ({ blocks }: { blocks: readonly ResolvedBlock[] }) => (
       }
 
       if (block.kind === "tabs") {
+        const panels = createArticleTabPanels(
+          block.tabs.map((tab) => ({ label: tab.title }))
+        );
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: fixture order is stable
-          <ArticleTabs key={`tabs-${index}`}>
-            {block.tabs.map((tab) => (
-              <ArticleTab key={tab.title} title={tab.title}>
+          <ArticleTabs
+            key={`tabs-${index}`}
+            panels={serializeArticlePanels(panels)}
+          >
+            {block.tabs.map((tab, tabIndex) => (
+              <ArticleTab key={tab.title} value={panels[tabIndex]?.value ?? ""}>
                 <Blocks blocks={tab.blocks} />
               </ArticleTab>
             ))}

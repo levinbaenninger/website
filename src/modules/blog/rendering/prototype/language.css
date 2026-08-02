@@ -1273,14 +1273,20 @@
 
 /* ------------------------------------------------------------ ACCORDION -- */
 
-[data-article-language] div:has(> div > h3 > [data-article-accordion-trigger]) {
+[data-article-language]
+  div:has(
+    > div > [data-article-accordion-header] > [data-article-accordion-trigger]
+  ) {
   margin-block-start: var(--typeset-flow);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-[data-article-language] div:has(> h3 > [data-article-accordion-trigger]) {
+[data-article-language]
+  div:has(
+    > [data-article-accordion-header] > [data-article-accordion-trigger]
+  ) {
   border-radius: calc(var(--radius) * 1.4);
   background-color: var(--surface);
   color: var(--surface-foreground);
@@ -1288,7 +1294,7 @@
   overflow: hidden;
 }
 
-[data-article-language] h3:has(> [data-article-accordion-trigger]) {
+[data-article-language] [data-article-accordion-header] {
   margin: 0;
   font-size: inherit;
   line-height: inherit;
@@ -1340,11 +1346,9 @@
 
 /*
  * `margin-block-start: 0` is the whole fix, and it took three passes to find
- * because it is not the panel's own rule. `.typeset` gives every element that
- * follows a heading `margin-block-start: 1em` — "headings own the space below
- * them" — and Radix renders the trigger inside an `h3`, so the panel was
- * inheriting a paragraph's worth of heading spacing it never asked for. 16 px,
- * measured, between the trigger's bottom edge and the panel's first line.
+ * because it is not the panel's own rule. The explicit header slot now keeps
+ * Accordion labels out of the document outline and gives the panel a stable
+ * non-heading sibling whose spacing is owned here.
  */
 [data-article-language] [data-article-panel="accordion"] {
   margin-block-start: 0;
@@ -1438,7 +1442,10 @@
   background-color: var(--line);
 }
 
-[data-article-language="b"] div:has(> h3 > [data-article-accordion-trigger]) {
+[data-article-language="b"]
+  div:has(
+    > [data-article-accordion-header] > [data-article-accordion-trigger]
+  ) {
   border-radius: 0;
   background-color: transparent;
   box-shadow: none;
@@ -1446,7 +1453,9 @@
 }
 
 [data-article-language="b"]
-  div:has(> div > h3 > [data-article-accordion-trigger]) {
+  div:has(
+    > div > [data-article-accordion-header] > [data-article-accordion-trigger]
+  ) {
   gap: 0;
   border-block-end: 1px solid var(--line);
 }
@@ -1583,7 +1592,9 @@
 }
 
 [data-article-language="c"]
-  div:has(> h3 > [data-article-accordion-trigger]):hover {
+  div:has(
+    > [data-article-accordion-header] > [data-article-accordion-trigger]
+  ):hover {
   background-color: color-mix(in oklab, var(--accent) 60%, var(--surface));
 }
 

@@ -4,35 +4,50 @@ import {
   Accordion as AccordionPrimitive,
   Tabs as TabsPrimitive,
 } from "radix-ui";
-import { isValidElement, useEffect, useId, useMemo, useState } from "react";
-import type { ReactElement, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type { ReactNode } from "react";
 
-interface ArticleAccordionItemProps {
-  readonly children?: ReactNode;
-  readonly defaultOpen?: boolean;
-  readonly title: string;
+import {
+  parseArticleAccordionPanels,
+  parseArticleTabPanels,
+} from "./panel-contract.ts";
+import type { ArticleAccordionPanel } from "./panel-contract.ts";
+
+interface ArticleAccordionContextValue {
+  readonly openValues: readonly string[];
+  readonly panels: readonly ArticleAccordionPanel[];
+  readonly reveal: (value: string) => void;
 }
 
-interface ArticleTabProps {
-  readonly children?: ReactNode;
-  readonly icon?: ReactElement;
-  readonly title: string;
+interface ArticleTabsContextValue {
+  readonly reveal: (value: string) => void;
+  readonly selectedValue: string;
 }
 
-const flattenChildren = (children: ReactNode): ReactNode[] => {
-  if (
-    children === null ||
-    children === undefined ||
-    typeof children === "boolean"
-  ) {
-    return [];
-  }
+const ArticleAccordionContext = createContext<
+  ArticleAccordionContextValue | undefined
+>(undefined);
+const ArticleTabsContext = createContext<ArticleTabsContextValue | undefined>(
+  undefined
+);
 
-  if (Array.isArray(children)) {
-    return children.flatMap((child: ReactNode) => flattenChildren(child));
+const useRequiredContext = <T,>(
+  context: T | undefined,
+  componentName: string
+): T => {
+  if (context === undefined) {
+    throw new Error(
+      `${componentName} must be rendered inside its panel group.`
+    );
   }
-
-  return [children];
+  return context;
 };
 
 let hashNavigationConsumers = 0;
@@ -130,102 +145,182 @@ const useArticleHashNavigation = (): void => {
   }, []);
 };
 
-export const ArticleAccordionItem = (_props: ArticleAccordionItemProps): null =>
-  null;
+const useBeforeMatch = (reveal: () => void, hidden: boolean) => {
+  const panelRef = useRef<HTMLElement>(null);
 
-export const ArticleAccordion = ({
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (panel !== null) {
+      panel.addEventListener("beforematch", reveal);
+      if (hidden) {
+        panel.setAttribute("hidden", "until-found");
+      } else {
+        panel.removeAttribute("hidden");
+      }
+    }
+    return () => {
+      panel?.removeEventListener("beforematch", reveal);
+    };
+  }, [hidden, reveal]);
+
+  return panelRef;
+};
+
+export const ArticleAccordionItem = ({
   children,
+  value,
 }: {
-  readonly children: ReactNode;
+  readonly children?: ReactNode;
+  readonly value: string;
 }) => {
-  useArticleHashNavigation();
-  const baseId = useId();
-  const items = flattenChildren(children).filter(
-    (child): child is ReactElement<ArticleAccordionItemProps> =>
-      isValidElement<ArticleAccordionItemProps>(child) &&
-      child.type === ArticleAccordionItem
+  const context = useRequiredContext(
+    useContext(ArticleAccordionContext),
+    "ArticleAccordionItem"
   );
-  const itemValues = useMemo(
-    () => items.map((_, index) => `${baseId}-item-${index}`),
-    [baseId, items]
-  );
-  const defaultValues = items.flatMap((item, index) =>
-    item.props.defaultOpen === true ? [itemValues[index] ?? ""] : []
-  );
-  const [openValues, setOpenValues] = useState(defaultValues);
+  const panel = context.panels.find((candidate) => candidate.value === value);
+  if (panel === undefined) {
+    throw new TypeError(
+      `Unknown compiled Accordion value ${JSON.stringify(value)}.`
+    );
+  }
+  const open = context.openValues.includes(value);
+  const reveal = () => {
+    context.reveal(value);
+  };
+  const panelRef = useBeforeMatch(reveal, !open);
 
   return (
-    <AccordionPrimitive.Root
-      onValueChange={setOpenValues}
-      type="multiple"
-      value={openValues}
-    >
-      {items.map((item, index) => {
-        const value = itemValues[index] ?? "";
-        return (
-          <AccordionPrimitive.Item key={value} value={value}>
-            <AccordionPrimitive.Header>
-              <AccordionPrimitive.Trigger data-article-accordion-trigger>
-                {item.props.title}
-              </AccordionPrimitive.Trigger>
-            </AccordionPrimitive.Header>
-            <AccordionPrimitive.Content
-              data-article-panel="accordion"
-              forceMount
-              hidden={!openValues.includes(value)}
-            >
-              {item.props.children}
-            </AccordionPrimitive.Content>
-          </AccordionPrimitive.Item>
-        );
-      })}
-    </AccordionPrimitive.Root>
+    <AccordionPrimitive.Item value={value}>
+      <AccordionPrimitive.Header asChild>
+        <div data-article-accordion-header>
+          <AccordionPrimitive.Trigger data-article-accordion-trigger>
+            {panel.label}
+          </AccordionPrimitive.Trigger>
+        </div>
+      </AccordionPrimitive.Header>
+      <AccordionPrimitive.Content asChild forceMount>
+        <article-panel
+          data-article-panel="accordion"
+          hidden={open ? undefined : "until-found"}
+          ref={panelRef}
+          style={{ display: "block" }}
+        >
+          {children}
+        </article-panel>
+      </AccordionPrimitive.Content>
+    </AccordionPrimitive.Item>
   );
 };
 
-export const ArticleTab = (_props: ArticleTabProps): null => null;
-
-export const ArticleTabs = ({ children }: { readonly children: ReactNode }) => {
+export const ArticleAccordion = ({
+  children,
+  panels: serializedPanels,
+}: {
+  readonly children: ReactNode;
+  readonly panels: string;
+}) => {
   useArticleHashNavigation();
-  const baseId = useId();
-  const tabs = flattenChildren(children).filter(
-    (child): child is ReactElement<ArticleTabProps> =>
-      isValidElement<ArticleTabProps>(child) && child.type === ArticleTab
+  const panels = useMemo(
+    () => parseArticleAccordionPanels(serializedPanels),
+    [serializedPanels]
   );
-  const values = useMemo(
-    () => tabs.map((_, index) => `${baseId}-tab-${index}`),
-    [baseId, tabs]
+  const [openValues, setOpenValues] = useState(() =>
+    panels.flatMap(({ defaultOpen, value }) => (defaultOpen ? [value] : []))
   );
-  const firstValue = values[0] ?? "";
-  const [selectedValue, setSelectedValue] = useState(firstValue);
+  const context = useMemo<ArticleAccordionContextValue>(
+    () => ({
+      openValues,
+      panels,
+      reveal: (value) => {
+        setOpenValues((current) =>
+          current.includes(value) ? current : [...current, value]
+        );
+      },
+    }),
+    [openValues, panels]
+  );
 
   return (
-    <TabsPrimitive.Root onValueChange={setSelectedValue} value={selectedValue}>
-      <TabsPrimitive.List>
-        {tabs.map((tab, index) => {
-          const value = values[index] ?? "";
-          return (
-            <TabsPrimitive.Trigger key={value} value={value}>
-              {tab.props.icon}
-              <span>{tab.props.title}</span>
+    <ArticleAccordionContext value={context}>
+      <AccordionPrimitive.Root
+        onValueChange={setOpenValues}
+        type="multiple"
+        value={openValues}
+      >
+        {children}
+      </AccordionPrimitive.Root>
+    </ArticleAccordionContext>
+  );
+};
+
+export const ArticleTab = ({
+  children,
+  value,
+}: {
+  readonly children?: ReactNode;
+  readonly value: string;
+}) => {
+  const context = useRequiredContext(
+    useContext(ArticleTabsContext),
+    "ArticleTab"
+  );
+  const reveal = () => {
+    context.reveal(value);
+  };
+  const panelRef = useBeforeMatch(reveal, context.selectedValue !== value);
+
+  return (
+    <TabsPrimitive.Content asChild forceMount value={value}>
+      <article-panel
+        data-article-panel="tab"
+        hidden={context.selectedValue === value ? undefined : "until-found"}
+        ref={panelRef}
+        style={{ display: "block" }}
+      >
+        {children}
+      </article-panel>
+    </TabsPrimitive.Content>
+  );
+};
+
+export const ArticleTabs = ({
+  children,
+  panels: serializedPanels,
+  ...iconSlots
+}: {
+  readonly children: ReactNode;
+  readonly panels: string;
+  readonly [iconSlot: string]: ReactNode;
+}) => {
+  useArticleHashNavigation();
+  const panels = useMemo(
+    () => parseArticleTabPanels(serializedPanels),
+    [serializedPanels]
+  );
+  const firstValue = panels[0]?.value ?? "";
+  const [selectedValue, setSelectedValue] = useState(firstValue);
+  const context = useMemo<ArticleTabsContextValue>(
+    () => ({ reveal: setSelectedValue, selectedValue }),
+    [selectedValue]
+  );
+
+  return (
+    <ArticleTabsContext value={context}>
+      <TabsPrimitive.Root
+        activationMode="automatic"
+        onValueChange={setSelectedValue}
+        value={selectedValue}
+      >
+        <TabsPrimitive.List>
+          {panels.map((panel) => (
+            <TabsPrimitive.Trigger key={panel.value} value={panel.value}>
+              {panel.iconSlot === undefined ? null : iconSlots[panel.iconSlot]}
+              <span>{panel.label}</span>
             </TabsPrimitive.Trigger>
-          );
-        })}
-      </TabsPrimitive.List>
-      {tabs.map((tab, index) => {
-        const value = values[index] ?? "";
-        return (
-          <TabsPrimitive.Content
-            data-article-panel="tab"
-            forceMount
-            hidden={selectedValue !== value}
-            key={value}
-            value={value}
-          >
-            {tab.props.children}
-          </TabsPrimitive.Content>
-        );
-      })}
-    </TabsPrimitive.Root>
+          ))}
+        </TabsPrimitive.List>
+        {children}
+      </TabsPrimitive.Root>
+    </ArticleTabsContext>
   );
 };

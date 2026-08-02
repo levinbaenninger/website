@@ -11,6 +11,11 @@ import type {
 } from "@/modules/blog/articles/facts.ts";
 
 import { serializeCodeTabLabels } from "./code-tabs-contract.ts";
+import {
+  createArticleAccordionPanels,
+  createArticleTabPanels,
+  serializeArticlePanels,
+} from "./panel-contract.ts";
 
 interface ArticlePosition {
   readonly start: {
@@ -1817,6 +1822,83 @@ const validateTab = (
   });
 };
 
+const compiledAttribute = (name: string, value: string): ArticleAttribute => ({
+  type: "mdxJsxAttribute",
+  name,
+  value,
+});
+
+const lowerInteractivePanels = (root: Root): void => {
+  visit(root, (node) => {
+    if (
+      node.type !== "mdxJsxFlowElement" ||
+      (node.name !== "Accordion" && node.name !== "Tabs")
+    ) {
+      return;
+    }
+
+    if (node.name === "Accordion") {
+      const items = node.children.filter(
+        (child): child is ArticleFlowElement =>
+          child.type === "mdxJsxFlowElement" && child.name === "AccordionItem"
+      );
+      const panels = createArticleAccordionPanels(
+        items.map((item) => ({
+          defaultOpen: item.attributes.some(
+            (attribute) =>
+              attribute.type === "mdxJsxAttribute" &&
+              attribute.name === "defaultOpen" &&
+              attribute.value === null
+          ),
+          label: findStringAttribute(item, "title") ?? "",
+        }))
+      );
+
+      node.attributes = [
+        compiledAttribute("panels", serializeArticlePanels(panels)),
+      ];
+      node.children = items.map((item, index) => {
+        item.attributes = [
+          compiledAttribute("value", panels[index]?.value ?? ""),
+        ];
+        return item;
+      });
+      return;
+    }
+
+    const tabs = node.children.filter(
+      (child): child is ArticleFlowElement =>
+        child.type === "mdxJsxFlowElement" && child.name === "Tab"
+    );
+    const iconSlots: ArticleAttribute[] = [];
+    const panelInputs = tabs.map((tab, index) => {
+      const iconAttribute = tab.attributes.find(
+        (attribute) =>
+          attribute.type === "mdxJsxAttribute" && attribute.name === "icon"
+      );
+      const iconSlot =
+        iconAttribute === undefined ? undefined : `tabIcon${index}`;
+      if (iconAttribute?.type === "mdxJsxAttribute" && iconSlot !== undefined) {
+        iconSlots.push({ ...iconAttribute, name: iconSlot });
+      }
+      return {
+        ...(iconSlot === undefined ? {} : { iconSlot }),
+        label: findStringAttribute(tab, "title") ?? "",
+      };
+    });
+    const panels = createArticleTabPanels(panelInputs);
+
+    node.attributes = [
+      compiledAttribute("panels", serializeArticlePanels(panels)),
+      ...iconSlots,
+    ];
+    node.children = tabs.map((tab, index) => {
+      tab.attributes = [compiledAttribute("value", panels[index]?.value ?? "")];
+      return tab;
+    });
+  });
+};
+
 const validateClosedLanguage = (
   root: Root,
   imports: ArticleImports,
@@ -2037,6 +2119,7 @@ export default function articleContract() {
     };
 
     diagnostics.throwIfAny();
+    lowerInteractivePanels(root);
     file.data.articleFacts = facts;
     root.children.push(factsExport(facts));
   };
