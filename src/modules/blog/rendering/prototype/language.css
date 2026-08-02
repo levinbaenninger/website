@@ -208,9 +208,17 @@
  * control stranded at the far edge, a line and a half from the last word. Inline
  * layout puts it after the final word wherever that lands.
  */
+/*
+ * The control is 28 px tall against a 20–26 px heading line box, so it cannot be
+ * aligned by a fixed offset: `middle` centres it on the text's own optical
+ * middle whatever the heading's size, and the `em` nudge adds back the
+ * difference between x-height and cap height, which is what `middle` measures
+ * against and the eye does not.
+ */
 [data-article-language] :is(h2, h3, h4) [data-heading-copy] {
   display: inline-flex;
-  vertical-align: -0.35em;
+  vertical-align: middle;
+  margin-block-end: 0.2em;
   margin-inline-start: 0.125em;
 }
 
@@ -596,11 +604,19 @@
 
 /*
  * A hover popup is as wide as the type it prints, and an inferred `Map.get`
- * signature is wider than the page. The popup is bounded to the frame and its
- * code wraps — a type nobody can read is worse than a type on three lines.
+ * signature is wider than the page. The popup is bounded and its code wraps — a
+ * type nobody can read is worse than a type on three lines.
+ *
+ * Both halves are load-bearing. The popup is absolutely positioned, so its width
+ * is shrink-to-fit, and shrink-to-fit resolves against the *min-content* size —
+ * which `overflow-wrap: anywhere` drives down to a single character, collapsing
+ * the popup into a one-glyph column. `break-word` wraps identically at paint
+ * time but does not affect intrinsic sizing, and `width: max-content` states the
+ * natural width outright so only `max-width` clamps it.
  */
 [data-article-language] .twoslash .twoslash-popup-container,
 [data-article-language] .twoslash .twoslash-meta-line {
+  width: max-content;
   max-width: min(36rem, calc(100vw - 2rem));
 }
 
@@ -638,11 +654,11 @@
  * matching depth rather than in the general list below.
  */
 [data-article-language] .twoslash-popup-container figure[data-code-block] code {
-  display: inline;
+  display: block;
   width: auto;
   min-width: 0;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 [data-article-language]
@@ -653,7 +669,7 @@
   width: auto;
   min-width: 0;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /*
@@ -1243,7 +1259,16 @@
   translate: 0 0.125rem;
 }
 
+/*
+ * `margin-block-start: 0` is the whole fix, and it took three passes to find
+ * because it is not the panel's own rule. `.typeset` gives every element that
+ * follows a heading `margin-block-start: 1em` — "headings own the space below
+ * them" — and Radix renders the trigger inside an `h3`, so the panel was
+ * inheriting a paragraph's worth of heading spacing it never asked for. 16 px,
+ * measured, between the trigger's bottom edge and the panel's first line.
+ */
 [data-article-language] [data-article-panel="accordion"] {
+  margin-block-start: 0;
   padding: 0 1rem 0.75rem;
 }
 
