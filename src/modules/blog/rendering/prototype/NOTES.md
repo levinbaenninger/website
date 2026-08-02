@@ -29,11 +29,11 @@ Everything the reference already answers is held identical across all three lang
 - links: body weight, 1 px underline at 3 px offset, `currentColor / 30%` → `currentColor` on hover
 - inline code: 1 px border, `muted / 50%`, `radius * 0.8`, 14 px, wraps rather than clips
 - blockquote: one 1 px `line` rule, muted, upright, no quote marks
-- `hr` on `line`; list markers at text size, muted
-- headings: `h2`–`h4` only, in the reference's own anchor shape — the heading text _is_ the link, and a copy-link button fades in beside it
+- `hr` on `line`; list markers at `0.875em`, muted
+- headings: `h2`–`h4` only, in the reference's own anchor shape — the heading text _is_ the link, and a copy-link button fades in beside it. Laid out inline rather than as a flex row, and wrapped `pretty` rather than `balance`
 - tables: 14 px, a rule under every row on `line`, none under the last, 8/12 px cells, `first:ps-0`, 150 px minimum cells inside a horizontal scroll container
 - code frame: `radius * 1.4`, `surface`, 4 px padding, `inset 0 0 0 1px border/64`; `pre` 16 px block padding, no scrollbar; `.line` 16 px inline padding; 14/17 mono; inside a panel the fill drops to `background` so the frame stays a distinct object
-- code title row: 10/12 px padding, mono, muted, truncating; with no title the control is lifted out of flow to the top-right and the lines gain 56 px of end padding, which is the reference's own geometry
+- code title row: Fumadocs' shape without its language icon — a full-bleed bar ruled off from the code, 8/14 px padding, mono, muted, truncating. With no title the control is lifted out of flow to the top-right and the lines gain 56 px of end padding, which is the reference's own geometry
 - line numbers: sticky 64 px gutter, 24 px end padding, right-aligned, `code-number`
 - highlight / word-highlight on `code-highlight`; focus blurs everything else 2 px and restores on hover
 - Steps: 28 px indent with a `line` rule at `md`, 40 px and no rule below it; counter 24 px, `radius * 1.4`, `muted`, 13/24 regular
@@ -41,7 +41,7 @@ Everything the reference already answers is held identical across all three lang
 - tab strips: 32 px, `radius`, `surface`, `inset-ring border/64`, 2 px padding; triggers fill the strip's inner height, `radius * 0.8`, 16 px inline, 14/20 medium; the active one white in light and `muted` in dark, `inset-ring foreground/10`; panels open 8 px under the strip
 - body typography: the `.typeset-blog` preset at 16 px — 16/28, `--typeset-flow: 1em`. Every block in the language takes its leading margin from that one variable, so prose, lists, quotes, code, tables, Callouts, Cards, Files, Steps, Figures and tab groups all move together.
 
-The measure is the reference's own 16/28. Three things depart from it deliberately, all Levin's calls from review: `--typeset-flow` at `1em` against the reference's `1.25em`; list markers at text size against the reference's `text-xs` (which is what made them read small _and_ sit low); and code at 14/17 against the reference's 14/20, because code is scanned in columns rather than read in lines.
+The measure is the reference's own 16/28. Five things depart from it deliberately, all Levin's calls from review: `--typeset-flow` at `1em` against the reference's `1.25em`; list markers at `0.875em` against the reference's `text-xs`, which made them read small _and_ sit low; code at 14/17 against the reference's 14/20, because code is scanned in columns rather than read in lines; the code title as a ruled-off bar rather than a first line; and body headings wrapped `pretty` rather than `balance`, because balancing a two-line heading empties half the column.
 
 Diff notation is the one held-constant item with no reference at all: the reference Blog never renders a diff, and a diff without colour is unreadable, so the conventional green/red plus a `+`/`-` gutter mark is used in all three rather than made an axis.
 
@@ -145,9 +145,11 @@ The production fix belongs in `rendering/interactions.tsx`: **stop introspecting
 
 **8. `ArticleAccordion` renders no disclosure mark.** A trigger with no chevron reads as a heading, not a control. Drawn in CSS here; belongs in the component.
 
-**9. Tabbed code fences inside Steps, Tabs or Accordion silently degrade.** `validateAndGroupCode` annotates every fence recursively but groups only `root.children`, so a `tab="…" tab-group="…"` run nested inside a JSX element never becomes `CodeTabs` — and the `code-tabs-size` and `code-tabs-boundary` diagnostics never fire there either. Measured in the compiled `stress.mdx`: `data-code-tab-label` appears twice, `CodeTabs` zero times, and the two fences render as independent code blocks whose tab labels are simply discarded. Either grouping recurses, or authoring a tabbed run inside a Step has to be a contract error.
+**9. Tabbed code fences inside Steps, Tabs or Accordion silently degrade.** `validateAndGroupCode` annotates every fence recursively but groups only `root.children`, so a `tab="…" tab-group="…"` run nested inside a JSX element never becomes `CodeTabs` — and the `code-tabs-size` and `code-tabs-boundary` diagnostics never fire there either. Measured in the compiled `stress.mdx`: `data-code-tab-label` appears twice, `CodeTabs` zero times, and the two fences render as independent code blocks whose tab labels are simply discarded.
 
-**10. Twoslash popups get wrapped in the Article code frame.** `pre` is a global MDX mapping, and `rendererRich` emits its own `<pre>` inside hover popups — so a popup contains a full `figure[data-code-block]` with the surface, the ring and the 4 px padding, but no caption. Measured: one nested frame inside a popup in `specimen.mdx`. The specification needs `ArticleCodeBlock` to leave Twoslash's own markup alone.
+**Levin's call: grouping should recurse, not become an error.** Tabbed code inside a Step is exactly where an installation walkthrough wants it — "run this, in npm or pnpm" is a step, not a top-level aside — so the resolution is to make the grouping pass walk into `Steps`, `Tabs` and `Accordion` children rather than to reject the construct there. That also brings the two diagnostics with it, which is the part that makes the current behaviour worst: today the mistake is silent.
+
+**10. Twoslash popups get wrapped in the Article code frame.** `pre` is a global MDX mapping, and `rendererRich` emits its own `<pre>` inside hover popups — so a popup contains a full `figure[data-code-block]` with the surface, the ring and the 4 px padding, but no caption. Three visible consequences, all measured in `specimen.mdx`: the popup's top corners were rounded while its documentation body underneath was square, the frame's `width: max-content` stopped an inferred signature from ever wrapping, and the frame's fill sat inside the popup's own fill. The prototype undoes the frame inside a popup; the specification needs `ArticleCodeBlock` to leave Twoslash's own markup alone in the first place.
 
 **11. `.typeset` fights the reference in four specific places**, all handled in `language.css` and all worth writing into the specification rather than rediscovering: `pre` (`bg-muted`, radius, `.75em 1em` padding), `kbd` (a border and a 2 px bottom border on top of the shared `Kbd`), `table` (wrap, not scroll), and links (weight 500 against the reference's body weight).
 
@@ -224,3 +226,17 @@ Eleven points. Same rule as Revision 1: none of it is an axis, so all of it land
 - **List markers and checkboxes, again.** The cause was the reference's own `marker:text-xs/none`: a 12 px bullet on a 28 px line box reads small _and_ sits low, because the shrunken glyph is still aligned to the full line box. The override is gone — markers take the text's size, muted. Checkboxes are `1em` and `vertical-align: middle`, which is independent of the leading.
 
 **Verified this round at a real 390 px viewport for the first time** — see "What was verified".
+
+## Revision 3 — Levin's third review
+
+Seven points. Two of them turned out to have the same root cause as each other, and a third turned out to be one line of the reference's own geometry doing the wrong thing at Article width.
+
+**One item was noted rather than built.** Finding 9 above now carries Levin's resolution: nested tabbed code should _group_, not become a contract error. A "run this, in npm or pnpm" step is exactly where an author wants tabs, so the grouping pass has to walk into `Steps`, `Tabs` and `Accordion` children — and bring its two diagnostics with it, since the failure is silent today.
+
+**Applied:**
+
+- **The Accordion's top gap was never padding.** The trigger inherited the body's 1.75 leading, so 15 px text floated in a 26 px line box inside a 46 px control, and the space under the label was half a line box. The trigger states `1.5rem` now, and the panel's own padding is 12 px.
+- **Code titles are ruled off.** Fumadocs' shape without its language icon: the caption is a full-bleed bar with a rule under it and the frame's top corners, so a filename reads as a label on the block rather than as its first line. The negative margins cancel the frame's 4 px padding so the rule reaches both edges.
+- **The signature would not wrap, and the popup's corners disagreed with its body.** One cause, and it is finding 10: the `<pre>` Twoslash emits inside a hover popup came back out as a full Article code frame — surface, ring, 14 px radius, `width: max-content`. Inside a popup the frame is now undone completely rather than restyled, which fixes the wrapping and the mismatched corners together.
+- **List markers and checkboxes, third pass.** Markers sit at `0.875em`, between the reference's 12 px and full text size. The checkbox was aligned along its top and hanging below the text because `vertical-align: middle` centres on the _x-height_ while the eye centres on the cap height; the half-difference is added back as `margin-block-end`, which lifts an inline box off its alignment point.
+- **Long headings stopped wrapping early.** This one is the reference's own `prose-headings:text-balance`, and it is wrong at this width: balancing a two-line heading splits it down the middle, so the long `h2` in `stress.mdx` broke at 405 px of a 734 px column and left the copy control marooned a line and a half from the last word. Body headings wrap `pretty` now — measured, the first line fills 697 px and the control trails the final word. The heading is also plain block layout rather than the reference's flex row, because a flex item's base size is its max-content width clamped to what is available, which is what put the control at the far edge in the first place. The Article title in the chrome keeps `balance`, where it is right.

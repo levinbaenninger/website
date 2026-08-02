@@ -158,13 +158,14 @@
 }
 
 /*
- * The reference's `prose-ul:marker:text-xs/none` is the cause of both marker
+ * The reference's `prose-ul:marker:text-xs/none` is the cause of the marker
  * complaints, not the cure: a 12 px bullet on a 28 px line box is small *and*
  * sits low, because the shrunken glyph is still aligned to the full line box.
- * The override is gone — the marker takes the text's own size and only its
- * colour is muted. Deviation from the reference, on purpose.
+ * Full text size then read too heavy, so the marker sits between the two.
+ * Deviation from the reference, on purpose.
  */
 [data-article-language] :is(ul, ol) > li::marker {
+  font-size: 0.875em;
   color: var(--muted-foreground);
 }
 
@@ -178,28 +179,51 @@
 }
 
 /*
- * Same problem as the marker. `.typeset` sets `vertical-align: -0.1em`, which is
- * tuned for a tighter leading and lands the box low on 1.75. `middle` aligns the
- * box's centre to the baseline plus half the x-height, which is independent of
- * the line height — so it stays put whatever the leading does. Full text size,
- * because a 14 px box next to 16 px text read as an afterthought.
+ * `vertical-align: middle` aligns the box's centre to the baseline plus half the
+ * *x-height*, but the eye centres on the cap height — so a full-size box lines
+ * up along its top and hangs below the text, which is exactly what it looked
+ * like. The remaining half-difference between cap and x-height is added back as
+ * `margin-block-end`, which on an inline-level box lifts it off its alignment
+ * point. Both dimensions are `em`, so it tracks the text at any size.
  */
 [data-article-language] li.task-list-item > input[type="checkbox"] {
   accent-color: var(--foreground);
   opacity: 1;
-  width: 1em;
-  height: 1em;
+  width: 0.875em;
+  height: 0.875em;
   margin-inline-end: 0.5em;
+  margin-block-end: 0.14em;
   vertical-align: middle;
 }
 
 /* ------------------------------------------------------------- HEADINGS -- */
 
-[data-article-language] :is(h2, h3, h4, h5, h6):has(> [data-heading-anchor]) {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.25rem;
+/*
+ * The heading stays a block and the controls sit inline in the text flow.
+ *
+ * The reference lays its headings out as a flex row, which is fine for its short
+ * ones and wrong for a long one: a flex item's base size is its max-content
+ * width clamped to what is available, so the anchor claimed the full column
+ * while `text-wrap: balance` broke the words at half of it — leaving the copy
+ * control stranded at the far edge, a line and a half from the last word. Inline
+ * layout puts it after the final word wherever that lands.
+ */
+[data-article-language] :is(h2, h3, h4) [data-heading-copy] {
+  display: inline-flex;
+  vertical-align: -0.35em;
+  margin-inline-start: 0.125em;
+}
+
+/*
+ * `pretty`, not the reference's `balance`. Balancing a two-line heading splits
+ * it down the middle — the long h2 in `stress.mdx` broke at 405 px of a 734 px
+ * column, leaving half the rail empty and the copy control marooned a line and a
+ * half from the last word. `pretty` fills the line and only guards the orphan.
+ * Deviation from the reference, and only for headings inside the Article body:
+ * the Article title in the chrome keeps `balance`, where it is right.
+ */
+[data-article-language] :is(h2, h3, h4) {
+  text-wrap: pretty;
 }
 
 [data-article-language] [data-heading-anchor] {
@@ -215,16 +239,13 @@
   transition: opacity 150ms ease;
 }
 
-[data-article-language]
-  :is(h2, h3, h4, h5, h6):hover
-  [data-heading-anchor="leading"],
+[data-article-language] :is(h2, h3, h4):hover [data-heading-anchor="leading"],
 [data-article-language] [data-heading-anchor="leading"]:focus-visible {
   opacity: 1;
 }
 
 /* The reference's copy-link control: hidden until the heading is hovered. */
 [data-article-language] [data-heading-copy] {
-  flex-shrink: 0;
   color: var(--muted-foreground);
   opacity: 0;
   transition: opacity 150ms ease;
@@ -237,7 +258,7 @@
  * for the code block alike. This is not a variant: a control with no feedback is
  * broken in all three languages.
  */
-[data-article-language] :is(h2, h3, h4, h5, h6):hover [data-heading-copy],
+[data-article-language] :is(h2, h3, h4):hover [data-heading-copy],
 [data-article-language] [data-heading-copy]:focus-visible,
 [data-article-language] [data-heading-copy]:not([data-state="idle"]) {
   opacity: 1;
@@ -380,6 +401,21 @@
   font-family: var(--font-mono);
   font-size: 0.875rem;
   text-align: start;
+}
+
+/*
+ * Fumadocs' shape rather than the reference's, minus its language icon: a title
+ * is its own bar, ruled off from the code and spanning the full frame, so a
+ * filename reads as a label on the block instead of as its first line. The
+ * negative margins cancel the frame's 4 px padding so the rule reaches both
+ * edges, and the top corners take the frame's radius back.
+ */
+[data-article-language] figure[data-code-block] > figcaption:has(> span) {
+  margin: -0.25rem -0.25rem 0.25rem;
+  border-start-start-radius: calc(var(--radius) * 1.4 - 0.25rem);
+  border-start-end-radius: calc(var(--radius) * 1.4 - 0.25rem);
+  border-block-end: 1px solid var(--frame-ring);
+  padding: 0.5rem 0.875rem;
 }
 
 [data-article-language] figure[data-code-block] > figcaption > span {
@@ -568,10 +604,54 @@
   max-width: min(36rem, calc(100vw - 2rem));
 }
 
+/*
+ * The signature would not wrap, and the popup's corners disagreed with its own
+ * body — both for one reason: `pre` is a global MDX mapping, so the `<pre>` the
+ * rich renderer emits inside a popup came back out as a full Article code frame,
+ * with the surface, the ring, the 14 px radius and `width: max-content`. That is
+ * finding 10, and inside a popup the frame has to be undone completely rather
+ * than merely restyled.
+ */
+[data-article-language] .twoslash-popup-container figure[data-code-block] {
+  margin: 0;
+  border-radius: 0;
+  background-color: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+[data-article-language] .twoslash-popup-container figure[data-code-block] pre {
+  padding: 0;
+  overflow: visible;
+}
+
+[data-article-language]
+  .twoslash-popup-container
+  figure[data-code-block]
+  .line {
+  padding-inline: 0;
+}
+
+/*
+ * The frame's own `code` rule is more specific than a popup-scoped one, so the
+ * `width: max-content` that stops the signature wrapping has to be undone at
+ * matching depth rather than in the general list below.
+ */
+[data-article-language] .twoslash-popup-container figure[data-code-block] code {
+  display: inline;
+  width: auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 [data-article-language]
   .twoslash
   :is(.twoslash-popup-code, .twoslash-popup-docs),
+[data-article-language] .twoslash-popup-container code,
 [data-article-language] .twoslash .twoslash-meta-line {
+  width: auto;
+  min-width: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -1119,15 +1199,22 @@
   line-height: inherit;
 }
 
+/*
+ * The trigger states its own line height. Left to inherit, it takes the body's
+ * 1.75 and the text floats in a 26 px line box inside a 46 px control — which is
+ * where "the accordion content has too much padding to the top" came from. The
+ * gap was never padding; it was half a line box.
+ */
 [data-article-language] [data-article-accordion-trigger] {
   display: flex;
   width: 100%;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 1rem;
   font-family: var(--font-sans);
   font-size: 0.9375rem;
+  line-height: 1.5rem;
   font-weight: 500;
   text-align: start;
   color: inherit;
@@ -1157,7 +1244,7 @@
 }
 
 [data-article-language] [data-article-panel="accordion"] {
-  padding: 0 1rem 0.875rem;
+  padding: 0 1rem 0.75rem;
 }
 
 [data-article-language] [data-article-panel="accordion"] > :first-child {
