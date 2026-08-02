@@ -14,7 +14,7 @@ This context describes the visitor-facing areas and concepts of Levin's personal
 
 **Article**: A piece of authored content for the Blog, in either draft or published state. _Avoid_: Blog post, post
 
-**Article outline**: The complete ordered structure of an Article's authored headings. It remains stable as interactive content opens and closes, includes headings within collapsed content, and excludes panel labels that are not themselves authored headings. _Avoid_: Visible headings, table of contents
+**Article outline**: The complete ordered structure of an Article's authored headings. It remains stable as interactive content opens and closes and includes authored headings within collapsed content. Component labels—including Accordion item, Card, Callout, code, Step, and Tab titles—do not create Article headings and are excluded. _Avoid_: Visible headings, table of contents
 
 **Article source bundle**: The authored source unit that groups an Article's content with the local assets it owns.
 
