@@ -25,6 +25,7 @@ const compileArticle = async (
   source: string,
   themes: ArticleCodeThemes = FIXTURE_CODE_THEMES
 ): Promise<{
+  readonly compiledSource: string;
   readonly facts: ArticleCompilationFacts;
 }> => {
   const file = await compile(
@@ -35,7 +36,7 @@ const compileArticle = async (
   if (facts === undefined) {
     throw new TypeError("Expected Article compilation to expose facts.");
   }
-  return { facts };
+  return { compiledSource: String(file), facts };
 };
 
 const renderArticle = async (
@@ -81,6 +82,31 @@ afterEach(() => {
 });
 
 describe("Article compilation contract", () => {
+  test("lowers authored panels into stable compiler-owned models", async () => {
+    const { compiledSource } =
+      await compileArticle(`import { RocketIcon } from "lucide-react"
+
+<Accordion>
+  <AccordionItem title="First" defaultOpen>First body</AccordionItem>
+  <AccordionItem title="Second">Second body</AccordionItem>
+</Accordion>
+
+<Tabs>
+  <Tab title="Alpha" icon={<RocketIcon />}>Alpha body</Tab>
+  <Tab title="Beta">Beta body</Tab>
+</Tabs>`);
+
+    expect(compiledSource).toContain(
+      'panels: "[{\\"defaultOpen\\":true,\\"label\\":\\"First\\",\\"value\\":\\"accordion-item-0\\"},{\\"defaultOpen\\":false,\\"label\\":\\"Second\\",\\"value\\":\\"accordion-item-1\\"}]"'
+    );
+    expect(compiledSource).toContain('value: "accordion-item-0"');
+    expect(compiledSource).toContain(
+      'panels: "[{\\"iconSlot\\":\\"tabIcon0\\",\\"label\\":\\"Alpha\\",\\"value\\":\\"tab-0\\"},{\\"label\\":\\"Beta\\",\\"value\\":\\"tab-1\\"}]"'
+    );
+    expect(compiledSource).toContain("tabIcon0: _jsx(RocketIcon, {})");
+    expect(compiledSource).toContain('value: "tab-1"');
+  });
+
   test("compiles semantic prose and deterministic private facts", async () => {
     const article = await renderArticle(`## Intro
 

@@ -48,11 +48,22 @@ const Blocks = ({ blocks }: { blocks: readonly ResolvedBlock[] }) => (
       }
 
       if (block.kind === "accordion") {
+        const panels = block.items.map((item, itemIndex) => ({
+          defaultOpen: false,
+          label: item.title,
+          value: `accordion-item-${itemIndex}`,
+        }));
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: fixture order is stable
-          <ArticleAccordion key={`accordion-${index}`}>
-            {block.items.map((item) => (
-              <ArticleAccordionItem key={item.title} title={item.title}>
+          <ArticleAccordion
+            key={`accordion-${index}`}
+            panels={JSON.stringify(panels)}
+          >
+            {block.items.map((item, itemIndex) => (
+              <ArticleAccordionItem
+                key={item.title}
+                value={`accordion-item-${itemIndex}`}
+              >
                 <Blocks blocks={item.blocks} />
               </ArticleAccordionItem>
             ))}
@@ -61,11 +72,15 @@ const Blocks = ({ blocks }: { blocks: readonly ResolvedBlock[] }) => (
       }
 
       if (block.kind === "tabs") {
+        const panels = block.tabs.map((tab, tabIndex) => ({
+          label: tab.title,
+          value: `tab-${tabIndex}`,
+        }));
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: fixture order is stable
-          <ArticleTabs key={`tabs-${index}`}>
-            {block.tabs.map((tab) => (
-              <ArticleTab key={tab.title} title={tab.title}>
+          <ArticleTabs key={`tabs-${index}`} panels={JSON.stringify(panels)}>
+            {block.tabs.map((tab, tabIndex) => (
+              <ArticleTab key={tab.title} value={`tab-${tabIndex}`}>
                 <Blocks blocks={tab.blocks} />
               </ArticleTab>
             ))}

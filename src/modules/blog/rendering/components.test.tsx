@@ -164,13 +164,13 @@ describe("semantic Article components", () => {
 
   test("server-renders every interactive panel while preserving defaults", () => {
     const markup = renderToStaticMarkup(
-      <ArticleTabs>
-        <ArticleTab title="First">
+      <ArticleTabs panels='[{"label":"First","value":"tab-0"},{"label":"Second","value":"tab-1"}]'>
+        <ArticleTab value="tab-0">
           <h2 id="visible-heading">Visible heading</h2>
         </ArticleTab>
-        <ArticleTab title="Second">
-          <ArticleAccordion>
-            <ArticleAccordionItem title="Closed">
+        <ArticleTab value="tab-1">
+          <ArticleAccordion panels='[{"label":"Closed","value":"accordion-item-0","defaultOpen":false}]'>
+            <ArticleAccordionItem value="accordion-item-0">
               <h2 id="hidden-heading">Hidden heading</h2>
             </ArticleAccordionItem>
           </ArticleAccordion>
@@ -181,10 +181,10 @@ describe("semantic Article components", () => {
     expect(markup).toContain('id="visible-heading"');
     expect(markup).toContain('id="hidden-heading"');
     expect(markup).toMatch(
-      /role="tabpanel"[^>]*hidden=""[^>]*data-article-panel="tab"/u
+      /<article-panel(?=[^>]*role="tabpanel")(?=[^>]*hidden="until-found")(?=[^>]*data-article-panel="tab")[^>]*>/u
     );
     expect(markup).toMatch(
-      /hidden=""[^>]*role="region"[^>]*data-article-panel="accordion"/u
+      /<article-panel(?=[^>]*role="region")(?=[^>]*hidden="until-found")(?=[^>]*data-article-panel="accordion")[^>]*>/u
     );
   });
 
