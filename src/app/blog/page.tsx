@@ -21,25 +21,31 @@ export default async function BlogPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [articles, tags, params] = await Promise.all([
+  // `searchParams` is a request-time API: reading it unconditionally would opt
+  // the catalog out of prerendering. Only the development-only prototype needs
+  // it, so the await stays inside the gate that the production build removes.
+  if (process.env.NODE_ENV !== "production") {
+    const params = await searchParams;
+
+    if (isVariantKey(params.variant)) {
+      return (
+        <BlogCatalogPrototype
+          alignment={isAlignment(params.align) ? params.align : "meta-bottom"}
+          cardLayout={isCardLayout(params.card) ? params.card : "stacked"}
+          snippetMode={
+            isSnippetMode(params.snippet) ? params.snippet : "conditional"
+          }
+          state={isPrototypeState(params.state) ? params.state : "default"}
+          variant={params.variant}
+        />
+      );
+    }
+  }
+
+  const [articles, tags] = await Promise.all([
     listArticles(),
     listArticleTags(),
-    searchParams,
   ]);
-
-  if (process.env.NODE_ENV !== "production" && isVariantKey(params.variant)) {
-    return (
-      <BlogCatalogPrototype
-        alignment={isAlignment(params.align) ? params.align : "meta-bottom"}
-        cardLayout={isCardLayout(params.card) ? params.card : "stacked"}
-        snippetMode={
-          isSnippetMode(params.snippet) ? params.snippet : "conditional"
-        }
-        state={isPrototypeState(params.state) ? params.state : "default"}
-        variant={params.variant}
-      />
-    );
-  }
 
   return <BlogView articles={articles} tags={tags} />;
 }
