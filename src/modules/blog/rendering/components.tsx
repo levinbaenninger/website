@@ -1,4 +1,5 @@
 import {
+  ArrowUpRightIcon,
   FileCode2Icon,
   FileIcon,
   FileJsonIcon,
@@ -7,6 +8,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import type { StaticImageData } from "next/image";
+import Link from "next/link";
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
 
 import { AlertDescription, AlertTitle } from "@/shared/ui/alert";
@@ -25,6 +27,7 @@ import {
 import { Kbd } from "@/shared/ui/kbd";
 
 import { ArticleCopyButton } from "./copy-button";
+import { ArticleHeadingCopyLink } from "./heading-copy";
 
 interface FigureProps {
   readonly alt?: string;
@@ -49,20 +52,43 @@ export const ArticleFigure = ({
   </figure>
 );
 
+/*
+ * Three destinations, three behaviors, all decided by the compiled href — the
+ * contract already restricts an authored link to a same-Article fragment, a
+ * root-relative path, or an absolute HTTPS URL, so there is no fourth case.
+ *
+ * A fragment stays a plain anchor: it is same-document navigation, and routing
+ * it through the router would replace the browser's own behavior with a slower
+ * copy of it. A root-relative path is an in-app destination and takes the
+ * client-side transition. An external destination opens in a new tab and says
+ * so — with an icon *and* a name, because a mark no screen reader can reach is
+ * not a mark, and colour alone is not a mark either.
+ */
 export const ArticleLink = ({
   children,
   href = "",
   ...props
 }: ComponentPropsWithoutRef<"a">) => {
-  const external = href.startsWith("https://");
+  if (href.startsWith("https://")) {
+    return (
+      <a {...props} href={href} rel="noopener noreferrer" target="_blank">
+        {children}
+        <ArrowUpRightIcon aria-hidden data-article-external-mark="" />
+        <span className="sr-only"> (opens in a new tab)</span>
+      </a>
+    );
+  }
+
+  if (href.startsWith("/")) {
+    return (
+      <Link {...props} href={href}>
+        {children}
+      </Link>
+    );
+  }
 
   return (
-    <a
-      {...props}
-      href={href}
-      rel={external ? "noopener noreferrer" : undefined}
-      target={external ? "_blank" : undefined}
-    >
+    <a {...props} href={href}>
       {children}
     </a>
   );
@@ -249,37 +275,89 @@ export const ArticleCodeBlock = ({
   </figure>
 );
 
+/*
+ * The heading text *is* its own fragment link, with the copy-link control beside
+ * it. That shape needs no extra affordance to explain itself and no extra tab
+ * stop to reach, and it is the reference's own.
+ *
+ * The `id` is the compiler's, deterministic and already deduplicated by
+ * `github-slugger`, so the link can be written without knowing anything about
+ * the Article. A heading compiled without one — which the contract does not
+ * produce — degrades to plain text rather than to a broken link.
+ *
+ * The language stops at h4: `contract.ts` rejects h1 above it and h5/h6 below,
+ * so these three are the complete set.
+ */
+const ArticleHeadingContent = ({
+  children,
+  id,
+}: {
+  readonly children: ReactNode;
+  readonly id: string | undefined;
+}): ReactNode =>
+  id === undefined ? (
+    children
+  ) : (
+    <>
+      <a data-article-heading-anchor="" href={`#${id}`}>
+        {children}
+      </a>
+      <ArticleHeadingCopyLink id={id} />
+    </>
+  );
+
 export const ArticleHeading2 = ({
   children,
   ...props
-}: ComponentPropsWithoutRef<"h2">) => <h2 {...props}>{children}</h2>;
+}: ComponentPropsWithoutRef<"h2">) => (
+  <h2 {...props}>
+    <ArticleHeadingContent id={props.id}>{children}</ArticleHeadingContent>
+  </h2>
+);
 
 export const ArticleHeading3 = ({
   children,
   ...props
-}: ComponentPropsWithoutRef<"h3">) => <h3 {...props}>{children}</h3>;
+}: ComponentPropsWithoutRef<"h3">) => (
+  <h3 {...props}>
+    <ArticleHeadingContent id={props.id}>{children}</ArticleHeadingContent>
+  </h3>
+);
 
 export const ArticleHeading4 = ({
   children,
   ...props
-}: ComponentPropsWithoutRef<"h4">) => <h4 {...props}>{children}</h4>;
-
-export const ArticleHeading5 = ({
-  children,
-  ...props
-}: ComponentPropsWithoutRef<"h5">) => <h5 {...props}>{children}</h5>;
-
-export const ArticleHeading6 = ({
-  children,
-  ...props
-}: ComponentPropsWithoutRef<"h6">) => <h6 {...props}>{children}</h6>;
+}: ComponentPropsWithoutRef<"h4">) => (
+  <h4 {...props}>
+    <ArticleHeadingContent id={props.id}>{children}</ArticleHeadingContent>
+  </h4>
+);
 
 export const ArticleQuote = (props: ComponentPropsWithoutRef<"blockquote">) => (
   <blockquote {...props} />
 );
 
+/*
+ * A wide table scrolls inside the rail instead of compressing its columns into
+ * unreadable ones, and it cannot be a rule: `.typeset-scroll` needs a wrapper
+ * element, and CSS cannot add one.
+ *
+ * The region is focusable so a keyboard can scroll it. That costs a tab stop on
+ * every table, including narrow ones that never overflow — the alternative is
+ * content only a pointer can reach, which is worse. A named `section` is a
+ * region, and the name is what makes the stop announce itself as something
+ * rather than as an unlabelled box.
+ */
 export const ArticleTable = (props: ComponentPropsWithoutRef<"table">) => (
-  <table {...props} />
+  <section
+    aria-label="Table"
+    className="typeset-scroll"
+    data-article-table=""
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Scrollable overflow has to be reachable without a pointer.
+    tabIndex={0}
+  >
+    <table {...props} />
+  </section>
 );
 
 export const ArticleTableHead = (props: ComponentPropsWithoutRef<"thead">) => (

@@ -723,11 +723,27 @@ const assignHeadingIds = (
 
   visit(root, "heading", (heading: Heading) => {
     diagnostics.capture(heading, () => {
-      if (heading.depth === 1) {
+      const { depth } = heading;
+      if (depth === 1) {
         throw new Error(
-          "[blog/heading-h1] Article bodies begin at h2; the Article title supplies the only h1. Use h2–h6."
+          "[blog/heading-h1] Article bodies begin at h2; the Article title supplies the only h1. Use h2–h4."
         );
       }
+      if (depth === 5 || depth === 6) {
+        throw new Error(
+          `[blog/heading-depth] Heading depth ${depth} is outside the Article outline. Use h2–h4.`
+        );
+      }
+
+      // The heading text becomes the section's fragment link, so an authored
+      // link inside it would nest an anchor inside an anchor.
+      visit(heading, (descendant) => {
+        if (descendant.type === "link" || descendant.type === "linkReference") {
+          throw new Error(
+            "[blog/heading-link] Article headings are their own section link and cannot contain a link. Move the link into the prose below the heading."
+          );
+        }
+      });
 
       const text = toString(heading);
       const id = slugger.slug(text);
@@ -737,7 +753,7 @@ const assignHeadingIds = (
         id,
       };
       headings.push({
-        depth: heading.depth,
+        depth,
         id,
         text,
       });

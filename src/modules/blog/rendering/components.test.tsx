@@ -64,8 +64,6 @@ describe("semantic Article components", () => {
       "h2",
       "h3",
       "h4",
-      "h5",
-      "h6",
       "hr",
       "input",
       "pre",
@@ -79,6 +77,9 @@ describe("semantic Article components", () => {
   });
 
   test("renders links with destination-specific browser behavior", () => {
+    const fragment = renderToStaticMarkup(
+      <ArticleLink href="#details">Fragment</ArticleLink>
+    );
     const internal = renderToStaticMarkup(
       <ArticleLink href="/blog/another#details">Internal</ArticleLink>
     );
@@ -86,10 +87,14 @@ describe("semantic Article components", () => {
       <ArticleLink href="https://example.com/docs">External</ArticleLink>
     );
 
-    expect(internal).toBe('<a href="/blog/another#details">Internal</a>');
-    expect(external).toBe(
-      '<a href="https://example.com/docs" rel="noopener noreferrer" target="_blank">External</a>'
-    );
+    expect(fragment).toBe('<a href="#details">Fragment</a>');
+    expect(internal).toContain('href="/blog/another#details"');
+    expect(internal).not.toContain("target=");
+    expect(external).toContain('rel="noopener noreferrer" target="_blank"');
+    expect(external).toContain("(opens in a new tab)");
+    expect(external).toContain("data-article-external-mark");
+    expect(fragment).not.toContain("(opens in a new tab)");
+    expect(internal).not.toContain("(opens in a new tab)");
   });
 
   test("preserves intrinsic image data and explicit alternatives", () => {

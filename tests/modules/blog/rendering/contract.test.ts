@@ -151,8 +151,12 @@ Plain **strong** prose with \`inline code\`.
       searchText:
         "Intro Plain strong prose with inline code. One Two A useful quote. Intro",
     });
-    expect(article.markup).toContain('<h2 id="intro">Intro</h2>');
-    expect(article.markup).toContain('<h2 id="intro-1">Intro</h2>');
+    expect(article.markup).toContain(
+      '<h2 id="intro"><a data-article-heading-anchor="" href="#intro">Intro</a>'
+    );
+    expect(article.markup).toContain(
+      '<h2 id="intro-1"><a data-article-heading-anchor="" href="#intro-1">Intro</a>'
+    );
     expect(article.markup).toContain("<strong>strong</strong>");
     expect(article.markup).toContain("<blockquote>");
   });
@@ -160,6 +164,30 @@ Plain **strong** prose with \`inline code\`.
   test("rejects a body-level h1 with a stable diagnostic", async () => {
     await expect(compileArticle("# Body title")).rejects.toThrow(
       /blog\/heading-h1.*Article bodies begin at h2/u
+    );
+  });
+
+  test("keeps the Article outline at depth two through four", async () => {
+    const outline = await compileArticle("## Two\n\n### Three\n\n#### Four");
+
+    expect(outline.facts.headings).toEqual([
+      { depth: 2, id: "two", text: "Two" },
+      { depth: 3, id: "three", text: "Three" },
+      { depth: 4, id: "four", text: "Four" },
+    ]);
+    await expect(compileArticle("##### Five")).rejects.toThrow(
+      /blog\/heading-depth.*Heading depth 5 is outside the Article outline/u
+    );
+    await expect(compileArticle("###### Six")).rejects.toThrow(
+      /blog\/heading-depth.*Heading depth 6 is outside the Article outline/u
+    );
+  });
+
+  test("rejects a link inside a heading that is already a link", async () => {
+    await expect(
+      compileArticle("## See [the docs](https://example.com/docs)")
+    ).rejects.toThrow(
+      /blog\/heading-link.*Article headings are their own section link/u
     );
   });
 

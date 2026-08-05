@@ -91,26 +91,20 @@
 }
 
 /*
- * External destinations say so. `ArticleLink` already sets `target="_blank"` for
- * every `https://` href, so the mark needs no new authoring prop and no new
- * component — but it does need to live in the component eventually, because a
- * mask cannot be read by assistive technology. Finding 12.
+ * External destinations say so. Finding 12 is now resolved in production —
+ * `ArticleLink` renders a real icon plus an accessible name — so the mask this
+ * file used to draw is gone and only its placement remains.
  */
-[data-article-language] a[target="_blank"]::after {
-  content: "";
+[data-article-language] a[target="_blank"] [data-article-external-mark] {
   display: inline-block;
   width: 0.85em;
   height: 0.85em;
   margin-inline-start: 0.15em;
   vertical-align: -0.08em;
-  background-color: currentColor;
   opacity: 0.6;
-  mask-repeat: no-repeat;
-  mask-size: contain;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E");
 }
 
-[data-article-language] a[target="_blank"]:hover::after {
+[data-article-language] a[target="_blank"]:hover [data-article-external-mark] {
   opacity: 1;
 }
 
@@ -124,7 +118,8 @@
 
 [data-article-language]
   [data-slot="article-cards"]
-  > a[target="_blank"]::after {
+  > a[target="_blank"]
+  [data-article-external-mark] {
   position: absolute;
   top: 0.875rem;
   right: 0.875rem;
