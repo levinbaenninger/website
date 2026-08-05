@@ -164,6 +164,24 @@ describe("hydrated discovery controls", () => {
     ).toBeTruthy();
   });
 
+  // Clearing hides the Clear control, so a naive handler leaves focus on a
+  // `display:none` button and the visitor lands back on the document.
+  test("returns focus to the field after the Clear control is used", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(threeArticles);
+
+    const search = await screen.findByRole("searchbox", {
+      name: "Search Articles",
+    });
+
+    await user.type(search, "cache");
+    await user.click(screen.getByRole("button", { name: "Clear search" }));
+
+    expect(search).toHaveProperty("value", "");
+    expect(document.activeElement).toBe(search);
+  });
+
   test("clears the query with Escape and keeps the field focused", async () => {
     const user = userEvent.setup();
 

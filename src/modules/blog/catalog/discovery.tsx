@@ -1,7 +1,7 @@
 "use client";
 
 import { SearchIcon, XIcon } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 
 import type { ArticleTagFacet } from "@/modules/blog/articles/types";
 import { Badge } from "@/shared/ui/badge";
@@ -36,47 +36,55 @@ const SearchField = ({
   enabled: boolean;
   onQueryChange: (query: string) => void;
   query: string;
-}) => (
-  <InputGroup className="h-9 rounded-lg shadow-none">
-    <InputGroupInput
-      aria-label="Search Articles"
-      disabled={!enabled}
-      onChange={(event) => {
-        onQueryChange(event.target.value);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          onQueryChange("");
-        }
-      }}
-      placeholder="Search articles…"
-      type="search"
-      value={query}
-    />
+}) => {
+  const fieldRef = useRef<HTMLInputElement>(null);
 
-    <InputGroupAddon align="inline-start">
-      <SearchIcon aria-hidden />
-    </InputGroupAddon>
-
-    <InputGroupAddon
-      align="inline-end"
-      className="pr-2.25 data-[disabled=true]:hidden"
-      data-disabled={query.length === 0}
-    >
-      <InputGroupButton
-        aria-label="Clear search"
-        className="rounded-sm border-none"
-        onClick={() => {
-          onQueryChange("");
+  return (
+    <InputGroup className="h-9 rounded-lg shadow-none">
+      <InputGroupInput
+        aria-label="Search Articles"
+        disabled={!enabled}
+        onChange={(event) => {
+          onQueryChange(event.target.value);
         }}
-        size="icon-xs"
-        title="Clear search"
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            onQueryChange("");
+          }
+        }}
+        placeholder="Search articles…"
+        ref={fieldRef}
+        type="search"
+        value={query}
+      />
+
+      <InputGroupAddon align="inline-start">
+        <SearchIcon aria-hidden />
+      </InputGroupAddon>
+
+      <InputGroupAddon
+        align="inline-end"
+        className="pr-2.25 data-[disabled=true]:hidden"
+        data-disabled={query.length === 0}
       >
-        <XIcon aria-hidden />
-      </InputGroupButton>
-    </InputGroupAddon>
-  </InputGroup>
-);
+        <InputGroupButton
+          aria-label="Clear search"
+          className="rounded-sm border-none"
+          onClick={() => {
+            onQueryChange("");
+            // Clearing hides this very button, so focus would fall to the
+            // document. Put it back where the visitor was working.
+            fieldRef.current?.focus();
+          }}
+          size="icon-xs"
+          title="Clear search"
+        >
+          <XIcon aria-hidden />
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
+  );
+};
 
 const TagOption = ({
   count,
