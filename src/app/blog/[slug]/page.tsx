@@ -5,6 +5,7 @@ import { createArticleMetadata } from "@/app/_blog/articles/metadata";
 import { requireCurrentArticle } from "@/app/_blog/articles/route";
 import { articleRouteContract } from "@/app/_blog/articles/route-server";
 import { ArticleStructuredData } from "@/app/_blog/articles/structured-data";
+import { toCanonicalUrl } from "@/app/_site/identity";
 // PROTOTYPE — issues #33 and #34. Remove these imports together with the
 // prototype directories once a reader composition and a presentation language
 // are chosen.
@@ -77,7 +78,15 @@ export default async function ArticlePage(props: ArticlePageProps) {
   return (
     <>
       <ArticleStructuredData article={article} />
-      <ArticleView article={article} />
+      <ArticleView
+        article={article}
+        // Origin belongs to the app, not to the Article. A local Draft has no
+        // canonical destination, so it receives none and its headings keep the
+        // fragment link without the public section-copy control.
+        canonicalUrl={
+          article.status === "published" ? toCanonicalUrl(article.href) : null
+        }
+      />
     </>
   );
 }
