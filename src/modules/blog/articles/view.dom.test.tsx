@@ -75,10 +75,15 @@ const article = ({
 
 /** The prerender: `renderToStaticMarkup` runs no effects, so this is the
  *  reader a visitor receives before — or without — any JavaScript. */
-const renderServer = (detail: ArticleDetail) => {
+const renderServer = (
+  detail: ArticleDetail,
+  canonicalUrl: string | null = null
+) => {
   const container = document.createElement("div");
 
-  container.innerHTML = renderToStaticMarkup(<ArticleView article={detail} />);
+  container.innerHTML = renderToStaticMarkup(
+    <ArticleView article={detail} canonicalUrl={canonicalUrl} />
+  );
   document.body.append(container);
 
   return container;
@@ -293,6 +298,43 @@ describe("Article reader navigation", () => {
       queries.queryByRole("navigation", { name: "Neighbouring Articles" })
     ).toBeNull();
     expect(queries.getAllByRole("link")).toHaveLength(1);
+  });
+});
+
+describe("Article sharing", () => {
+  const CANONICAL_URL =
+    "https://levin.baenninger.me/blog/representative-article";
+
+  test("puts Share in front of the neighbour links", () => {
+    const container = renderServer(
+      article({
+        navigation: {
+          next: { href: "/blog/older", title: "An older Article" },
+          previous: null,
+        },
+      }),
+      CANONICAL_URL
+    );
+
+    // Document order is the contract here, and no accessible query expresses
+    // one control coming before another.
+    expect(
+      [
+        ...container.querySelectorAll(
+          '[aria-label="Share"], [aria-label="Next Article"]'
+        ),
+      ].map((control) => control.getAttribute("aria-label"))
+    ).toEqual(["Share", "Next Article"]);
+  });
+
+  test("withholds complete-Article sharing from a local Draft", () => {
+    const container = renderServer(
+      article({ publishedAt: null, status: "draft" })
+    );
+
+    expect(
+      within(container).queryByRole("button", { name: "Share" })
+    ).toBeNull();
   });
 });
 
