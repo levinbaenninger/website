@@ -17,8 +17,8 @@ interface ArticleViewProps {
   readonly article: ArticleDetail;
   /**
    * The absolute canonical Article URL, supplied by the app because origin is
-   * app-owned. `null` withholds the public section-copy controls, which is the
-   * local Draft case.
+   * app-owned. `null` withholds the Share menu and the public section-copy
+   * controls alike, which is the local Draft case.
    */
   readonly canonicalUrl?: string | null;
 }
@@ -55,7 +55,11 @@ export const ArticleView = ({
         <ReaderTopLine />
       </ReaderRail>
 
-      <ReaderToolbar navigation={navigation} title={article.title} />
+      <ReaderToolbar
+        canonicalUrl={canonicalUrl}
+        navigation={navigation}
+        title={article.title}
+      />
 
       <ReaderRail>
         <ArticleHeader article={article} />

@@ -22,6 +22,7 @@ import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/ui/cn";
 
 import { ARTICLE_TITLE_SLOT } from "./reader-contract";
+import { ArticleShareMenu } from "./share-menu";
 import { StickyArticleTitle } from "./sticky-title";
 
 /** The 48 rem lined rail every part of the reader is measured against. */
@@ -113,17 +114,26 @@ const ToolbarNeighbourLink = ({
 );
 
 /**
- * The toolbar's action cluster. Share joins it in front of the neighbour links.
+ * The toolbar's action cluster: Share, then the neighbour links.
  *
  * An unavailable neighbour is omitted rather than disabled: a control that
- * cannot do anything is noise in the tab order.
+ * cannot do anything is noise in the tab order. Share is omitted on the same
+ * grounds whenever there is no canonical URL — the local Draft case, where the
+ * only link the menu could offer is one nobody else can open.
  */
 const ReaderToolbarActions = ({
+  canonicalUrl,
   navigation,
+  title,
 }: {
+  readonly canonicalUrl: string | null;
   readonly navigation: ArticleReaderNavigation;
+  readonly title: string;
 }) => (
   <div className="flex shrink-0 items-center gap-2">
+    {canonicalUrl === null ? null : (
+      <ArticleShareMenu canonicalUrl={canonicalUrl} title={title} />
+    )}
     {navigation.previous === null ? null : (
       <ToolbarNeighbourLink
         direction="previous"
@@ -147,9 +157,11 @@ const ReaderToolbarActions = ({
  * drifts off centre instead of colliding with either side.
  */
 export const ReaderToolbar = ({
+  canonicalUrl,
   navigation,
   title,
 }: {
+  readonly canonicalUrl: string | null;
   readonly navigation: ArticleReaderNavigation;
   readonly title: string;
 }) => (
@@ -162,7 +174,11 @@ export const ReaderToolbar = ({
       <StickyArticleTitle title={title} />
 
       <div className="flex flex-1 basis-0 justify-end">
-        <ReaderToolbarActions navigation={navigation} />
+        <ReaderToolbarActions
+          canonicalUrl={canonicalUrl}
+          navigation={navigation}
+          title={title}
+        />
       </div>
     </ReaderRail>
   </div>
