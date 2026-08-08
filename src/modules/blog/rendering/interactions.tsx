@@ -146,7 +146,19 @@ const useArticleHashNavigation = (): void => {
   }, []);
 };
 
-const useBeforeMatch = (reveal: () => void, hidden: boolean) => {
+/**
+ * Wires an inactive panel to `hidden="until-found"` and to `beforematch`.
+ *
+ * The attribute is set imperatively rather than rendered, because React
+ * normalises a `hidden` prop to a boolean and the string value is the whole
+ * point: `until-found` is what lets a browser's find-in-page reveal a match
+ * inside a panel the reader has not opened, and `beforematch` is how the panel
+ * hears about it in time to open itself.
+ *
+ * Exported for `code-tabs.tsx`, which is the third panel kind and needs the
+ * identical behaviour.
+ */
+export const useArticleFoundPanel = (reveal: () => void, hidden: boolean) => {
   const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -188,7 +200,7 @@ export const ArticleAccordionItem = ({
   const reveal = () => {
     context.reveal(value);
   };
-  const panelRef = useBeforeMatch(reveal, !open);
+  const panelRef = useArticleFoundPanel(reveal, !open);
 
   return (
     <AccordionPrimitive.Item data-slot="article-accordion-item" value={value}>
@@ -279,7 +291,10 @@ export const ArticleTab = ({
   const reveal = () => {
     context.reveal(value);
   };
-  const panelRef = useBeforeMatch(reveal, context.selectedValue !== value);
+  const panelRef = useArticleFoundPanel(
+    reveal,
+    context.selectedValue !== value
+  );
 
   return (
     <TabsPrimitive.Content asChild forceMount value={value}>

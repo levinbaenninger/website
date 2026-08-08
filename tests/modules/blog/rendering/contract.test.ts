@@ -902,4 +902,188 @@ const view = <div>Hello</div>
       "-old\n+new\n"
     );
   });
+  test("groups tabbed fences nested inside approved compositions", async () => {
+    const { markup } = await renderArticle(`<Steps>
+  <Step title="Install">
+\`\`\`bash tab="npm" tab-group="package-manager"
+npm install
+\`\`\`
+
+\`\`\`bash tab="pnpm"
+pnpm install
+\`\`\`
+  </Step>
+</Steps>
+
+<Tabs>
+  <Tab title="Client">
+\`\`\`ts tab="TypeScript"
+const runtime = "ts"
+\`\`\`
+
+\`\`\`js tab="JavaScript"
+const runtime = "js"
+\`\`\`
+  </Tab>
+  <Tab title="Server">Nothing tabbed here.</Tab>
+</Tabs>
+
+<Accordion>
+  <AccordionItem title="Details">
+\`\`\`yaml tab="YAML"
+key: value
+\`\`\`
+
+\`\`\`json tab="JSON"
+{ "key": "value" }
+\`\`\`
+  </AccordionItem>
+</Accordion>`);
+
+    // Three nested runs, each grouped rather than discarded. Before #53 the
+    // labels reached the DOM and no strip was ever formed.
+    expect(markup.match(/data-code-tabs/gu)).toHaveLength(3);
+    expect(markup).not.toContain("data-code-tab-label");
+    for (const label of [
+      "npm",
+      "pnpm",
+      "TypeScript",
+      "JavaScript",
+      "YAML",
+      "JSON",
+    ]) {
+      expect(markup).toContain(`>${label}<`);
+    }
+    expect(markup).toContain('data-tab-group="package-manager"');
+  });
+
+  test("reports CodeTabs diagnostics at nested depth", async () => {
+    // The worse half of the old defect was silence: a mistake authored inside a
+    // Step compiled cleanly and rendered as loose blocks.
+    const invalid = [
+      [
+        '<Steps>\n  <Step title="One">\n```ts tab="Only"\nvalue\n```\n  </Step>\n</Steps>',
+        "blog/code-tabs-size",
+      ],
+      [
+        '<Tabs>\n  <Tab title="One">\n```ts tab="Same"\na\n```\n```js tab="Same"\nb\n```\n  </Tab>\n  <Tab title="Two">Other</Tab>\n</Tabs>',
+        "blog/code-tabs-label",
+      ],
+      [
+        '<Accordion>\n  <AccordionItem title="One">\n```ts tab="First"\na\n```\n```js\nb\n```\n  </AccordionItem>\n</Accordion>',
+        "blog/code-tabs-boundary",
+      ],
+      [
+        '<Steps>\n  <Step title="One">\n```ts tab="First"\na\n```\n```js tab="Second" tab-group="late"\nb\n```\n  </Step>\n</Steps>',
+        "blog/code-tabs-group",
+      ],
+    ] as const;
+
+    await Promise.all(
+      invalid.map(async ([source, ruleId]) => {
+        await expect(compileArticle(source)).rejects.toThrow(ruleId);
+      })
+    );
+  });
+
+  test("names every CodeBlock from its compiled language and title", async () => {
+    const untitled = await renderArticle("```ts\nconst answer = 42\n```");
+    expect(untitled.codeBlocks[0]?.["data-code-name"]).toBe(
+      "TypeScript code example"
+    );
+    expect(untitled.markup).toContain('aria-label="TypeScript code example"');
+
+    const titled = await renderArticle(
+      '```bash title="install.sh"\nnpm install\n```'
+    );
+    expect(titled.codeBlocks[0]?.["data-code-name"]).toBe(
+      "install.sh, Bash code example"
+    );
+  });
+
+  test("emits both code themes without an authoritative inline background", async () => {
+    const { markup } = await renderArticle("```ts\nconst answer = 42\n```");
+
+    expect(markup).toContain("--shiki-light:");
+    expect(markup).toContain("--shiki-dark:");
+    // The frame owns the surface; an inline background could only be beaten
+    // with `!important`, and the stylesheet carries none.
+    expect(markup).not.toMatch(/style="[^"]*background-color:/u);
+    expect(markup).not.toMatch(/style="[^"]*[^-]color:\s*#/u);
+  });
+
+  test("keeps compiled fence facts aligned across a Twoslash block", async () => {
+    // Twoslash can emit a `pre` of its own inside a popup, and the facts are
+    // reapplied by position: an uncounted `pre` used to shift the title, the
+    // copy source and the line-number start of every later block by one.
+    const { codeBlocks } = await renderArticle(`\`\`\`ts twoslash
+const greeting: string = "hello"
+\`\`\`
+
+\`\`\`ts title="after.ts" lineNumbers=5
+const after = 1
+\`\`\``);
+
+    expect(codeBlocks).toHaveLength(2);
+    expect(codeBlocks[1]?.["data-code-title"]).toBe("after.ts");
+    expect(codeBlocks[1]?.["data-line-numbers-start"]).toBe("5");
+    expect(codeBlocks[1]?.["data-copy-source"]).toBe("const after = 1");
+  });
+
+  test("says what every annotation means in words as well as in colour", async () => {
+    const { markup } = await renderArticle(`\`\`\`ts
+const highlighted = 1 // [!code highlight]
+const focused = 2 // [!code focus]
+const added = 3 // [!code ++]
+const removed = 4 // [!code --]
+const worded = 5 // [!code word:worded]
+\`\`\``);
+
+    for (const label of [
+      "Highlighted line: ",
+      "Focused line: ",
+      "Added line: ",
+      "Removed line: ",
+      "highlighted ",
+    ]) {
+      expect(markup).toContain(`data-code-annotation="">${label}<`);
+    }
+  });
+
+  test("keeps Twoslash markup out of the Article code frame", async () => {
+    const hover = await renderArticle(`\`\`\`ts twoslash
+const greeting: string = "hello"
+\`\`\``);
+
+    // One frame for the fence, and Twoslash's own markup is not a second one:
+    // the compiler marks the `pre` a popup may carry so the global `pre`
+    // mapping leaves it alone.
+    expect(hover.codeBlocks).toHaveLength(1);
+    expect(hover.markup.match(/data-code-block/gu)).toHaveLength(1);
+    // The token became a real control rather than a hover-only span. Its popup
+    // is portalled, so it is client-only by construction — which is exactly why
+    // an explicit query or diagnostic must not be one.
+    expect(hover.markup).toContain('data-twoslash-trigger=""');
+    expect(hover.markup).toContain('aria-haspopup="dialog"');
+    expect(hover.markup).toContain(">greeting</button>");
+
+    // An explicit query and an expected error are authored output: the reader
+    // asked for them to be *shown*, so they stay static visible code.
+    const explicit = await renderArticle(`\`\`\`ts twoslash
+// @errors: 2322
+const answer: number = 42
+//    ^?
+const teaching: string = 42
+\`\`\``);
+    expect(explicit.markup).toContain("twoslash-query-line");
+    expect(explicit.markup).toContain("twoslash-error-line");
+    expect(explicit.markup).toContain(
+      "Type &#x27;number&#x27; is not assignable to type &#x27;string&#x27;."
+    );
+    // The query prints the inferred type as code under the line, not as a
+    // control: an authored `^?` is output, and output does not need operating.
+    expect(explicit.markup).not.toMatch(
+      /twoslash-query-line[^>]*>[\s\S]*?data-twoslash-trigger/u
+    );
+  });
 });

@@ -942,6 +942,11 @@
   scrollbar-width: none;
 }
 
+/* `scrollbar-width` is not honoured everywhere the strip has to scroll. */
+[data-slot="article-body"] [role="tablist"]::-webkit-scrollbar {
+  display: none;
+}
+
 /*
  * The trigger states its own height — the strip's, minus its 2 px padding.
  * Left to `padding` plus the body's 1.75 leading it came out 32.5 px tall in a

@@ -13,7 +13,12 @@ import {
 import Image from "next/image";
 import type { StaticImageData } from "next/image";
 import Link from "next/link";
-import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
+import type {
+  ComponentPropsWithoutRef,
+  CSSProperties,
+  ReactElement,
+  ReactNode,
+} from "react";
 
 import { AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import {
@@ -32,6 +37,7 @@ import { Kbd } from "@/shared/ui/kbd";
 
 import { ArticleCopyButton } from "./copy-button";
 import { ArticleHeadingCopyLink } from "./heading-copy";
+import { ArticleTwoslashScope } from "./twoslash";
 
 interface FigureProps {
   readonly alt?: string;
@@ -300,38 +306,90 @@ export const ArticleKbd = ({ children }: { readonly children: string }) => (
 );
 
 type ArticleCodeBlockProps = ComponentPropsWithoutRef<"pre"> & {
+  readonly "data-code-name"?: string;
   readonly "data-code-tab-label"?: string;
   readonly "data-code-title"?: string;
   readonly "data-copy-source"?: string;
   readonly "data-line-numbers-start"?: number;
   readonly "data-twoslash"?: string;
+  readonly "data-twoslash-internal"?: string;
 };
 
+/*
+ * The line-number start reaches CSS as a custom property, because the gutter is
+ * a counter and a counter needs its origin as a number. A declared interface
+ * rather than an assertion: `style` accepts any subtype of `CSSProperties`, so
+ * naming the property is enough to keep it typed.
+ */
+interface ArticleCodeBlockStyle extends CSSProperties {
+  readonly "--line-start"?: number;
+}
+
+/*
+ * `pre` is a global Article mapping, so every `pre` in the compiled tree arrives
+ * here — including the one Twoslash's rich renderer emits for a fenced example
+ * inside a hover popup. That one already sits inside a frame of its own, and
+ * wrapping it again produced a surface, a ring and a copy control nested in the
+ * popup's own card, with a `max-content` width that stopped an inferred
+ * signature from ever wrapping. The compiler marks it; here it passes straight
+ * through as the plain `pre` it is.
+ *
+ * Everything else becomes the frame: an optional ruled title bar, the copy
+ * control, and a compiler-derived accessible name — the language, plus the title
+ * when the author gave one — so the figure announces what it holds instead of
+ * presenting an unnamed region.
+ *
+ * The frame stays a Server Component. Only the copy control and the Twoslash pin
+ * scope are client leaves, and the scope is mounted solely for a block that
+ * actually carries Twoslash markup: it is what makes "one pinned popup" a
+ * property of a CodeBlock rather than of the page.
+ */
 export const ArticleCodeBlock = ({
+  "data-code-name": name,
   "data-code-tab-label": _tabLabel,
   "data-code-title": title,
   "data-copy-source": copySource,
   "data-line-numbers-start": lineNumbersStart,
   "data-twoslash": twoslash,
+  "data-twoslash-internal": twoslashInternal,
   children,
   ...props
-}: ArticleCodeBlockProps) => (
-  <figure
-    data-code-block=""
-    data-line-numbers-start={lineNumbersStart}
-    data-twoslash={twoslash}
-  >
-    {title === undefined && copySource === undefined ? null : (
-      <figcaption>
-        {title === undefined ? null : <span>{title}</span>}
-        {copySource === undefined ? null : (
-          <ArticleCopyButton source={copySource} />
-        )}
-      </figcaption>
-    )}
-    <pre {...props}>{children}</pre>
-  </figure>
-);
+}: ArticleCodeBlockProps) => {
+  if (twoslashInternal !== undefined) {
+    return <pre {...props}>{children}</pre>;
+  }
+
+  const style: ArticleCodeBlockStyle | undefined =
+    lineNumbersStart === undefined
+      ? undefined
+      : { "--line-start": lineNumbersStart };
+
+  const frame = (
+    <figure
+      aria-label={name}
+      data-code-block=""
+      data-line-numbers-start={lineNumbersStart}
+      data-twoslash={twoslash}
+      style={style}
+    >
+      {title === undefined && copySource === undefined ? null : (
+        <figcaption>
+          {title === undefined ? null : <span>{title}</span>}
+          {copySource === undefined ? null : (
+            <ArticleCopyButton source={copySource} />
+          )}
+        </figcaption>
+      )}
+      <pre {...props}>{children}</pre>
+    </figure>
+  );
+
+  return twoslash === undefined ? (
+    frame
+  ) : (
+    <ArticleTwoslashScope>{frame}</ArticleTwoslashScope>
+  );
+};
 
 /*
  * The heading text *is* its own fragment link, with the copy-link control beside

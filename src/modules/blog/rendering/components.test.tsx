@@ -73,6 +73,9 @@ describe("semantic Article components", () => {
       "th",
       "thead",
       "tr",
+      "twoslash-hover",
+      "twoslash-popup",
+      "twoslash-trigger",
     ]);
   });
 

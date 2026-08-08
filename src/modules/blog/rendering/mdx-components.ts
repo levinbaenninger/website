@@ -33,6 +33,11 @@ import {
   ArticleTab,
   ArticleTabs,
 } from "./interactions";
+import {
+  ArticleTwoslashHover,
+  ArticleTwoslashPopup,
+  ArticleTwoslashTrigger,
+} from "./twoslash";
 
 const articleMdxComponents: MDXComponents = Object.freeze({
   Accordion: ArticleAccordion,
@@ -64,6 +69,16 @@ const articleMdxComponents: MDXComponents = Object.freeze({
   th: ArticleTableHeading,
   thead: ArticleTableHead,
   tr: ArticleTableRow,
+  /*
+   * Twoslash's own hover markup, lifted by `code.ts` into three named elements
+   * the registry can reach. A hyphenated tag name is a component key like any
+   * other, and using one keeps these three unreachable from authored MDX: the
+   * closed language rejects raw HTML and every unknown component name, so an
+   * author can no more write `<twoslash-hover>` than they can write a `div`.
+   */
+  "twoslash-hover": ArticleTwoslashHover,
+  "twoslash-popup": ArticleTwoslashPopup,
+  "twoslash-trigger": ArticleTwoslashTrigger,
 });
 
 export const getArticleMdxComponents = (): MDXComponents =>

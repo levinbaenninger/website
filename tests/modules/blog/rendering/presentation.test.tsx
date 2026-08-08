@@ -55,6 +55,11 @@ Prose with \`inlineCode\`, a [same-Article fragment](#the-second-section), a
 | --- | --- |
 | Outline | Depth two through four |
 | Fragment | A stable compiled ID |
+
+\`\`\`ts title="reader.ts" lineNumbers=1
+const kept = "copied" // [!code highlight]
+const removed = 1 // [!code --]
+\`\`\`
 `;
 
 /*
@@ -293,6 +298,29 @@ describe("Article presentation language", () => {
     expect(rich).toContain('hidden="until-found"');
     // Component labels are controls, never headings.
     expect(rich).not.toMatch(/<h[1-6][^>]*>Closed by default/u);
+  });
+
+  test("names a CodeBlock and keeps its copied source clean", () => {
+    expect(published).toContain(
+      'aria-label="reader.ts, TypeScript code example"'
+    );
+    expect(published).toContain('data-line-numbers-start="1"');
+    expect(published).toContain('aria-label="Copy code"');
+    // The gutter is a CSS counter and never text, so a line number cannot be
+    // selected and cannot reach the clipboard. `contract.test.ts` proves the
+    // compiled copy source itself; here the point is that the rendered block
+    // carries no numbers to copy in the first place.
+    expect(published).not.toContain(">1</span>");
+    expect(published).not.toContain("[!code");
+  });
+
+  test("says what an annotation means without relying on its colour", () => {
+    expect(published).toContain(
+      'class="sr-only" data-code-annotation="">Highlighted line: <'
+    );
+    expect(published).toContain(
+      'class="sr-only" data-code-annotation="">Removed line: <'
+    );
   });
 
   test("renders ordinary Markdown as ordinary semantic prose", () => {

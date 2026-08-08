@@ -2,7 +2,7 @@ import GithubSlugger from "github-slugger";
 import { icons as lucideIcons } from "lucide-react";
 import type { Code, Definition, Heading, Root, RootContent } from "mdast";
 import { toString } from "mdast-util-to-string";
-import { visit } from "unist-util-visit";
+import { CONTINUE, SKIP, visit } from "unist-util-visit";
 
 import type {
   ArticleCompilationFacts,
@@ -504,6 +504,34 @@ const validateTwoslashSource = (node: Code): void => {
   }
 };
 
+/*
+ * The spoken name of a language, which is not its fence keyword: "ts" is a
+ * fence, "TypeScript" is what a reader hears. Every approved language has one,
+ * so the lookup is total and needs no fallback beyond the keyword itself.
+ */
+const CODE_LANGUAGE_NAMES: Readonly<Record<string, string>> = {
+  bash: "Bash",
+  css: "CSS",
+  diff: "Diff",
+  html: "HTML",
+  js: "JavaScript",
+  json: "JSON",
+  jsx: "JSX",
+  md: "Markdown",
+  mdx: "MDX",
+  text: "Plain text",
+  ts: "TypeScript",
+  tsx: "TSX",
+  yaml: "YAML",
+};
+
+const codeBlockName = (language: string, title: string | undefined): string => {
+  const spoken = CODE_LANGUAGE_NAMES[language] ?? language;
+  return title === undefined
+    ? `${spoken} code example`
+    : `${title}, ${spoken} code example`;
+};
+
 const annotateCodeNode = (
   node: Code,
   diagnostics: ArticleDiagnostics
@@ -537,6 +565,13 @@ const annotateCodeNode = (
       ...node.data.hProperties,
       "data-code-title": parsed.title,
       "data-code-tab-label": parsed.tab,
+      /*
+       * The CodeBlock's accessible name is compiled rather than read back off
+       * the rendered tokens: the authored language and title are the only two
+       * facts that describe a block, and both are known here. A reader arriving
+       * on the frame hears what the example is before deciding to enter it.
+       */
+      "data-code-name": codeBlockName(language, parsed.title),
       "data-copy-source": cleanCopySource(node.value),
       "data-line-numbers-start": parsed.lineNumbers,
       "data-twoslash": parsed.twoslash ? "" : undefined,
@@ -549,7 +584,7 @@ const codeTabsNode = (
   children: readonly Code[],
   labels: readonly string[],
   groupId: string | undefined
-): RootContent =>
+): ArticleFlowElement =>
   ({
     type: "mdxJsxFlowElement",
     name: "CodeTabs",
@@ -570,32 +605,43 @@ const codeTabsNode = (
           ]),
     ],
     children: [...children],
-  }) satisfies RootContent;
+  }) satisfies ArticleFlowElement;
 
-const validateAndGroupCode = (
-  root: Root,
+/*
+ * Grouping walks the whole tree, not just `root.children`.
+ *
+ * A tabbed run authored inside a Step, a Tab or an AccordionItem — "run this,
+ * in npm or pnpm" — used to be annotated and then silently dropped on the
+ * floor: the labels reached the DOM as `data-code-tab-label` and no `CodeTabs`
+ * was ever formed, and the `code-tabs-size`, `code-tabs-boundary`,
+ * `code-tabs-label` and `code-tabs-group` diagnostics never fired there either.
+ * A silent mistake is the worse half of that; grouping recurses so both halves
+ * go away together.
+ *
+ * The recursion has no allowlist of container names on purpose. The fences live
+ * in the leaf composition — `Step`, `Tab`, `AccordionItem` — and an allowlist of
+ * containers goes stale the moment the language grows one. Every JSX flow
+ * element's children are grouped by the same rule the root's are.
+ */
+const groupCodeRuns = <TChild extends RootContent>(
+  children: readonly TChild[],
+  metadata: ReadonlyMap<Code, CodeFenceMetadata>,
   diagnostics: ArticleDiagnostics
-): void => {
-  const metadata = new Map<Code, CodeFenceMetadata>();
-  visit(root, "code", (node: Code) => {
-    const parsed = annotateCodeNode(node, diagnostics);
-    if (parsed !== undefined) {
-      metadata.set(node, parsed);
-    }
-  });
-
-  const grouped: RootContent[] = [];
-  for (let index = 0; index < root.children.length;) {
-    const child = root.children[index];
-    if (child.type !== "code") {
-      grouped.push(child);
+): (TChild | Code | ArticleFlowElement)[] => {
+  const grouped: (TChild | Code | ArticleFlowElement)[] = [];
+  for (let index = 0; index < children.length;) {
+    const child = children[index];
+    if (child === undefined || child.type !== "code") {
+      if (child !== undefined) {
+        grouped.push(child);
+      }
       index += 1;
       continue;
     }
 
     const run: Code[] = [];
-    while (index < root.children.length) {
-      const codeNode = root.children[index];
+    while (index < children.length) {
+      const codeNode = children[index];
       if (codeNode === undefined || codeNode.type !== "code") {
         break;
       }
@@ -649,7 +695,31 @@ const validateAndGroupCode = (
     }
     grouped.push(codeTabsNode(run, labels, runMetadata[0]?.tabGroup));
   }
-  root.children = grouped;
+  return grouped;
+};
+
+const validateAndGroupCode = (
+  root: Root,
+  diagnostics: ArticleDiagnostics
+): void => {
+  const metadata = new Map<Code, CodeFenceMetadata>();
+  visit(root, "code", (node: Code) => {
+    const parsed = annotateCodeNode(node, diagnostics);
+    if (parsed !== undefined) {
+      metadata.set(node, parsed);
+    }
+  });
+
+  visit(root, "mdxJsxFlowElement", (node) => {
+    // A `CodeTabs` this pass just built already holds a grouped run; grouping
+    // it again would nest one CodeTabs inside another.
+    if (node.name === "CodeTabs") {
+      return SKIP;
+    }
+    node.children = groupCodeRuns(node.children, metadata, diagnostics);
+    return CONTINUE;
+  });
+  root.children = groupCodeRuns(root.children, metadata, diagnostics);
 };
 
 const factsExport = (
