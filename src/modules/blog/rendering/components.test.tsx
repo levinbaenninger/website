@@ -113,12 +113,18 @@ describe("semantic Article components", () => {
       />
     );
 
-    expect(informative).toContain("<figure>");
+    expect(informative).toContain('<figure data-slot="article-figure">');
     expect(informative).toContain('<img alt="Request flow"');
     expect(informative).toContain('width="640" height="360"');
     expect(informative).toContain("<figcaption>Diagram caption</figcaption>");
     expect(decorative).toContain('<img alt=""');
     expect(decorative).toContain('width="200" height="100"');
+    // `sizes` is what makes the pipeline responsive: without it Next emits a
+    // fixed-size 1x/2x srcset instead of width-appropriate candidates.
+    expect(informative).toContain('sizes="(min-width: 48rem) 48rem, 100vw"');
+    expect(informative).toContain("srcSet=");
+    // An SVG has no raster candidates to choose between.
+    expect(decorative).toContain('src="/decoration.svg"');
   });
 
   test("renders GFM task controls as native disabled checkboxes", () => {
@@ -135,6 +141,9 @@ describe("semantic Article components", () => {
         Static guidance
       </ArticleCallout>
     );
+    const untitled = renderToStaticMarkup(
+      <ArticleCallout kind="danger">Static guidance</ArticleCallout>
+    );
     const cards = renderToStaticMarkup(
       <ArticleCards>
         <ArticleCard href="/blog/deploy" title="Deploy">
@@ -146,10 +155,21 @@ describe("semantic Article components", () => {
 
     expect(callout).toContain("<aside");
     expect(callout).toContain('data-kind="warning"');
+    // Static prose is not a live region, so the kind reaches a screen reader as
+    // its own word rather than through the tint or the decorative mark.
     expect(callout).not.toContain('role="alert"');
+    expect(callout).toContain('data-slot="article-callout-mark"');
+    expect(callout).toContain('<span class="sr-only">Warning: </span>');
+    expect(untitled).toContain('<span class="sr-only">Danger: </span>');
+    expect(untitled).not.toContain('data-slot="alert-title"');
+
+    // A Card collection is a list, the Card is its item, and a linked Card is
+    // exactly one link around the whole tile.
+    expect(cards).toContain('<ul data-slot="article-cards">');
+    expect(cards.match(/<li data-slot="article-card">/gu)).toHaveLength(2);
     expect(cards).toContain('<a href="/blog/deploy"');
-    expect(cards.match(/href="\/blog\/deploy"/gu)).toHaveLength(1);
-    expect(cards.match(/<article(?:\s|>)/gu)).toHaveLength(2);
+    expect(cards.match(/<a(?:\s|>)/gu)).toHaveLength(1);
+    expect(cards).not.toContain("<article");
   });
 
   test("preserves file-tree, ordered-step, and keyboard semantics", () => {
@@ -157,7 +177,12 @@ describe("semantic Article components", () => {
       <>
         <ArticleFiles>
           <ArticleFolder defaultOpen name="app">
+            <ArticleFolder defaultOpen name="(marketing)">
+              <ArticleFile name="a-considerably-longer-route-name.tsx" />
+            </ArticleFolder>
             <ArticleFile name="page.tsx" />
+            <ArticleFile name="tsconfig.json" />
+            <ArticleFile name="README" />
           </ArticleFolder>
         </ArticleFiles>
         <ArticleSteps>
@@ -168,12 +193,25 @@ describe("semantic Article components", () => {
       </>
     );
 
-    expect(output).toContain("<ul");
+    expect(output).toContain('<ul data-slot="article-files">');
     expect(output).toContain('aria-label="app folder"');
-    expect(output).toContain("page.tsx");
-    expect(output).toContain("<ol");
-    expect(output).toContain("<li");
+    expect(output).toContain('aria-label="(marketing) folder"');
+    // A Folder nests to whatever depth is authored, and every nested list is a
+    // list — carrying its own slot so the prose marker rules leave it alone.
+    expect(output.match(/data-slot="article-folder-entries"/gu)).toHaveLength(
+      2
+    );
+    expect(output).toContain("a-considerably-longer-route-name.tsx");
+    // The file mark is inferred from the name and is decoration throughout.
+    expect(output).toContain('data-file-kind="tsx"');
+    expect(output).toContain('data-file-kind="json"');
+    expect(output).toContain('data-file-kind="file"');
+    expect(output.match(/<svg[^>]*aria-hidden="true"/gu)).not.toBeNull();
+    expect(output).toContain('<ol data-slot="article-steps">');
     expect(output).toContain("<kbd");
+    // A Step label reads like a heading and must never become one.
+    expect(output).toContain('<div data-slot="article-step-title">Run</div>');
+    expect(output).not.toMatch(/<h[1-6]/u);
   });
 
   test("server-renders opaque active and inactive panel slots", () => {

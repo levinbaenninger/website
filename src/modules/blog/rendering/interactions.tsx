@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDownIcon } from "lucide-react";
 import {
   Accordion as AccordionPrimitive,
   Tabs as TabsPrimitive,
@@ -190,11 +191,21 @@ export const ArticleAccordionItem = ({
   const panelRef = useBeforeMatch(reveal, !open);
 
   return (
-    <AccordionPrimitive.Item value={value}>
+    <AccordionPrimitive.Item data-slot="article-accordion-item" value={value}>
+      {/*
+       * `asChild` replaces Radix's own `h3`: an Accordion label is a component
+       * label, not an authored heading, and the Article outline is the set of
+       * authored headings. A disclosure with no mark reads as a heading anyway,
+       * so the trigger carries a real chevron that `article.css` rotates.
+       */}
       <AccordionPrimitive.Header asChild>
-        <div data-article-accordion-header>
-          <AccordionPrimitive.Trigger data-article-accordion-trigger>
+        <div data-article-accordion-header data-slot="article-accordion-header">
+          <AccordionPrimitive.Trigger
+            data-article-accordion-trigger
+            data-slot="article-accordion-trigger"
+          >
             {panel.label}
+            <ChevronDownIcon aria-hidden data-slot="article-disclosure-mark" />
           </AccordionPrimitive.Trigger>
         </div>
       </AccordionPrimitive.Header>
@@ -243,6 +254,7 @@ export const ArticleAccordion = ({
   return (
     <ArticleAccordionContext value={context}>
       <AccordionPrimitive.Root
+        data-slot="article-accordion"
         onValueChange={setOpenValues}
         type="multiple"
         value={openValues}
@@ -306,14 +318,25 @@ export const ArticleTabs = ({
 
   return (
     <ArticleTabsContext value={context}>
+      {/*
+       * Every other block in the language owns its own leading margin, and
+       * Radix's root renders a bare `div` — so without a slot of its own a Tabs
+       * placed directly after an Accordion had no gap at all. Presentation
+       * should not have to match on shape.
+       */}
       <TabsPrimitive.Root
         activationMode="automatic"
+        data-slot="article-tabs"
         onValueChange={setSelectedValue}
         value={selectedValue}
       >
-        <TabsPrimitive.List>
+        <TabsPrimitive.List data-slot="article-tab-list">
           {panels.map((panel) => (
-            <TabsPrimitive.Trigger key={panel.value} value={panel.value}>
+            <TabsPrimitive.Trigger
+              data-slot="article-tab-trigger"
+              key={panel.value}
+              value={panel.value}
+            >
               {panel.iconSlot === undefined ? null : iconSlots[panel.iconSlot]}
               <span>{panel.label}</span>
             </TabsPrimitive.Trigger>
