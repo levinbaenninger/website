@@ -1,0 +1,626 @@
+/*
+ * The Article code-reading surface.
+ *
+ * A second slice of the same stylesheet as `article.css` — same scope, same
+ * tokens, same unlayered strategy — kept in its own file because the code
+ * surface is a distinct object with a distinct vocabulary: a frame, a title bar,
+ * a gutter, six annotations, a tab strip, and Twoslash.
+ *
+ * Unlayered on purpose. Tailwind v4 puts its utilities in `@layer utilities` and
+ * `.typeset` in `@layer components`, and an unlayered rule beats every layered
+ * rule regardless of specificity. There is not one `!important` in this file,
+ * and that is a property of the pipeline rather than of the selectors: Shiki
+ * used to write `background-color` and `color` as an inline style on the `pre`,
+ * which no container can override without one. `code.ts` passes
+ * `defaultColor: false`, so both themes arrive as `--shiki-light` and
+ * `--shiki-dark` custom properties and the container owns its own fill.
+ *
+ * Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại):
+ * `src/styles/globals.css` (`[data-rehype-pretty-code-figure]`),
+ * `src/components/mdx-code-block.tsx` and `src/components/base/ui/tabs.tsx`.
+ * The title bar takes Fumadocs' shape instead, minus its language icon.
+ */
+
+/* ---------------------------------------------------------------- FRAME -- */
+
+/*
+ * `--frame-fill` rather than a literal, because a frame inside a panel has to
+ * stop using the panel's own fill — otherwise the code stops being a distinct
+ * object and the panel reads as one undifferentiated block. The gutter reads the
+ * same variable, which is what keeps a sticky line number opaque over code
+ * scrolling underneath it.
+ */
+[data-slot="article-body"] figure[data-code-block] {
+  --frame-fill: var(--surface);
+
+  position: relative;
+  margin-block-start: var(--typeset-flow);
+  border-radius: calc(var(--radius) * 1.4);
+  background-color: var(--frame-fill);
+  color: var(--surface-foreground);
+  padding: 0.25rem;
+  box-shadow: inset 0 0 0 1px var(--frame-ring);
+}
+
+[data-slot="article-body"] [data-article-panel] figure[data-code-block] {
+  --frame-fill: var(--background);
+}
+
+/*
+ * The source scrolls horizontally and never wraps: a wrapped line silently
+ * changes what the example says, and an indentation that moves is a different
+ * program. Shiki gives the `pre` a `tabindex`, so the overflow is reachable
+ * without a pointer; the scrollbar is hidden because the frame is 4 px of
+ * padding deep and a stock bar sits on the code.
+ */
+[data-slot="article-body"] figure[data-code-block] pre {
+  margin: 0;
+  border-radius: 0;
+  padding: 1rem 0;
+  background-color: transparent;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  outline: none;
+  scrollbar-width: none;
+}
+
+[data-slot="article-body"] figure[data-code-block] pre::-webkit-scrollbar {
+  display: none;
+}
+
+[data-slot="article-body"] figure[data-code-block] pre:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+/*
+ * 14/17 rather than the reference's 14/20. Code is scanned in columns rather
+ * than read in lines, so it wants tighter leading than prose — and against the
+ * body's 1.75 the reference's 1.43 still reads loose.
+ */
+[data-slot="article-body"] figure[data-code-block] code {
+  display: block;
+  min-width: 100%;
+  width: max-content;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.0625rem;
+}
+
+[data-slot="article-body"] figure[data-code-block] .line {
+  display: block;
+  padding-inline: 1rem;
+}
+
+/*
+ * Both themes, from one compilation. Shiki emits both colours on every token and
+ * the document theme picks which one resolves; without the dark half every code
+ * block on the site renders the light theme in dark mode, which was true here
+ * until #53.
+ */
+[data-slot="article-body"] :is(.shiki, .shiki span) {
+  color: var(--shiki-light);
+}
+
+.dark [data-slot="article-body"] :is(.shiki, .shiki span) {
+  color: var(--shiki-dark);
+}
+
+/* ------------------------------------------------------------- CAPTION -- */
+
+[data-slot="article-body"] figure[data-code-block] > figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  text-align: start;
+}
+
+/*
+ * A title is its own bar, ruled off from the code and spanning the full frame,
+ * so a filename reads as a label on the block instead of as its first line. The
+ * negative margins cancel the frame's 4 px padding so the rule reaches both
+ * edges, and the top corners take the frame's radius back.
+ */
+[data-slot="article-body"] figure[data-code-block] > figcaption:has(> span) {
+  margin: -0.25rem -0.25rem 0.25rem;
+  border-start-start-radius: calc(var(--radius) * 1.4 - 0.25rem);
+  border-start-end-radius: calc(var(--radius) * 1.4 - 0.25rem);
+  border-block-end: 1px solid var(--frame-ring);
+  padding: 0.5rem 0.875rem;
+}
+
+[data-slot="article-body"] figure[data-code-block] > figcaption > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * With no title there is no row: the control lifts out of flow to the top-right
+ * and the lines gain enough end padding that a long line never runs under it.
+ */
+[data-slot="article-body"]
+  figure[data-code-block]
+  > figcaption:not(:has(> span)) {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  padding: 0;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block]:not(:has(> figcaption > span))
+  .line {
+  padding-inline-end: 3.5rem;
+}
+
+/* --------------------------------------------------------------- COPY --- */
+
+/*
+ * Hover is the reference's own answer and on its own it fails three ways: a
+ * keyboard has no hover, a touch screen has no hover, and a control that hides
+ * itself the moment it is used reports nothing back. So the control is revealed
+ * by hover on a fine pointer, by its own focus, for as long as `CopyButton`
+ * reports a non-idle result, and unconditionally where hover does not exist.
+ */
+[data-slot="article-body"] [data-article-code-copy] {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block]:hover
+  [data-article-code-copy],
+[data-slot="article-body"] [data-article-code-copy]:focus-visible,
+[data-slot="article-body"] [data-article-code-copy]:not([data-state="idle"]) {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  [data-slot="article-body"] [data-article-code-copy] {
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------- LINE NUMBERS -- */
+
+/*
+ * Line numbers are a CSS counter and never text. Generated content cannot be
+ * selected and cannot reach the clipboard, which is the whole reason for the
+ * choice: a reader who copies an example gets the program, not a column of
+ * numbers glued to the front of every line. The compiled `data-copy-source` is
+ * the copy control's answer to the same requirement.
+ *
+ * The gutter is sticky so it survives horizontal scrolling, and it paints the
+ * frame's own fill rather than inheriting, because the `pre` underneath it is
+ * transparent and the code scrolls beneath.
+ */
+[data-slot="article-body"]
+  figure[data-code-block][data-line-numbers-start]
+  code {
+  counter-reset: line calc(var(--line-start, 1) - 1);
+}
+
+[data-slot="article-body"]
+  figure[data-code-block][data-line-numbers-start]
+  .line {
+  padding-inline-start: 0;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block][data-line-numbers-start]
+  .line::before {
+  counter-increment: line;
+  content: counter(line);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: inline-block;
+  width: 4rem;
+  padding-inline-end: 1.5rem;
+  background-color: var(--frame-fill);
+  color: var(--code-number);
+  font-size: 0.875rem;
+  text-align: end;
+}
+
+/* --------------------------------------------------------- ANNOTATIONS -- */
+
+/*
+ * Six annotations, and each one says its meaning in words as well as in colour.
+ * `code.ts` writes a visually hidden label into the annotated line; these rules
+ * are the visible half. A removed line differs from an added one by hue alone,
+ * which is precisely the distinction a reader who cannot see hue would lose.
+ *
+ * The labels take `user-select: none` so a selection dragged across the block
+ * still yields the program. The copy control never sees them either way — its
+ * source is compiled from the authored fence.
+ */
+[data-slot="article-body"] [data-code-annotation] {
+  user-select: none;
+}
+
+[data-slot="article-body"] .line.highlighted {
+  background-color: var(--code-highlight);
+}
+
+[data-slot="article-body"] .highlighted-word {
+  border-radius: 0.25rem;
+  background-color: var(--code-highlight);
+  padding: 0.125rem 0;
+  box-shadow: 0 0 0 2px var(--code-highlight);
+}
+
+/*
+ * Focus notation blurs everything the example is not about, and it has to be
+ * escapable by every input mode. Hovering restores the block for a pointer;
+ * `:focus-within` restores it for a keyboard, which reaches the `pre` through
+ * the tab stop Shiki already gives it. Without the second half, the unfocused
+ * lines were unreadable to anyone not using a mouse.
+ */
+[data-slot="article-body"] pre.has-focused .line:not(.focused) {
+  filter: blur(2px);
+  opacity: 0.7;
+  transition:
+    filter 200ms ease,
+    opacity 200ms ease;
+}
+
+[data-slot="article-body"] pre.has-focused:hover .line:not(.focused),
+[data-slot="article-body"] pre.has-focused:focus-within .line:not(.focused) {
+  filter: none;
+  opacity: 1;
+}
+
+/*
+ * Diff is the one construct with no reference at all — the reference Blog never
+ * renders one. A diff without colour is unreadable, so it keeps the conventional
+ * green and red, and the `+`/`-` gutter mark plus the hidden label are the two
+ * channels that carry the meaning when the colour does not.
+ */
+[data-slot="article-body"] .line.diff.add {
+  background-color: var(--code-added);
+}
+
+[data-slot="article-body"] .line.diff.remove {
+  background-color: var(--code-removed);
+  opacity: 0.75;
+}
+
+[data-slot="article-body"] pre.has-diff .line {
+  position: relative;
+}
+
+[data-slot="article-body"] .line.diff::after {
+  position: absolute;
+  left: 0.375rem;
+  color: var(--muted-foreground);
+}
+
+[data-slot="article-body"] .line.diff.add::after {
+  content: "+";
+}
+
+[data-slot="article-body"] .line.diff.remove::after {
+  content: "-";
+}
+
+/* ----------------------------------------------------------- TAB STRIP -- */
+
+/*
+ * One strip vocabulary for `CodeTabs` and for the general `Tabs`, because both
+ * emit `role="tablist"` and a reader has no reason to learn two. Transposed from
+ * the reference's `TabsList` / `TabsTrigger`, minus its animated indicator:
+ * neither of this repository's tab implementations renders one, so the active
+ * state is a fill on the trigger.
+ */
+[data-slot="article-body"] [role="tablist"] {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  overflow-x: auto;
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  padding: 0.125rem;
+  box-shadow: inset 0 0 0 1px var(--frame-ring);
+  scrollbar-width: none;
+}
+
+[data-slot="article-body"] [role="tablist"]::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+ * The trigger's height is the strip's minus its 2 px padding, stated outright
+ * rather than left to padding plus an inherited line height. The Article body
+ * runs at 1.75, so an unstated trigger comes out 32.5 px tall inside a 28 px
+ * slot and the active fill spills over the strip.
+ */
+[data-slot="article-body"] [role="tab"] {
+  display: flex;
+  flex: 1 0 auto;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: calc(var(--radius) * 0.8);
+  padding: 0 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  outline: none;
+  transition:
+    color 200ms ease,
+    background-color 200ms ease;
+  cursor: pointer;
+}
+
+[data-slot="article-body"] [role="tab"]:hover {
+  color: var(--foreground);
+}
+
+[data-slot="article-body"] [role="tab"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+/*
+ * The reference's indicator is white in light and `muted` in dark, not
+ * `background`: in dark mode `background` and the strip's own `surface` are
+ * close enough that a `background`-filled indicator disappears into the strip.
+ */
+[data-slot="article-body"] [role="tab"][data-state="active"],
+[data-slot="article-body"] [role="tab"][aria-selected="true"] {
+  background-color: oklch(1 0 0);
+  color: var(--foreground);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklab, var(--foreground) 10%, transparent);
+}
+
+.dark [data-slot="article-body"] [role="tab"][data-state="active"],
+.dark [data-slot="article-body"] [role="tab"][aria-selected="true"] {
+  background-color: var(--muted);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklab, var(--foreground) 6%, transparent);
+}
+
+[data-slot="article-body"] [role="tab"] svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/*
+ * The gap under the strip is the panel's padding, never the first child's
+ * margin: a panel holding a single sentence has no element child at all — MDX
+ * leaves a bare text node — so a rule on `> :first-child` reaches nothing and
+ * the text sits flush against the strip.
+ */
+[data-slot="article-body"] [role="tabpanel"] {
+  outline: none;
+  padding-block-start: 0.5rem;
+}
+
+[data-slot="article-body"] [role="tabpanel"] > :first-child {
+  margin-block-start: 0;
+}
+
+[data-slot="article-body"] [data-code-tabs] {
+  display: flex;
+  flex-direction: column;
+  margin-block-start: var(--typeset-flow);
+}
+
+/* The frame's own leading margin would double the strip's gap. */
+[data-slot="article-body"]
+  [data-code-tabs]
+  [role="tabpanel"]
+  figure[data-code-block] {
+  margin-block-start: 0;
+}
+
+/* -------------------------------------------------------- TWOSLASH ----- */
+
+/*
+ * The token a popup belongs to. Twoslash's underline is the only affordance
+ * saying the token has type information behind it, and it is a real button, so
+ * it also has to look like ordinary code until it is approached.
+ */
+[data-slot="article-body"] [data-twoslash-trigger] {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: help;
+  text-decoration: underline dotted
+    color-mix(in oklab, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+[data-slot="article-body"] [data-twoslash-trigger]:hover,
+[data-slot="article-body"] [data-twoslash-trigger][data-state="open"] {
+  text-decoration-color: currentColor;
+}
+
+[data-slot="article-body"] [data-twoslash-trigger]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+[data-slot="article-body"] .twoslash-error {
+  background: repeat-x bottom left / 6px 3px
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='3'><path d='M0 3 L3 0 L6 3' fill='none' stroke='%23e45649' stroke-width='1'/></svg>");
+  padding-block-end: 2px;
+}
+
+/*
+ * `^?` queries and expected-error diagnostics are not popovers at all. They are
+ * explicit authored output — the author asked for the type or the error to be
+ * *shown* — so they stay static code under the line they belong to, visible with
+ * no interaction and no JavaScript. Only an incidental hover is a popover.
+ *
+ * They are block-level children of the code element, so they start at its edge
+ * while every real line starts 16 px in; where a gutter is present that becomes
+ * 64 px, so the message lines up with the first character above it.
+ */
+[data-slot="article-body"] .twoslash-meta-line {
+  margin-inline: 1rem;
+  border-radius: calc(var(--radius) * 0.8);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+[data-slot="article-body"] .twoslash-query-line {
+  color: var(--muted-foreground);
+}
+
+/*
+ * A query prints its own popup container inline, under the line it points at.
+ * It is not a card and never was one — the arrow belongs to a floating popup —
+ * so it reads as the code it is.
+ */
+[data-slot="article-body"] .twoslash-query-line .twoslash-popup-container {
+  display: inline;
+}
+
+[data-slot="article-body"] .twoslash-popup-arrow {
+  display: none;
+}
+
+[data-slot="article-body"] .twoslash-error-line {
+  margin-block: 0.25rem;
+  background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+  padding: 0.25rem 0.5rem;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block][data-line-numbers-start]
+  .twoslash-meta-line {
+  margin-inline-start: 4rem;
+}
+
+/*
+ * The popup is portalled, so it renders outside `[data-slot="article-body"]` and
+ * cannot inherit that scope's tokens. That is the point rather than a cost: the
+ * popup has to escape the code scroller, and a portal is what takes it out of
+ * the `pre`'s overflow entirely instead of un-clipping the frame while a token
+ * happens to be hovered.
+ *
+ * Its width is stated and then clamped. A popup is positioned absolutely, so its
+ * width is shrink-to-fit, and shrink-to-fit resolves against the *min-content*
+ * size — which `overflow-wrap: anywhere` drives down to a single character,
+ * collapsing an inferred signature into a one-glyph column. `break-word` wraps
+ * identically at paint time without touching intrinsic sizing, and
+ * `width: max-content` states the natural width so only `max-width` clamps it.
+ */
+[data-article-twoslash-popup] {
+  z-index: 50;
+  width: max-content;
+  max-width: min(36rem, calc(100vw - 2rem));
+  border-radius: calc(var(--radius) * 0.8);
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  padding: 0.5rem 0.75rem;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--border) 64%, transparent),
+    0 4px 16px color-mix(in oklab, black 8%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+[data-article-twoslash-popup] .twoslash-popup-code {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+[data-article-twoslash-popup]
+  :is(.shiki, .shiki span, .twoslash-popup-code span) {
+  color: var(--shiki-light);
+}
+
+.dark
+  [data-article-twoslash-popup]
+  :is(.shiki, .shiki span, .twoslash-popup-code span) {
+  color: var(--shiki-dark);
+}
+
+[data-article-twoslash-popup] .twoslash-popup-docs {
+  margin-block-start: 0.5rem;
+  border-block-start: 1px solid
+    color-mix(in oklab, var(--border) 64%, transparent);
+  padding-block-start: 0.5rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+}
+
+/* A fenced example inside a doc comment is code, not a nested CodeBlock. */
+[data-article-twoslash-popup] pre {
+  margin: 0;
+  background: none;
+  padding: 0;
+  overflow-x: auto;
+}
+
+/* --------------------------------------------------------------- MOTION -- */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="article-body"] [data-article-code-copy],
+  [data-slot="article-body"] [role="tab"],
+  [data-slot="article-body"] pre.has-focused .line:not(.focused) {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------- PRINT -- */
+
+/*
+ * On paper there is no scrolling, no hover and no pointer, so the three things
+ * that depend on one are undone: the source wraps instead of overflowing, the
+ * focus blur lifts — a blurred line prints blurred, permanently — and the copy
+ * control goes, since it can do nothing. Restacking inactive panels and popups
+ * for print is deliberately not attempted.
+ */
+@media print {
+  [data-slot="article-body"] figure[data-code-block] pre,
+  [data-slot="article-body"] figure[data-code-block] code {
+    width: auto;
+    overflow: visible;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+
+  [data-slot="article-body"] pre.has-focused .line:not(.focused) {
+    filter: none;
+    opacity: 1;
+  }
+
+  [data-slot="article-body"] [data-article-code-copy] {
+    display: none;
+  }
+}
