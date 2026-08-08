@@ -274,18 +274,33 @@ export const ArticleHeader = ({
 
 /**
  * The full-width reader grid: the rail stays centred and the outline gets the
- * right gutter. The gutters are empty and inert in this slice; the desktop
- * minimap moves into the right one.
+ * right gutter.
+ *
+ * The left gutter stays empty and inert, and so does the right one when there is
+ * no outline to put in it — an Article with one heading or none reclaims the
+ * space rather than reserving it for a control that will never appear.
+ *
+ * The minimap sticks 12 px below the 92 px chrome, which is the offset the
+ * prose column's own first line sits at, so the bars read as the left edge of
+ * the section they describe.
  */
 export const ReaderGrid = ({
   children,
+  outline = null,
 }: {
   readonly children: React.ReactNode;
+  readonly outline?: React.ReactNode;
 }) => (
   <div className="mx-auto grid w-full grid-cols-1 lg:grid-cols-[1fr_var(--container-3xl)_1fr]">
     <div aria-hidden className="max-lg:hidden" />
     {children}
-    <div aria-hidden className="max-lg:hidden" />
+    {outline === null ? (
+      <div aria-hidden className="max-lg:hidden" />
+    ) : (
+      <div className="max-lg:hidden">
+        <div className="sticky top-26">{outline}</div>
+      </div>
+    )}
   </div>
 );
 

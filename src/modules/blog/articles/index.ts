@@ -20,6 +20,7 @@ export type {
   ArticleDetail,
   ArticleDiscoveryEntry,
   ArticleNeighbourLink,
+  ArticleOutlineHeading,
   ArticleReaderNavigation,
   ArticleRedirect,
   ArticleSearchDocument,

@@ -9,6 +9,7 @@ import type {
   ArticleDetail,
   ArticleDiscoveryEntry,
   ArticleNeighbourLink,
+  ArticleOutlineHeading,
   ArticleReaderNavigation,
   ArticleRedirect,
   ArticleSearchDocument,
@@ -183,6 +184,23 @@ const toReaderNavigation = (
   next: toNeighbourLink(articles[index + 1]),
 });
 
+/**
+ * The reader's view of the compiled headings.
+ *
+ * Copied field by field rather than handed over: `ArticleCompilationFacts` also
+ * carries the link inventory and the search text, and the reader has no business
+ * with either. Everything downstream of here — the projection, the islands, the
+ * rendered links — sees only depth, ID and text.
+ */
+const toOutline = (
+  article: CanonicalArticle
+): readonly ArticleOutlineHeading[] =>
+  article.articleFacts.headings.map(({ depth, id, text }) => ({
+    depth,
+    id,
+    text,
+  }));
+
 const toDetail = (
   article: CanonicalArticle,
   navigation: ArticleReaderNavigation
@@ -195,6 +213,7 @@ const toDetail = (
       Content: article.Content,
       discovery: toDiscoveryEntry(article),
       navigation,
+      outline: toOutline(article),
     };
   }
 
@@ -207,6 +226,7 @@ const toDetail = (
     Content: article.Content,
     discovery: null,
     navigation,
+    outline: toOutline(article),
   };
 };
 

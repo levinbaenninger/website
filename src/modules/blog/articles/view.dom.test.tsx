@@ -2,7 +2,11 @@ import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, test } from "vite-plus/test";
 
-import type { ArticleDetail, ArticleReaderNavigation } from "./types";
+import type {
+  ArticleDetail,
+  ArticleOutlineHeading,
+  ArticleReaderNavigation,
+} from "./types";
 import { ArticleView } from "./view";
 
 const COVER = { height: 630, src: "/cover.png", width: 1200 };
@@ -11,6 +15,7 @@ const NO_NEIGHBOURS: ArticleReaderNavigation = { next: null, previous: null };
 
 const article = ({
   navigation = NO_NEIGHBOURS,
+  outline = [],
   publishedAt = "2026-08-02",
   status = "published",
   tags = [],
@@ -18,6 +23,7 @@ const article = ({
   updatedAt = null,
 }: {
   readonly navigation?: ArticleReaderNavigation;
+  readonly outline?: readonly ArticleOutlineHeading[];
   readonly publishedAt?: string | null;
   readonly status?: "draft" | "published";
   readonly tags?: readonly { readonly id: string; readonly label: string }[];
@@ -30,6 +36,7 @@ const article = ({
     description: "A representative Article.",
     href: "/blog/representative-article" as const,
     navigation,
+    outline,
     slug: "representative-article",
     tags,
     title,

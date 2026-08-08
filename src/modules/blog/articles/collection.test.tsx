@@ -543,6 +543,38 @@ describe("Article operations", () => {
     expect(detail).not.toHaveProperty("articleFacts");
   });
 
+  test("projects the compiled headings as the Article outline", async () => {
+    const headings = [
+      { depth: 2, id: "why", text: "Why it matters" },
+      { depth: 3, id: "details", text: "The details" },
+      { depth: 4, id: "caveat", text: "One caveat" },
+    ] as const;
+    const articles = createArticleOperations({
+      includeDrafts: false,
+      manifest: [
+        entry(
+          "outlined-article",
+          {
+            title: "Outlined article",
+            description: "An Article with headings.",
+            status: "Published",
+            publishedAt: "2026-07-20",
+            tags: ["nextjs"],
+          },
+          { headings, links: [], searchText: "Body text" }
+        ),
+      ],
+      today: TODAY,
+    });
+
+    const detail = await articles.findArticle("outlined-article");
+
+    // Document order, every authored depth, and nothing the compiler knows
+    // beyond the three fields the reader is allowed to render.
+    expect(detail?.outline).toEqual(headings);
+    expect(JSON.stringify(detail?.outline)).not.toContain("Body text");
+  });
+
   test("filters listings by one exact Tag and counts visible Tag facets", async () => {
     const articles = createArticleOperations({
       includeDrafts: true,

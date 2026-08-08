@@ -1,5 +1,6 @@
 import { ArticleBody } from "@/modules/blog/rendering/body";
 
+import { ArticleOutlineCard, ArticleOutlineMinimap } from "./outline";
 import {
   ArticleHeader,
   EndPager,
@@ -27,9 +28,9 @@ interface ArticleViewProps {
  *
  * Everything a visitor needs in order to read the Article and leave it is
  * server-rendered: the header, the compiled body, the Blog link, both
- * neighbour links, and the end pager. The toolbar's copy of the title is the
- * only element that hydrates, because a scroll position is the one fact the
- * server does not have.
+ * neighbour links, the end pager, and the outline's own heading links.
+ * Hydration adds what the server cannot know — a scroll position, and which
+ * heading it puts the visitor in.
  *
  * Neighbour links are ordinary route links, which is also what starts the
  * destination Article at the top: from anywhere past the fold the destination's
@@ -43,8 +44,13 @@ export const ArticleView = ({
 }: ArticleViewProps) => {
   const { Content, navigation } = article;
 
+  // One heading is not an outline: it names the Article a second time and gives
+  // a visitor nothing to choose between. Below two, both surfaces are omitted
+  // and the space they would have taken goes back to the Article.
+  const outline = article.outline.length < 2 ? null : article.outline;
+
   return (
-    <article className="flex flex-1 flex-col">
+    <article className="flex flex-1 flex-col" data-slot="article-reader">
       <ReaderRail>
         <ReaderTopLine />
       </ReaderRail>
@@ -55,9 +61,20 @@ export const ArticleView = ({
         <ArticleHeader article={article} />
       </ReaderRail>
 
-      <ReaderGrid>
+      <ReaderGrid
+        outline={
+          outline === null ? null : <ArticleOutlineMinimap outline={outline} />
+        }
+      >
         <ReaderRail>
           <ProseColumn>
+            {outline === null ? null : (
+              <ArticleOutlineCard
+                className="mb-8 lg:hidden"
+                outline={outline}
+              />
+            )}
+
             <ArticleBody canonicalUrl={canonicalUrl}>
               <Content />
             </ArticleBody>
