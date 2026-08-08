@@ -5,6 +5,10 @@ import {
   FileJsonIcon,
   FolderIcon,
   FolderOpenIcon,
+  InfoIcon,
+  LightbulbIcon,
+  OctagonAlertIcon,
+  TriangleAlertIcon,
 } from "lucide-react";
 import Image from "next/image";
 import type { StaticImageData } from "next/image";
@@ -36,15 +40,28 @@ interface FigureProps {
   readonly src: StaticImageData;
 }
 
+/*
+ * The Article rail is at most 48rem wide and the Figure fills it, so `sizes`
+ * says exactly that. Without it Next emits a 1x/2x srcset built for a
+ * fixed-size image; with it the browser picks a width-appropriate candidate,
+ * which is the difference between the responsive pipeline running and merely
+ * being present.
+ *
+ * The intrinsic width and height come from the static import — the contract
+ * only accepts an imported Article-local binding — so the box is reserved
+ * before the bytes arrive and nothing shifts while it loads. An SVG has no
+ * raster sizes to pick from, so it stays unoptimized.
+ */
 export const ArticleFigure = ({
   alt,
   children,
   decorative,
   src,
 }: FigureProps) => (
-  <figure>
+  <figure data-slot="article-figure">
     <Image
       alt={decorative === true ? "" : (alt ?? "")}
+      sizes="(min-width: 48rem) 48rem, 100vw"
       src={src}
       unoptimized={src.src.endsWith(".svg")}
     />
@@ -104,22 +121,55 @@ interface CalloutProps {
   readonly title?: string;
 }
 
-export const ArticleCallout = ({ children, kind, title }: CalloutProps) => (
-  <aside
-    className="group/alert relative grid w-full gap-0.5 rounded-lg border bg-card px-2.5 py-2 text-left text-sm text-card-foreground"
-    data-kind={kind}
-    data-slot="article-callout"
-  >
-    {title === undefined ? null : <AlertTitle>{title}</AlertTitle>}
-    <AlertDescription>{children}</AlertDescription>
-  </aside>
-);
+const calloutMarks = {
+  danger: OctagonAlertIcon,
+  note: InfoIcon,
+  tip: LightbulbIcon,
+  warning: TriangleAlertIcon,
+};
 
+const calloutLabels = {
+  danger: "Danger",
+  note: "Note",
+  tip: "Tip",
+  warning: "Warning",
+};
+
+/*
+ * A Callout is static content, so it is an `aside` rather than shadcn's `Alert`:
+ * `Alert` carries `role="alert"`, and an assertive live region on prose that was
+ * there when the page loaded interrupts a screen reader for nothing. The title
+ * and description slots are reused, which is the whole of what "Alert-backed"
+ * buys — a shared spacing and typography contract.
+ *
+ * The kind reaches the reader on three channels, and the tint is only the third
+ * of them: a real icon for the sighted reader, the kind's own word for anyone
+ * who cannot see it, and the colour on top of both. `data-kind` stays on the
+ * element because `article.css` keys the tint and the mark's colour off it.
+ */
+export const ArticleCallout = ({ children, kind, title }: CalloutProps) => {
+  const Mark = calloutMarks[kind];
+
+  return (
+    <aside data-kind={kind} data-slot="article-callout">
+      <Mark aria-hidden data-slot="article-callout-mark" />
+      <span className="sr-only">{calloutLabels[kind]}: </span>
+      {title === undefined ? null : <AlertTitle>{title}</AlertTitle>}
+      <AlertDescription>{children}</AlertDescription>
+    </aside>
+  );
+};
+
+/*
+ * A Card collection is a list of things, so it is a list. The `li` is the Card,
+ * which is why there is no inner `article` — a second element announcing itself
+ * around every tile says nothing the list item did not already say.
+ */
 export const ArticleCards = ({
   children,
 }: {
   readonly children: ReactNode;
-}) => <div data-slot="article-cards">{children}</div>;
+}) => <ul data-slot="article-cards">{children}</ul>;
 
 interface ArticleCardProps {
   readonly children?: ReactNode;
@@ -142,6 +192,12 @@ const ArticleCardContents = ({
   </Card>
 );
 
+/*
+ * A linked Card is exactly one link wrapping the whole tile, which is what the
+ * contract's `card-interactive` rule already guarantees by rejecting any other
+ * interactive content inside it. An unlinked Card is not a target and gets no
+ * pointer feedback: `article.css` reacts to the anchor, never to the item.
+ */
 export const ArticleCard = ({
   children,
   href,
@@ -149,17 +205,19 @@ export const ArticleCard = ({
   title,
 }: ArticleCardProps) => {
   const contents = (
-    <article data-slot="article-card">
-      <ArticleCardContents icon={icon} title={title}>
-        {children}
-      </ArticleCardContents>
-    </article>
+    <ArticleCardContents icon={icon} title={title}>
+      {children}
+    </ArticleCardContents>
   );
 
-  return href === undefined ? (
-    contents
-  ) : (
-    <ArticleLink href={href}>{contents}</ArticleLink>
+  return (
+    <li data-slot="article-card">
+      {href === undefined ? (
+        contents
+      ) : (
+        <ArticleLink href={href}>{contents}</ArticleLink>
+      )}
+    </li>
   );
 };
 
@@ -213,7 +271,7 @@ export const ArticleFolder = ({
         <span>{name}</span>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <ul>{children}</ul>
+        <ul data-slot="article-folder-entries">{children}</ul>
       </CollapsibleContent>
     </Collapsible>
   </li>

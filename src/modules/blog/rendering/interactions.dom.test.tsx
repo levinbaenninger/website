@@ -15,6 +15,7 @@ import {
   vi,
 } from "vite-plus/test";
 
+import { ArticleFile, ArticleFiles, ArticleFolder } from "./components";
 import {
   ArticleAccordion,
   ArticleAccordionItem,
@@ -73,6 +74,59 @@ describe("Article interactions", () => {
 
     expect(panels[0]?.hidden).toBe(false);
     expect(panels[1]?.hidden).toBe(false);
+  });
+
+  test("keeps Accordion labels out of the Article outline", () => {
+    const { container } = render(
+      <ArticleAccordion panels='[{"label":"Only","value":"accordion-item-0","defaultOpen":false}]'>
+        <ArticleAccordionItem value="accordion-item-0">
+          <h2 id="authored">Authored heading</h2>
+        </ArticleAccordionItem>
+      </ArticleAccordion>
+    );
+
+    /*
+     * Radix's `Accordion.Header` renders an `h3` of its own unless it is told
+     * otherwise, which would put a component label into the Article outline.
+     * The authored heading inside the closed panel is the only heading here —
+     * and it stays in the tree while the panel is closed, which is what keeps
+     * the outline stable across panel state.
+     */
+    const headings = container.querySelectorAll("h1, h2, h3, h4, h5, h6");
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.textContent).toBe("Authored heading");
+
+    const trigger = screen.getByRole("button", { name: "Only" });
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    // The disclosure mark carries no name of its own.
+    expect(trigger.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+      "true"
+    );
+  });
+
+  test("operates a nested Folder from the keyboard alone", async () => {
+    const user = userEvent.setup();
+    render(
+      <ArticleFiles>
+        <ArticleFolder defaultOpen name="app">
+          <ArticleFolder name="(marketing)">
+            <ArticleFile name="page.tsx" />
+          </ArticleFolder>
+        </ArticleFolder>
+      </ArticleFiles>
+    );
+
+    const nested = screen.getByRole("button", { name: "(marketing) folder" });
+    expect(nested.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("page.tsx")).toBeNull();
+
+    nested.focus();
+    await user.keyboard("{Enter}");
+
+    expect(nested.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("page.tsx")).toBeTruthy();
+    // A File row is static: it is neither a control nor a stop on the way to one.
+    expect(screen.getAllByRole("button")).toHaveLength(2);
   });
 
   test("selects the first general Tab without persistence or synchronization", async () => {
