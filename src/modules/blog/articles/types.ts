@@ -74,9 +74,31 @@ export interface ArticleReaderNavigation {
   readonly next: ArticleNeighbourLink | null;
 }
 
+/**
+ * One heading of the Article outline.
+ *
+ * The compiler is the only source of both fields: `id` is the ID it wrote onto
+ * the rendered heading, and `text` is the plain text it extracted before the
+ * heading became markup. The reader never scrapes the DOM to rebuild either.
+ */
+export interface ArticleOutlineHeading {
+  readonly depth: 2 | 3 | 4;
+  readonly id: string;
+  readonly text: string;
+}
+
 interface ArticleDetailBase {
   readonly Content: MDXContent;
   readonly navigation: ArticleReaderNavigation;
+  /**
+   * The complete ordered structure of authored Article headings.
+   *
+   * Document order, and the same shape whatever a Tab or an Accordion is doing:
+   * a heading inside a closed panel is part of the Article whether or not it is
+   * on screen. It is a projection of compilation facts rather than the facts
+   * themselves — links, search text and the rest stay private to the module.
+   */
+  readonly outline: readonly ArticleOutlineHeading[];
 }
 
 export type DraftArticleDetail = DraftArticleSummary &

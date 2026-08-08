@@ -144,6 +144,7 @@ const renderArticle = (
     discovery: null,
     href: "/blog/representative-article",
     navigation: { next: null, previous: null },
+    outline: [],
     publishedAt: status === "published" ? "2026-08-02" : null,
     slug: "representative-article",
     status,

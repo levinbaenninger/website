@@ -40,6 +40,7 @@ const publishedArticle = {
   title: "Canonical Article",
   updatedAt: "2026-07-15",
   navigation: { next: null, previous: null },
+  outline: [],
 } as const satisfies ArticleDetail;
 
 describe("article metadata adapters", () => {
@@ -105,6 +106,7 @@ describe("article metadata adapters", () => {
       status: "draft",
       updatedAt: null,
       navigation: { next: null, previous: null },
+      outline: [],
     } as const satisfies ArticleDetail;
 
     const metadata = createArticleMetadata(draft);

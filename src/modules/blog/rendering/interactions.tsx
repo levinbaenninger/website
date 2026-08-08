@@ -20,6 +20,7 @@ import {
   parseArticleTabPanels,
 } from "./panel-contract.ts";
 import type { ArticleAccordionPanel } from "./panel-contract.ts";
+import { useArticleFragmentNavigation } from "./reveal.ts";
 
 interface ArticleAccordionContextValue {
   readonly openValues: readonly string[];
@@ -49,101 +50,6 @@ const useRequiredContext = <T,>(
     );
   }
   return context;
-};
-
-let hashNavigationConsumers = 0;
-let removeHashNavigationListener: (() => void) | undefined;
-let hashRevealScheduled = false;
-
-const revealCurrentArticleHash = (): void => {
-  if (window.location.hash.length <= 1) {
-    return;
-  }
-
-  let id: string;
-  try {
-    id = decodeURIComponent(window.location.hash.slice(1));
-  } catch {
-    return;
-  }
-
-  // IDs are generated from authored headings and are not safe CSS selectors.
-  // eslint-disable-next-line unicorn/prefer-query-selector
-  const target = document.getElementById(id);
-  if (target === null) {
-    return;
-  }
-
-  const panels: HTMLElement[] = [];
-  let ancestor = target.parentElement;
-  while (ancestor !== null) {
-    if (Object.hasOwn(ancestor.dataset, "articlePanel")) {
-      panels.unshift(ancestor);
-    }
-    ancestor = ancestor.parentElement;
-  }
-
-  for (const panel of panels) {
-    if (panel.hidden === false) {
-      continue;
-    }
-    const controlId = panel.getAttribute("aria-labelledby");
-    if (controlId !== null) {
-      // Radix-generated IDs may also contain CSS selector punctuation.
-      // eslint-disable-next-line unicorn/prefer-query-selector
-      const control = document.getElementById(controlId);
-      if (control instanceof HTMLElement) {
-        control.dispatchEvent(
-          new MouseEvent("mousedown", {
-            bubbles: true,
-            button: 0,
-          })
-        );
-        control.click();
-      }
-    }
-  }
-
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => {
-      target.scrollIntoView();
-    });
-  });
-};
-
-const scheduleArticleHashReveal = (): void => {
-  if (hashRevealScheduled) {
-    return;
-  }
-  hashRevealScheduled = true;
-  queueMicrotask(() => {
-    hashRevealScheduled = false;
-    revealCurrentArticleHash();
-  });
-};
-
-const useArticleHashNavigation = (): void => {
-  useEffect(() => {
-    hashNavigationConsumers += 1;
-    if (hashNavigationConsumers === 1) {
-      const handleHashChange = (): void => {
-        scheduleArticleHashReveal();
-      };
-      window.addEventListener("hashchange", handleHashChange);
-      removeHashNavigationListener = () => {
-        window.removeEventListener("hashchange", handleHashChange);
-      };
-      scheduleArticleHashReveal();
-    }
-
-    return () => {
-      hashNavigationConsumers -= 1;
-      if (hashNavigationConsumers === 0) {
-        removeHashNavigationListener?.();
-        removeHashNavigationListener = undefined;
-      }
-    };
-  }, []);
 };
 
 /**
@@ -242,7 +148,7 @@ export const ArticleAccordion = ({
   readonly children: ReactNode;
   readonly panels: string;
 }) => {
-  useArticleHashNavigation();
+  useArticleFragmentNavigation();
   const panels = useMemo(
     () => parseArticleAccordionPanels(serializedPanels),
     [serializedPanels]
@@ -319,7 +225,7 @@ export const ArticleTabs = ({
   readonly panels: string;
   readonly [iconSlot: string]: ReactNode;
 }) => {
-  useArticleHashNavigation();
+  useArticleFragmentNavigation();
   const panels = useMemo(
     () => parseArticleTabPanels(serializedPanels),
     [serializedPanels]

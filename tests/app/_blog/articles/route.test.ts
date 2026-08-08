@@ -33,6 +33,7 @@ const currentArticle = {
   title: "Current Article",
   updatedAt: null,
   navigation: { next: null, previous: null },
+  outline: [],
 } as const satisfies ArticleDetail;
 
 const createOperations = ({

@@ -43,10 +43,22 @@
  * Callouts, code frames, tab strips, file trees. `--code-*` belong to the
  * code-reading surface and are defined here so there is exactly one definition
  * of each in the tree.
+ *
+ * `--surface` sits on the reader rather than on the body because the Article
+ * outline card is a raised object too and it is reader chrome, outside the body
+ * scope on purpose: inside it, every prose rule below would style it. The body
+ * inherits it, which is what keeps one definition serving both.
  */
-[data-slot="article-body"] {
+[data-slot="article-reader"] {
   --surface: oklch(0.985 0 0);
   --surface-foreground: var(--foreground);
+}
+
+.dark [data-slot="article-reader"] {
+  --surface: oklch(0.21 0.006 285.823);
+}
+
+[data-slot="article-body"] {
   --code: var(--background);
   --code-number: oklch(0.24 0.01 0 / 0.3);
   --code-highlight: oklch(0.49 0.18 257.61 / 0.06);
@@ -56,7 +68,6 @@
 }
 
 .dark [data-slot="article-body"] {
-  --surface: oklch(0.21 0.006 285.823);
   --code-number: oklch(0.92 0.01 0 / 0.32);
   --code-highlight: oklch(0.62 0.18 257.61 / 0.12);
 }
@@ -253,12 +264,15 @@
  * for a document with an h1 in it, and an Article's h1 is the title in the
  * reader chrome rather than anything the body owns.
  *
- * `scroll-margin-block-start` keeps a fragment target clear of the sticky
- * toolbar; the reader owns the toolbar's height, this owns the gap.
+ * `scroll-margin-block-start` states the whole landing line: 92 px of sticky
+ * chrome plus 20 px of clearance. It is stated rather than made up out of the
+ * chrome height and whatever margin the heading happens to carry, because that
+ * margin is a typographic decision and the landing line is not — an h4 with a
+ * smaller margin would otherwise land tighter under the toolbar than an h2.
  */
 [data-slot="article-body"] :is(h2, h3, h4) {
   font-weight: 500;
-  scroll-margin-block-start: 4rem;
+  scroll-margin-block-start: 7rem;
   /*
    * `pretty`, not `balance`. Balancing a two-line heading splits it down the
    * middle and leaves half the rail empty with the copy control marooned a line
