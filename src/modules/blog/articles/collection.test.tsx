@@ -835,4 +835,91 @@ describe("Article operations", () => {
       /Article link fragment.*missing/u
     );
   });
+
+  test("names the neighbours of an Article in exact visible catalog order", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        published("older", "2026-07-20"),
+        draft("zebra"),
+        published("newer", "2026-07-25"),
+        draft("alpha"),
+      ],
+      today: TODAY,
+    });
+
+    const [first, middle, last] = await Promise.all([
+      articles.findArticle("alpha"),
+      articles.findArticle("zebra"),
+      articles.findArticle("older"),
+    ]);
+
+    // The listing is alpha, zebra, newer, older.
+    expect(first?.navigation).toEqual({
+      previous: null,
+      next: { href: "/blog/zebra", title: "Draft zebra" },
+    });
+    expect(middle?.navigation).toEqual({
+      previous: { href: "/blog/alpha", title: "Draft alpha" },
+      next: { href: "/blog/newer", title: "Published newer" },
+    });
+    expect(last?.navigation).toEqual({
+      previous: { href: "/blog/newer", title: "Published newer" },
+      next: null,
+    });
+  });
+
+  test("leaves a single Article without neighbours instead of wrapping", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: true,
+      manifest: [published("only", "2026-07-20")],
+      today: TODAY,
+    });
+
+    const article = await articles.findArticle("only");
+
+    expect(article?.navigation).toEqual({ previous: null, next: null });
+  });
+
+  test("never offers a Draft neighbour in production", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: false,
+      manifest: [
+        published("older", "2026-07-20"),
+        draftCanary(),
+        published("newer", "2026-07-25"),
+      ],
+      today: TODAY,
+    });
+
+    const article = await articles.findArticle("newer");
+
+    expect(article?.navigation).toEqual({
+      previous: null,
+      next: { href: "/blog/older", title: "Published older" },
+    });
+    expect(JSON.stringify(article?.navigation)).not.toContain(
+      DRAFT_CANARY_SENTINEL
+    );
+  });
+
+  test("keeps neighbours out of every projection but Article detail", async () => {
+    const articles = createArticleOperations({
+      includeDrafts: true,
+      manifest: [
+        published("older", "2026-07-20"),
+        published("newer", "2026-07-25"),
+      ],
+      today: TODAY,
+    });
+
+    const [summary] = await articles.listArticles();
+    const detail = await articles.findArticle("newer");
+
+    expect(summary).not.toHaveProperty("navigation");
+    expect(detail?.navigation.next).toEqual({
+      href: "/blog/older",
+      title: "Published older",
+    });
+  });
 });

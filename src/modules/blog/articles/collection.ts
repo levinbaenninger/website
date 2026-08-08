@@ -8,6 +8,8 @@ import type {
   ArticleCover,
   ArticleDetail,
   ArticleDiscoveryEntry,
+  ArticleNeighbourLink,
+  ArticleReaderNavigation,
   ArticleRedirect,
   ArticleSearchDocument,
   ArticleSocialImage,
@@ -161,7 +163,30 @@ const toDiscoveryEntry = (
   updatedAt: article.updatedAt ?? null,
 });
 
-const toDetail = (article: CanonicalArticle): ArticleDetail => {
+const toNeighbourLink = (
+  article: CanonicalArticle | undefined
+): ArticleNeighbourLink | null =>
+  article === undefined ? null : { href: article.href, title: article.title };
+
+/**
+ * Previous and Next in the exact order the catalog lists, which is why they are
+ * derived from the visible collection rather than from a separate query: an
+ * unfiltered list is the only thing that reproduces what a visitor scrolled
+ * past. The collection does not wrap, so a boundary yields `null`, and in
+ * production a Draft is not in the array at all — it cannot become a neighbour.
+ */
+const toReaderNavigation = (
+  articles: readonly CanonicalArticle[],
+  index: number
+): ArticleReaderNavigation => ({
+  previous: toNeighbourLink(articles[index - 1]),
+  next: toNeighbourLink(articles[index + 1]),
+});
+
+const toDetail = (
+  article: CanonicalArticle,
+  navigation: ArticleReaderNavigation
+): ArticleDetail => {
   const summary = toSummary(article);
 
   if (article.status === "Published" && summary.status === "published") {
@@ -169,6 +194,7 @@ const toDetail = (article: CanonicalArticle): ArticleDetail => {
       ...summary,
       Content: article.Content,
       discovery: toDiscoveryEntry(article),
+      navigation,
     };
   }
 
@@ -180,6 +206,7 @@ const toDetail = (article: CanonicalArticle): ArticleDetail => {
     ...summary,
     Content: article.Content,
     discovery: null,
+    navigation,
   };
 };
 
@@ -371,8 +398,11 @@ export const createArticleOperations = (
     },
     async findArticle(slug) {
       const articles = await getVisibleArticles();
-      const article = articles.find((candidate) => candidate.slug === slug);
-      return article === undefined ? null : toDetail(article);
+      const index = articles.findIndex((candidate) => candidate.slug === slug);
+      const article = articles[index];
+      return article === undefined
+        ? null
+        : toDetail(article, toReaderNavigation(articles, index));
     },
     async listArticleTags() {
       const articles = await getVisibleArticles();

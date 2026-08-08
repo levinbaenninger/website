@@ -19,6 +19,8 @@ export type { FixedArticleDestination } from "./collection";
 export type {
   ArticleDetail,
   ArticleDiscoveryEntry,
+  ArticleNeighbourLink,
+  ArticleReaderNavigation,
   ArticleRedirect,
   ArticleSearchDocument,
   ArticleSocialImage,

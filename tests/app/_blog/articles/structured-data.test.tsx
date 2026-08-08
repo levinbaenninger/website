@@ -29,6 +29,7 @@ const publishedArticle = {
   tags: [{ id: "nextjs", label: "Next.js" }],
   title: "Canonical Article",
   updatedAt: "2026-07-15",
+  navigation: { next: null, previous: null },
 } as const satisfies ArticleDetail;
 
 describe("Article structured data", () => {
@@ -74,6 +75,7 @@ describe("Article structured data", () => {
       publishedAt: null,
       status: "draft",
       updatedAt: null,
+      navigation: { next: null, previous: null },
     } as const satisfies ArticleDetail;
 
     expect(
