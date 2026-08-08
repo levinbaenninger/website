@@ -138,6 +138,7 @@ const renderArticle = (
     description: "A representative Article.",
     discovery: null,
     href: "/blog/representative-article",
+    navigation: { next: null, previous: null },
     publishedAt: status === "published" ? "2026-08-02" : null,
     slug: "representative-article",
     status,

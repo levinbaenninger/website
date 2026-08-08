@@ -32,6 +32,7 @@ const currentArticle = {
   tags: [{ id: "nextjs", label: "Next.js" }],
   title: "Current Article",
   updatedAt: null,
+  navigation: { next: null, previous: null },
 } as const satisfies ArticleDetail;
 
 const createOperations = ({

@@ -4,9 +4,9 @@
 //
 // Adapted from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
 
-import { format, parseISO } from "date-fns";
 import Image from "next/image";
 
+import { formatArticleDate } from "@/modules/blog/articles/article-date";
 import type { ArticleCover as ArticleCoverImage } from "@/modules/blog/articles/types";
 import { Badge } from "@/shared/ui/badge";
 
@@ -73,8 +73,7 @@ export const CoverDraftBadge = () => (
   <Badge className="absolute top-2 left-2 shadow-sm">Draft</Badge>
 );
 
-export const formatArticleDate = (isoDate: string): string =>
-  format(parseISO(isoDate), "dd.MM.yyyy");
+export { formatArticleDate } from "@/modules/blog/articles/article-date";
 
 /**
  * The publication state of an Article. A local Draft says so in words rather

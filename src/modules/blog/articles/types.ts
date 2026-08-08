@@ -53,8 +53,30 @@ export interface ArticleDiscoveryEntry {
   readonly updatedAt: string | null;
 }
 
+/**
+ * One neighbouring Article, reduced to what the reader is allowed to render.
+ *
+ * Deliberately not an `ArticleSummary`: the reader shows a destination and a
+ * title, and a wider projection would invite the Cover, dates, and Draft state
+ * of an Article the visitor is not reading.
+ */
+export interface ArticleNeighbourLink {
+  readonly href: `/blog/${string}`;
+  readonly title: string;
+}
+
+/**
+ * The neighbours of an Article in the exact order visitors see in the catalog.
+ * Either side is `null` at a boundary: the collection does not wrap.
+ */
+export interface ArticleReaderNavigation {
+  readonly previous: ArticleNeighbourLink | null;
+  readonly next: ArticleNeighbourLink | null;
+}
+
 interface ArticleDetailBase {
   readonly Content: MDXContent;
+  readonly navigation: ArticleReaderNavigation;
 }
 
 export type DraftArticleDetail = DraftArticleSummary &
