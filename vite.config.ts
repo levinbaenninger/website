@@ -71,7 +71,7 @@ export default defineConfig({
       },
       "update:social-image-snapshots": {
         command:
-          "SOCIAL_IMAGE_GOLDENS=review vp test tests/shared/social-image/social-image.test.tsx",
+          "SOCIAL_IMAGE_GOLDENS=review vp test src/shared/social-image/__tests__/social-image.test.tsx",
         cache: false,
       },
     },
@@ -152,10 +152,7 @@ export default defineConfig({
         test: {
           name: "node",
           environment: "node",
-          include: [
-            "src/**/*.{test,spec}.{ts,tsx}",
-            "tests/**/*.{test,spec}.{ts,tsx}",
-          ],
+          include: ["src/**/*.{test,spec}.{ts,tsx}"],
           exclude: ["**/*.dom.test.{ts,tsx}"],
         },
       },
@@ -164,10 +161,7 @@ export default defineConfig({
         test: {
           name: "dom",
           environment: "happy-dom",
-          include: [
-            "src/**/*.dom.test.{ts,tsx}",
-            "tests/**/*.dom.test.{ts,tsx}",
-          ],
+          include: ["src/**/*.dom.test.{ts,tsx}"],
           setupFiles: ["./tests/setup/react-dom.ts"],
         },
       },
