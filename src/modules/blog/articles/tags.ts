@@ -5,6 +5,9 @@ export interface Tag {
 
 export const TAGS = [
   { id: "nextjs", label: "Next.js" },
+  { id: "react", label: "React" },
+  { id: "testing", label: "Testing" },
+  { id: "typescript", label: "TypeScript" },
   { id: "web-performance", label: "Web performance" },
 ] as const satisfies readonly Tag[];
 
