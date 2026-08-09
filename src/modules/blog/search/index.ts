@@ -9,6 +9,12 @@ const articleSearchLoader = createArticleSearchLoader({
 
 export const loadArticleSearch = articleSearchLoader.load;
 
+export {
+  isEffectiveArticleSearchQuery,
+  MAX_ARTICLE_SEARCH_QUERY_GRAPHEMES,
+  normalizeArticleSearchQuery,
+} from "./query";
+
 export type {
   ArticleSearch,
   ArticleSearchResult,

@@ -9,21 +9,46 @@ import { userEvent } from "@testing-library/user-event";
 import type { OnUrlUpdateFunction } from "nuqs/adapters/testing";
 import { withNuqsTestingAdapter } from "nuqs/adapters/testing";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, test, vi } from "vite-plus/test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vite-plus/test";
 
 import type {
+  ArticleSearchDocument,
   ArticleSummary,
   ArticleTagFacet,
 } from "@/modules/blog/articles/types";
+import { createArticleSearchArtifact } from "@/modules/blog/search/contract";
+import { createArticleSearchLoader } from "@/modules/blog/search/service";
+import type { ArticleSearch } from "@/modules/blog/search/service";
 
 import {
   draftArticle,
   NEXTJS,
   publishedArticle,
+  searchDocument,
   TAG_FACETS,
   WEB_PERFORMANCE,
 } from "./test-fixtures";
 import { BlogView } from "./view";
+
+// The one true boundary in this island: the lazy import of Fuse and the fetch
+// of the static artifact. Everything behind it — the real service, the real
+// Fuse configuration, real highlight ranges — is exercised for real, because
+// the point of most of these tests is what the visitor is shown about a match.
+const { loadArticleSearch } = vi.hoisted(() => ({
+  loadArticleSearch: vi.fn<() => Promise<ArticleSearch>>(),
+}));
+
+vi.mock(import("@/modules/blog/search"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  loadArticleSearch,
+}));
 
 // The prerender: `renderToStaticMarkup` runs no effects, so the island never
 // reaches its live branch. This is exactly the catalog a visitor receives
@@ -83,12 +108,86 @@ const taggedArticles = [
   publishedArticle({ slug: "seams", title: "Seams worth testing" }),
 ];
 
+// The same three Articles as `taggedArticles`, with the visible text the
+// artifact carries: a Tag-only match, a heading-only match and a body-only
+// match are each reachable by exactly one query.
+const searchDocuments: readonly ArticleSearchDocument[] = [
+  searchDocument({
+    body: "Every image budget dies in a spreadsheet.",
+    headings: ["Enforcing at build time"],
+    slug: "budgets",
+    tags: [NEXTJS],
+    title: "Budgeting images",
+  }),
+  searchDocument({
+    body: "The catalog is prerendered and the artifact is a static asset.",
+    headings: ["Cache profiles"],
+    slug: "cache",
+    tags: [NEXTJS, WEB_PERFORMANCE],
+    title: "Understanding cache components",
+  }),
+  searchDocument({
+    body: "A seam is where a test replaces production behaviour.",
+    headings: ["Injecting a fetch"],
+    slug: "seams",
+    title: "Seams worth testing",
+  }),
+];
+
+const searchOver = async (
+  documents: readonly ArticleSearchDocument[]
+): Promise<ArticleSearch> =>
+  await createArticleSearchLoader({
+    fetchArtifact: async () =>
+      await Promise.resolve(
+        Response.json(createArticleSearchArtifact(documents))
+      ),
+    loadFuse: async () => await import("fuse.js"),
+  }).load();
+
 const hrefsOf = () =>
   screen.getAllByRole("link").map((link) => link.getAttribute("href"));
 
 const radio = (name: string) => screen.getByRole("radio", { name });
 
+const searchBox = () =>
+  screen.getByRole("searchbox", { name: "Search Articles" });
+
+// Two controls answer to `Clear search`: the one inside the field, and the one
+// an Empty state offers. They do the same thing; the Empty's is the later one.
+const emptyClearSearch = (): HTMLElement => {
+  const control = screen
+    .getAllByRole("button", { name: "Clear search" })
+    .at(-1);
+
+  if (control === undefined) {
+    throw new TypeError("Expected an Empty state to offer Clear search.");
+  }
+
+  return control;
+};
+
+const marksIn = (element: Element) =>
+  [...element.querySelectorAll("mark")].map((mark) => mark.textContent);
+
+const tagValues = () =>
+  screen.getAllByRole("radio").map((option) => option.getAttribute("value"));
+
+const lastUpdate = (onUrlUpdate: ReturnType<typeof vi.fn>) =>
+  onUrlUpdate.mock.calls.at(-1)?.[0] as
+    | Parameters<OnUrlUpdateFunction>[0]
+    | undefined;
+
+beforeEach(async () => {
+  const search = await searchOver(searchDocuments);
+  loadArticleSearch.mockImplementation(
+    async () => await Promise.resolve(search)
+  );
+});
+
 afterEach(() => {
+  vi.useRealTimers();
+  vi.clearAllMocks();
   cleanup();
   document.body.replaceChildren();
 });
@@ -335,7 +434,6 @@ describe("Tag filter", () => {
 
     await user.click(radio("All 3 Articles"));
 
-    expect(hrefsOf()).toHaveLength(3);
     await waitFor(() => {
       expect(onUrlUpdate).toHaveBeenCalled();
     });
@@ -343,6 +441,10 @@ describe("Tag filter", () => {
     const { queryString } = onUrlUpdate.mock.calls.at(-1)?.[0] ?? {};
 
     expect(queryString).toBe("?q=cache");
+    // The query outlives the Tag it was combined with.
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
   });
 
   test("writes the Tag to the URL without adding a history entry", async () => {
@@ -377,7 +479,6 @@ describe("Tag filter", () => {
     });
 
     expect(radio("All 3 Articles")).toHaveProperty("checked", true);
-    expect(hrefsOf()).toHaveLength(3);
 
     await waitFor(() => {
       expect(onUrlUpdate).toHaveBeenCalled();
@@ -468,11 +569,13 @@ describe("Tag filter keyboard behaviour", () => {
 
     await user.click(radio("Next.js 2 Articles"));
 
-    expect(screen.getByText("2 Articles found in Next.js.")).toBeTruthy();
+    expect(
+      await screen.findByText("2 Articles found in Next.js.")
+    ).toBeTruthy();
 
     await user.click(radio("All 3 Articles"));
 
-    expect(screen.getByText("3 Articles found.")).toBeTruthy();
+    expect(await screen.findByText("3 Articles found.")).toBeTruthy();
   });
 });
 
@@ -524,5 +627,513 @@ describe("Tags that match nothing", () => {
 
     expect(screen.getAllByRole("link")).toHaveLength(3);
     expect(document.activeElement).toBe(radio("All 3 Articles"));
+  });
+});
+
+describe("lazy Article search", () => {
+  test("loads nothing until the first effective character is typed", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    const search = searchBox();
+
+    await user.click(search);
+    expect(loadArticleSearch).not.toHaveBeenCalled();
+
+    await user.type(search, "   ");
+    expect(loadArticleSearch).not.toHaveBeenCalled();
+    expect(hrefsOf()).toHaveLength(3);
+
+    await user.type(search, "cache");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+    expect(loadArticleSearch).toHaveBeenCalledOnce();
+  });
+
+  test("searches every later keystroke without loading again", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "cache");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+
+    await user.clear(searchBox());
+    await user.type(searchBox(), "spreadsheet");
+
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/budgets"]);
+    });
+    expect(loadArticleSearch).toHaveBeenCalledOnce();
+  });
+
+  test("restores a query the URL already carries", async () => {
+    renderHydrated(taggedArticles, { searchParams: "?q=spreadsheet" });
+
+    expect(searchBox()).toHaveProperty("value", "spreadsheet");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/budgets"]);
+    });
+  });
+
+  test("orders results by relevance and never reorders them for a Tag", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "next.js");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/budgets", "/blog/cache"]);
+    });
+
+    await user.click(radio("Next.js 2 Articles"));
+
+    expect(hrefsOf()).toEqual(["/blog/budgets", "/blog/cache"]);
+  });
+
+  test("combines the query and the Tag with AND semantics", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles, { searchParams: "?tag=web-performance" });
+
+    await user.type(searchBox(), "next.js");
+
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+  });
+
+  test("never shows an Article the visible catalog did not send", async () => {
+    const user = userEvent.setup();
+    const withStaleDocument = await searchOver([
+      ...searchDocuments,
+      searchDocument({
+        slug: "unpublished",
+        title: "Understanding cache internals",
+      }),
+    ]);
+
+    loadArticleSearch.mockImplementation(
+      async () => await Promise.resolve(withStaleDocument)
+    );
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "cache");
+
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+    expect(screen.queryByText("Understanding cache internals")).toBeNull();
+  });
+
+  test("keeps a matching Draft's Draft treatment", async () => {
+    const user = userEvent.setup();
+    const search = await searchOver([
+      searchDocument({
+        slug: "wip",
+        status: "draft",
+        title: "Understanding cache components",
+      }),
+    ]);
+
+    loadArticleSearch.mockImplementation(
+      async () => await Promise.resolve(search)
+    );
+    renderHydrated([
+      draftArticle({
+        publishedAt: "2027-01-01",
+        slug: "wip",
+        title: "Understanding cache components",
+      }),
+    ]);
+
+    await user.type(searchBox(), "cache");
+
+    expect(await screen.findByText("Draft")).toBeTruthy();
+    expect(screen.getByText("Not published")).toBeTruthy();
+    expect(screen.queryByText("01.01.2027")).toBeNull();
+  });
+});
+
+describe("explained Article search results", () => {
+  test("highlights the matching part of a title", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "cache");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+
+    const heading = screen.getByRole("heading", {
+      name: "Understanding cache components",
+    });
+
+    expect(marksIn(heading)).toEqual(["cache"]);
+  });
+
+  test("explains a heading-only match with the matching section", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "injecting");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/seams"]);
+    });
+
+    const excerpt = screen.getByText("Matching section:").parentElement;
+
+    expect(excerpt?.textContent).toContain("Injecting a fetch");
+    expect(marksIn(excerpt as Element)).not.toHaveLength(0);
+  });
+
+  test("explains a body-only match with a bounded excerpt", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "spreadsheet");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/budgets"]);
+    });
+
+    const excerpt = screen.getByText("Matching excerpt:").parentElement;
+
+    expect(excerpt?.textContent).toContain(
+      "Every image budget dies in a spreadsheet."
+    );
+    expect(marksIn(excerpt as Element)).toEqual(["spreadsheet"]);
+  });
+
+  test("leaves an unmatched description unmarked", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "web performance");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+
+    const description = screen.getByText("A representative Article.");
+
+    expect(marksIn(description)).toEqual([]);
+    expect(screen.queryByText("Matching excerpt:")).toBeNull();
+  });
+
+  test("explains a Tag-only match in the facet strip", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "web performance");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+
+    const group = screen.getByRole("radiogroup", {
+      name: "Filter Articles by Tag",
+    });
+
+    // One mark per token, and only on the Tag the query actually matched.
+    expect(marksIn(group)).toEqual(["Web", "performance"]);
+  });
+});
+
+describe("query-relative Tag counts", () => {
+  test("counts query matches independently of the selected Tag", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "next.js");
+    await waitFor(() => {
+      expect(hrefsOf()).toHaveLength(2);
+    });
+
+    expect(radio("All 2 Articles")).toBeTruthy();
+    expect(radio("Next.js 2 Articles")).toBeTruthy();
+    expect(radio("Web performance 1 Article")).toBeTruthy();
+
+    await user.click(radio("Web performance 1 Article"));
+
+    // Selecting a Tag narrows the cards, never the counts beside the options.
+    expect(hrefsOf()).toEqual(["/blog/cache"]);
+    expect(radio("All 2 Articles")).toBeTruthy();
+    expect(radio("Next.js 2 Articles")).toBeTruthy();
+  });
+
+  test("keeps every option in place and returns to catalog counts on clear", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "spreadsheet");
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/budgets"]);
+    });
+
+    expect(tagValues()).toEqual(["all", "nextjs", "web-performance"]);
+    expect(radio("Web performance 0 Articles")).toHaveProperty(
+      "disabled",
+      true
+    );
+
+    await user.click(screen.getByRole("button", { name: "Clear search" }));
+
+    expect(radio("All 3 Articles")).toBeTruthy();
+    expect(radio("Web performance 1 Article")).toHaveProperty(
+      "disabled",
+      false
+    );
+  });
+});
+
+describe("shareable query state", () => {
+  test("writes a normalized query to the URL without adding a history entry", async () => {
+    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles, { onUrlUpdate });
+
+    await user.type(searchBox(), "  Cache   Components");
+
+    await waitFor(() => {
+      expect(lastUpdate(onUrlUpdate)?.searchParams.get("q")).toBe(
+        "Cache Components"
+      );
+    });
+
+    const update = lastUpdate(onUrlUpdate);
+
+    expect(update?.options.history).toBe("replace");
+    expect(update?.options.shallow).toBe(true);
+  });
+
+  test("keeps one trailing space in the field and none in the URL", async () => {
+    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles, { onUrlUpdate });
+
+    const field = searchBox();
+
+    await user.type(field, "cache ");
+
+    expect(field).toHaveProperty("value", "cache ");
+    await waitFor(() => {
+      expect(lastUpdate(onUrlUpdate)?.searchParams.get("q")).toBe("cache");
+    });
+
+    await user.tab();
+
+    expect(field).toHaveProperty("value", "cache");
+  });
+
+  test("ignores pasted text past the accepted query boundary", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    const field = searchBox();
+
+    await user.click(field);
+    await user.paste("a".repeat(260));
+
+    expect((field as HTMLInputElement).value).toHaveLength(200);
+  });
+
+  test("clears only the query with Escape and keeps the Tag", async () => {
+    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles, {
+      onUrlUpdate,
+      searchParams: "?tag=nextjs",
+    });
+
+    const field = searchBox();
+
+    await user.type(field, "cache");
+    await user.keyboard("{Escape}");
+
+    expect(field).toHaveProperty("value", "");
+    expect(document.activeElement).toBe(field);
+    await waitFor(() => {
+      expect(lastUpdate(onUrlUpdate)?.queryString).toBe("?tag=nextjs");
+    });
+  });
+});
+
+describe("Article search loading and recovery", () => {
+  test("does not flash the loading state when the search settles quickly", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+
+    await user.type(searchBox(), "cache");
+
+    expect(screen.queryByText("Leafing through the Blog…")).toBeNull();
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+    expect(screen.queryByText("Leafing through the Blog…")).toBeNull();
+  });
+
+  test("keeps the cards until the loading state has earned its place", async () => {
+    const ready = await searchOver(searchDocuments);
+    const pending = Promise.withResolvers<ArticleSearch>();
+
+    loadArticleSearch.mockImplementation(async () => await pending.promise);
+
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+    await user.type(searchBox(), "cache");
+
+    // The previous catalog stays put while the artifact is in flight, and the
+    // strip says so rather than changing any chip's width.
+    expect(hrefsOf()).toHaveLength(3);
+    expect(screen.queryByText("Leafing through the Blog\u2026")).toBeNull();
+    expect(radio("All 3 Articles")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("radiogroup", { name: "Filter Articles by Tag" })
+        .getAttribute("aria-busy")
+    ).toBe("true");
+
+    expect(
+      await screen.findByText("Leafing through the Blog\u2026")
+    ).toBeTruthy();
+
+    pending.resolve(ready);
+
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+  });
+
+  test("latches a load failure and preserves the query, Tag, facets and focus", async () => {
+    loadArticleSearch.mockRejectedValue(new Error("offline"));
+
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles, { searchParams: "?tag=nextjs" });
+
+    const field = searchBox();
+
+    await user.type(field, "cache");
+
+    expect(await screen.findByText("Search lost the plot")).toBeTruthy();
+    expect(loadArticleSearch).toHaveBeenCalledOnce();
+
+    await user.type(field, "s");
+
+    // Latched: the visitor keeps typing, the failure does not multiply.
+    expect(loadArticleSearch).toHaveBeenCalledOnce();
+    expect(field).toHaveProperty("value", "caches");
+    expect(document.activeElement).toBe(field);
+    expect(radio("Next.js 2 Articles")).toHaveProperty("checked", true);
+    expect(radio("All 3 Articles")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Article search could not be loaded."
+    );
+
+    await user.click(emptyClearSearch());
+
+    expect(field).toHaveProperty("value", "");
+    expect(document.activeElement).toBe(field);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(hrefsOf()).toEqual(["/blog/cache", "/blog/budgets"]);
+  });
+
+  test("recovers through Retry search and returns focus to the field", async () => {
+    const ready = await searchOver(searchDocuments);
+
+    loadArticleSearch
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockImplementation(async () => await Promise.resolve(ready));
+
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+    await user.type(searchBox(), "cache");
+
+    await user.click(
+      await screen.findByRole("button", { name: "Retry search" })
+    );
+
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+    expect(loadArticleSearch).toHaveBeenCalledTimes(2);
+    expect(document.activeElement).toBe(searchBox());
+  });
+
+  test("clears only the named constraint from a no-results state", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles, { searchParams: "?tag=nextjs" });
+
+    await user.type(searchBox(), "kubernetes");
+
+    expect(
+      await screen.findByText("No luck with ‘kubernetes’ in Next.js")
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Show all Tags" }));
+
+    expect(searchBox()).toHaveProperty("value", "kubernetes");
+    expect(radio("All 0 Articles")).toHaveProperty("checked", true);
+    expect(document.activeElement).toBe(radio("All 0 Articles"));
+    expect(screen.getByText("No luck with ‘kubernetes’")).toBeTruthy();
+
+    await user.click(emptyClearSearch());
+
+    expect(searchBox()).toHaveProperty("value", "");
+    expect(document.activeElement).toBe(searchBox());
+    expect(hrefsOf()).toHaveLength(3);
+  });
+});
+
+describe("result announcements", () => {
+  test("waits for typing to settle before announcing the count", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles);
+    await user.type(searchBox(), "cache");
+
+    await waitFor(() => {
+      expect(hrefsOf()).toEqual(["/blog/cache"]);
+    });
+
+    // Cards first, words later: the count is not read out on the keystroke
+    // that produced it.
+    expect(
+      screen.queryByText("1 Article found for \u2018cache\u2019.")
+    ).toBeNull();
+    expect(
+      await screen.findByText("1 Article found for \u2018cache\u2019.")
+    ).toBeTruthy();
+  });
+
+  test("names the query and the Tag together and counts zero", async () => {
+    const user = userEvent.setup();
+
+    renderHydrated(taggedArticles, { searchParams: "?tag=web-performance" });
+
+    await user.type(searchBox(), "kubernetes");
+
+    expect(
+      await screen.findByText(
+        "0 Articles found for ‘kubernetes’ in Web performance."
+      )
+    ).toBeTruthy();
   });
 });

@@ -57,7 +57,7 @@ describe("client-safe Article search", () => {
     expect(fetchArtifact).toHaveBeenCalledWith(ARTICLE_SEARCH_ARTIFACT_URL);
   });
 
-  test("weights fields, requires every token, tolerates typos, and uses slug ties", async () => {
+  test("requires every token, tolerates typos, and uses slug ties", async () => {
     const search = await createArticleSearchLoader({
       fetchArtifact: async () => {
         await Promise.resolve();
@@ -89,16 +89,20 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
+    // Titles outrank the body, and equal titles fall back to slug order. The
+    // body-only Article is last but present: it says the words, so it is an
+    // answer, which is the whole point of a full-text search.
     expect(search.search("cache components").map(({ id }) => id)).toEqual([
       "a-title",
       "z-title",
+      "body-only",
     ]);
     expect(search.search("cache component").map(({ id }) => id)).toContain(
       "a-title"
     );
   });
 
-  test("ranks Tag labels, Tag IDs, descriptions, headings, and body by fixed precedence", async () => {
+  test("ranks Tag labels, descriptions, headings, and body by fixed precedence", async () => {
     const search = await createArticleSearchLoader({
       fetchArtifact: async () => {
         await Promise.resolve();
@@ -125,13 +129,6 @@ describe("client-safe Article search", () => {
               tags: [],
               title: "quasar",
             }),
-            document("tag-id", {
-              body: "Unrelated",
-              description: "Unrelated",
-              headings: [],
-              tags: [{ id: "quasar", label: "Other" }],
-              title: "quasar",
-            }),
             document("tag-label", {
               body: "Unrelated",
               description: "Unrelated",
@@ -147,86 +144,24 @@ describe("client-safe Article search", () => {
 
     expect(search.search("quasar").map(({ id }) => id)).toEqual([
       "tag-label",
-      "tag-id",
       "description",
       "heading",
       "body",
     ]);
   });
 
-  test("locks the candidate threshold independently from final-score filtering", async () => {
-    const loadSearch = async (documents: readonly ArticleSearchDocument[]) =>
-      await createArticleSearchLoader({
-        fetchArtifact: async () => {
-          await Promise.resolve();
-          return createResponse(artifact(documents));
-        },
-        loadFuse,
-      }).load();
-    const atThresholdQuery = "abcdefghijklmnopqrst";
-    const atThreshold = await loadSearch([
-      document("b-tag-only", {
-        body: "Unrelated",
-        description: "Unrelated",
-        headings: [],
-        tags: [{ id: "exact", label: atThresholdQuery }],
-        title: "Unrelated",
-      }),
-      document("z-at-threshold", {
-        body: "Unrelated",
-        description: "Unrelated",
-        headings: [],
-        tags: [{ id: "exact", label: atThresholdQuery }],
-        title: "xxxxxxxhijklmnopqrst",
-      }),
-    ]);
-    expect(atThreshold.search(atThresholdQuery).map(({ id }) => id)).toEqual([
-      "z-at-threshold",
-      "b-tag-only",
-    ]);
-
-    const aboveThresholdQuery = "abcdefghijklmnopqrstuvwxy";
-    const aboveThreshold = await loadSearch([
-      document("b-tag-only", {
-        body: "Unrelated",
-        description: "Unrelated",
-        headings: [],
-        tags: [{ id: "exact", label: aboveThresholdQuery }],
-        title: "Unrelated",
-      }),
-      document("c-above-threshold", {
-        body: "Unrelated",
-        description: "Unrelated",
-        headings: [],
-        tags: [{ id: "exact", label: aboveThresholdQuery }],
-        title: "xxxxxxxxxjklmnopqrstuvwxy",
-      }),
-    ]);
-    expect(
-      aboveThreshold.search(aboveThresholdQuery).map(({ id }) => id)
-    ).toEqual(["b-tag-only", "c-above-threshold"]);
-  });
-
-  test("returns every result at or below the separate final score cutoff", async () => {
-    const query = "abcdefghij";
+  test("ignores canonical Tag IDs, which a visitor never sees", async () => {
     const search = await createArticleSearchLoader({
       fetchArtifact: async () => {
         await Promise.resolve();
         return createResponse(
           artifact([
-            document("above-cutoff", {
-              body: `word ${query}`,
+            document("tag-id-only", {
+              body: "Unrelated",
               description: "Unrelated",
               headings: [],
-              tags: [],
-              title: "abcdxfghij",
-            }),
-            document("below-cutoff", {
-              body: query,
-              description: "Unrelated",
-              headings: [],
-              tags: [],
-              title: "abcdxfghij",
+              tags: [{ id: "quasar", label: "Other" }],
+              title: "Unrelated",
             }),
           ])
         );
@@ -234,7 +169,75 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
-    expect(search.search(query).map(({ id }) => id)).toEqual(["below-cutoff"]);
+    expect(search.search("quasar")).toEqual([]);
+  });
+
+  test("keeps a heading- or body-only match the title cannot explain", async () => {
+    const search = await createArticleSearchLoader({
+      fetchArtifact: async () => {
+        await Promise.resolve();
+        return createResponse(
+          artifact([
+            document("body-only", {
+              body: "Every image budget dies in a spreadsheet.",
+              description: "Unrelated.",
+              headings: [],
+              tags: [],
+              title: "Unrelated prose",
+            }),
+            document("heading-only", {
+              body: "Unrelated.",
+              description: "Unrelated.",
+              headings: ["Injecting a fetch"],
+              tags: [],
+              title: "Unrelated prose",
+            }),
+          ])
+        );
+      },
+      loadFuse,
+    }).load();
+
+    expect(search.search("spreadsheet").map(({ id }) => id)).toEqual([
+      "body-only",
+    ]);
+    expect(search.search("injecting a fetch").map(({ id }) => id)).toEqual([
+      "heading-only",
+    ]);
+  });
+
+  test("separates the candidate gate from the relevance gate", async () => {
+    const search = await createArticleSearchLoader({
+      fetchArtifact: async () => {
+        await Promise.resolve();
+        return createResponse(
+          artifact([
+            // Says the word.
+            document("exact", {
+              body: "Caching is the topic here.",
+              description: "Unrelated.",
+              headings: [],
+              tags: [],
+              title: "Unrelated prose",
+            }),
+            // Close enough to reach the candidate gate on `coaching`, far
+            // enough that offering it as an answer would be a guess.
+            document("near", {
+              body: "A coaching manual for unrelated prose.",
+              description: "Unrelated.",
+              headings: [],
+              tags: [],
+              title: "Unrelated prose",
+            }),
+          ])
+        );
+      },
+      loadFuse,
+    }).load();
+
+    expect(search.search("caching").map(({ id }) => id)).toEqual(["exact"]);
+    // Nothing here shares enough with `rust` to be a candidate at all.
+    expect(search.search("rust")).toEqual([]);
   });
 
   test("returns plain strings with valid end-exclusive ranges and deterministic snippets", async () => {
