@@ -5,7 +5,7 @@ import {
   PORTFOLIO_IDENTITY,
   SITE_IDENTITY,
   toCanonicalUrl,
-} from "@/app/_site/identity";
+} from "@/app/_config/site-identity";
 
 export const createRootMetadata = (): Metadata => {
   const canonicalUrl = toCanonicalUrl("/");

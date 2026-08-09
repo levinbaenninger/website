@@ -1,6 +1,6 @@
 {
   "clone_groups": [
-    "src/app/_not-found/plotter-figure.tsx:372-385|src/features/portfolio/about/introduction/spotlight-logo.tsx:158-171",
+    "src/app/_components/not-found/plotter-figure.tsx:372-385|src/features/portfolio/about/introduction/spotlight-logo.tsx:158-171",
     "src/app/blog/[slug]/open-graph.png/route.ts:6-19|src/app/blog/[slug]/twitter-card.png/route.ts:6-19",
     "src/app/globals.css:113-119|src/app/globals.css:75-81",
     "src/app/globals.css:196-205|src/app/globals.css:213-222",

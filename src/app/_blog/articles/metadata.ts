@@ -13,7 +13,7 @@ import {
   AUTHOR_IDENTITY,
   SITE_IDENTITY,
   toCanonicalUrl,
-} from "@/app/_site/identity";
+} from "@/app/_config/site-identity";
 import type { ArticleDetail } from "@/features/blog/articles/types";
 
 export const createArticleMetadata = (article: ArticleDetail): Metadata => {

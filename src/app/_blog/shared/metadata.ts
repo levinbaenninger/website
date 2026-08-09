@@ -4,7 +4,7 @@ import {
   AUTHOR_IDENTITY,
   SITE_IDENTITY,
   toCanonicalUrl,
-} from "@/app/_site/identity";
+} from "@/app/_config/site-identity";
 
 export {
   SOCIAL_IMAGE_CONTENT_TYPE,

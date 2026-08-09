@@ -5,6 +5,11 @@ import { useMotionValue } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
 
+import {
+  NOT_FOUND_COPY,
+  orderRecoveryDestinations,
+  selectNotFoundVariant,
+} from "@/app/_config/not-found";
 import { Button } from "@/shared/ui/button";
 import { Kbd, KbdGroup } from "@/shared/ui/kbd";
 import {
@@ -15,11 +20,6 @@ import {
   PanelTitle,
 } from "@/shared/ui/panel";
 
-import {
-  NOT_FOUND_COPY,
-  orderRecoveryDestinations,
-  selectNotFoundVariant,
-} from "./content";
 import { PEN_PARK_POINT } from "./digits";
 import { PlotterFigure } from "./plotter-figure";
 import { StatusStrip } from "./status-strip";

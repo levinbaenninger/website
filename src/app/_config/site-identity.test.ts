@@ -6,7 +6,7 @@ import {
   PORTFOLIO_IDENTITY,
   SITE_IDENTITY,
   toCanonicalUrl,
-} from "@/app/_site/identity";
+} from "@/app/_config/site-identity";
 
 describe("canonical app identity", () => {
   test("uses the immutable production identity without deployment inputs", () => {

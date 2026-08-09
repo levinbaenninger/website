@@ -4,7 +4,7 @@ import {
   AUTHOR_IDENTITY,
   BLOG_IDENTITY,
   toCanonicalUrl,
-} from "@/app/_site/identity";
+} from "@/app/_config/site-identity";
 import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
 import { isXml10CompatibleText } from "@/shared/xml/xml-characters";
 

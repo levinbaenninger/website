@@ -5,7 +5,7 @@ import {
   BLOG_IDENTITY,
   SITE_IDENTITY,
   toCanonicalUrl,
-} from "@/app/_site/identity";
+} from "@/app/_config/site-identity";
 
 export const createBlogMetadata = (): Metadata => {
   const canonicalUrl = toCanonicalUrl("/blog");

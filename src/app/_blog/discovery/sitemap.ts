@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { toCanonicalUrl } from "@/app/_site/identity";
+import { toCanonicalUrl } from "@/app/_config/site-identity";
 import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
 
 export const getArticleLastModified = (

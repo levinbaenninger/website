@@ -11,8 +11,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactElement } from "react";
 
-import { APP_DESTINATIONS } from "@/app/_shell/navigation/destinations";
-import type { AppDestination } from "@/app/_shell/navigation/destinations";
+import { APP_DESTINATIONS } from "@/app/_config/app-destinations";
+import type { AppDestination } from "@/app/_config/app-destinations";
 import { SOCIAL_PROFILES } from "@/features/portfolio/about/social/profiles";
 import { PORTFOLIO_DESTINATIONS } from "@/features/portfolio/destinations";
 import { Button } from "@/shared/ui/button";

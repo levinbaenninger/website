@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Popover } from "radix-ui";
 import { useState } from "react";
 
-import { APP_DESTINATIONS } from "@/app/_shell/navigation/destinations";
+import { APP_DESTINATIONS } from "@/app/_config/app-destinations";
 import { Button } from "@/shared/ui/button";
 
 export const MobileNavigation = () => {
