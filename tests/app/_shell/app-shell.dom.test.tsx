@@ -69,4 +69,28 @@ describe("App shell accessibility", () => {
 
     expect(screen.getAllByRole("main")).toHaveLength(1);
   });
+
+  test("opens the Blog catalog on its own heading", () => {
+    renderShell(<BlogView articles={[]} tags={[]} />);
+
+    const [first] = screen.getAllByRole("heading");
+
+    // Closed overlays contribute nothing to the outline, so the first heading
+    // a visitor meets is the page's own, not one belonging to the shell.
+    expect(first).toHaveProperty("tagName", "H1");
+  });
+
+  test("names the command menu only while it is open", async () => {
+    const user = userEvent.setup();
+    renderShell(<BlogView articles={[]} tags={[]} />);
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByText("Command Palette")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /search/iu }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Command Palette" })
+    ).toBeTruthy();
+  });
 });
