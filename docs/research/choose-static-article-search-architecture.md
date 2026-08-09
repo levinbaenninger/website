@@ -16,7 +16,7 @@ The canonical Article contract from [issue #5](https://github.com/levinbaenninge
 
 The current `next.config.ts` performs a normal Next.js production build and does not set `output: "export"`. The installed Next.js documentation treats a crawlable `out/` directory as a specific static-export mode, so a post-build HTML crawler is not a stable boundary for the current deployment. [Installed Next.js static-export guide](../../node_modules/next/dist/docs/01-app/02-guides/static-exports.md); [official Next.js static-export guide](https://nextjs.org/docs/app/guides/static-exports).
 
-Per [ADR 0001](../adr/0001-reserve-modules-for-product-capabilities.md), Article relevance, snippets, and result mapping belong to Blog. Blog exposes a deliberate client-safe search operation and result type. The app shell may compose that operation into its command menu, but shared UI does not own field weights, Article text extraction, or Fuse types.
+Per [ADR 0002](../adr/0002-adopt-a-feature-first-application-architecture.md), Article relevance, snippets, and result mapping belong to Blog. Blog exposes a deliberate client-safe search operation and result type. The app shell may compose that operation into its command menu, but shared UI does not own field weights, Article text extraction, or Fuse types.
 
 ## Engine and client boundary
 

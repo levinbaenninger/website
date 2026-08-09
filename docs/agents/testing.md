@@ -23,7 +23,6 @@ Keep names short and behavioral, such as `rejects a future publication date` or 
 - Keep focused unit and component tests beside the implementation as `src/**/*.test.ts(x)` when they exercise feature-owned behavior through its public interface.
 - Put workflows spanning multiple areas of one feature in `src/features/<feature>/__tests__`.
 - Keep focused Next.js adapter tests beside their adapter. Put multi-file shared-foundation integrations in the owning shared mechanism's `__tests__` folder.
-- During the follow-up migrations tracked in issues #64–#66, existing application-adapter and shared-integration tests may remain under the root `tests/` directory. Do not add new mirrored test suites there; move a test beside its eventual owner when that ownership is already clear.
 - Use `*.dom.test.tsx` only when the test needs DOM APIs or user interaction. These files run in the configured Happy DOM project with React test setup. All other tests run in the Node project.
 - Exercise interactions with Testing Library roles, labels, visible content, and `userEvent`. Use selectors only when no accessible query represents the contract.
 

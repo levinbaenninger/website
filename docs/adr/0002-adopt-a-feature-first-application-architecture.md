@@ -4,7 +4,7 @@ status: accepted
 
 # Adopt a feature-first application architecture
 
-Adapt Helvetic Studio's Bulletproof React conventions to this repository as a single Next.js application, without copying its monorepo structure. The migration will preserve visitor-facing behavior and will be completed as one coherent architectural change covering source ownership, test placement, selected browser journeys, Fallow enforcement, CI, agent guidance, and documentation. This ADR will supersede ADR-0001 once the detailed boundaries are agreed and the migration is accepted.
+Adapt Helvetic Studio's Bulletproof React conventions to this repository as a single Next.js application, without copying its monorepo structure. The migration preserves visitor-facing behavior as one coherent architectural change covering source ownership, test placement, selected browser journeys, Fallow enforcement, CI, agent guidance, and documentation. This ADR supersedes ADR-0001.
 
 Blog and Portfolio are the initial top-level features. Their internal responsibility folders remain implementation structure rather than peer features; a new top-level feature requires an independently meaningful workflow and a clean dependency direction. Application code imports explicit feature files directly instead of consuming barrel entrypoints, while architectural enforcement prevents peer-feature and reverse-layer imports. Shared code remains grouped by cohesive product-neutral mechanisms such as UI, audio, branding, social images, and XML rather than global artifact buckets for hooks, utilities, or types.
 
