@@ -2,7 +2,7 @@ import type {
   ArticleDetail,
   ArticleRedirect,
   ArticleSummary,
-} from "@/modules/blog/articles";
+} from "@/features/blog/articles/types";
 
 const ARTICLE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 

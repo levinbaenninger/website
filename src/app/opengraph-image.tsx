@@ -1,4 +1,4 @@
-import { PORTFOLIO_SOCIAL_IMAGE } from "@/modules/portfolio";
+import { PORTFOLIO_SOCIAL_IMAGE } from "@/features/portfolio/social-image";
 import { renderSocialImage } from "@/shared/social-image";
 
 export {

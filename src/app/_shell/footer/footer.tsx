@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 
-import { SOCIAL_PROFILES } from "@/modules/portfolio";
+import { SOCIAL_PROFILES } from "@/features/portfolio/about/social/profiles";
 import { FluidGradientText } from "@/shared/ui/fluid-gradient-text";
 import { Separator } from "@/shared/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";

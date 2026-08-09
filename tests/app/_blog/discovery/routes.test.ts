@@ -1,7 +1,7 @@
 import { DOMParser } from "@xmldom/xmldom";
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 
-import type { ArticleDiscoveryEntry } from "@/modules/blog/articles";
+import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
 
 const listPublishedArticleDiscoveryEntries =
   vi.fn<() => Promise<readonly ArticleDiscoveryEntry[]>>();

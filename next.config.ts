@@ -1,7 +1,7 @@
 import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
 
-import { createArticleMdxOptions } from "./src/modules/blog/rendering/compiler";
+import { createArticleMdxOptions } from "./src/features/blog/rendering/compiler";
 
 const nextConfig: NextConfig = {
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],

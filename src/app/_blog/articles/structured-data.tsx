@@ -1,5 +1,5 @@
 import { createPublishedArticleStructuredDataInput } from "@/app/_blog/articles/metadata";
-import type { ArticleDetail } from "@/modules/blog/articles";
+import type { ArticleDetail } from "@/features/blog/articles/types";
 
 export const serializeJsonLd = (value: unknown): string =>
   JSON.stringify(value).replaceAll("<", "\\u003c");

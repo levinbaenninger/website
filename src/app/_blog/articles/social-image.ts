@@ -1,4 +1,4 @@
-import type { ArticleSocialImage } from "@/modules/blog/articles";
+import type { ArticleSocialImage } from "@/features/blog/articles/types";
 import type { SocialImageInput } from "@/shared/social-image";
 
 import { isArticleSlug } from "./route";

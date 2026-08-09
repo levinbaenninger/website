@@ -1,7 +1,7 @@
 declare module "*.mdx" {
   import type { MDXContent } from "mdx/types";
 
-  import type { ArticleCompilationFacts } from "@/modules/blog/articles/facts";
+  import type { ArticleCompilationFacts } from "@/features/blog/articles/facts";
 
   export const __articleFacts: ArticleCompilationFacts;
   export const frontmatter: unknown;

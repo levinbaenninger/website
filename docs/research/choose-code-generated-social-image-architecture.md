@@ -95,15 +95,15 @@ These rules preserve the existing decision that Drafts are local-only, that prod
 
 ## Repository boundaries
 
-Per ADR 0001, `src/app` remains the thin Next.js boundary and modules do not import one another. [Module ownership ADR](../adr/0001-reserve-modules-for-product-capabilities.md).
+Per ADR 0002, `src/app` remains the thin Next.js boundary and peer features do not import one another. [Feature-first architecture ADR](../adr/0002-adopt-a-feature-first-application-architecture.md).
 
 - `src/app` owns four metadata-file adapters, two Article Route Handlers, their Next.js exports, static parameter wiring, explicit Article image metadata, and translation of missing Blog data to a 404.
-- `@/modules/blog/articles` exposes focused server-only, framework-neutral social-image operations: a deterministic list of visible Article image parameters and lookup of the plain image input for one current slug. The input contains only data needed by the image and alt contracts; it does not expose the canonical Article record, compiled MDX, Next metadata, or `ImageResponse`.
-- Portfolio exposes its renderer-neutral social-image input through its existing module public API. Blog and Portfolio remain independent.
-- `src/shared` may own the deliberately foundational pure JSX composition, fixed output constants, font/brand asset loading, and `ImageResponse` construction because all three image families are named consumers. Shared imports neither product module.
+- `@/features/blog/articles` exposes focused server-only, framework-neutral social-image operations: a deterministic list of visible Article image parameters and lookup of the plain image input for one current slug. The input contains only data needed by the image and alt contracts; it does not expose the canonical Article record, compiled MDX, Next metadata, or `ImageResponse`.
+- Portfolio exposes its renderer-neutral social-image input through a direct import from the owning feature area. Blog and Portfolio remain independent.
+- `src/shared` may own the deliberately foundational pure JSX composition, fixed output constants, font/brand asset loading, and `ImageResponse` construction because all three image families are named consumers. Shared imports neither product feature.
 - The Article Cover remains a distinct Blog concept, not an implicit social image. Whether a final composition visually includes it is a later design decision. [Project domain language](../../CONTEXT.md).
 
-The metadata adapters obtain module data, pass it to the shared mechanism, and return its `ImageResponse`. They contain no Article parsing, visibility policy, redirect lookup, CSS design, or independent fallback data.
+The metadata adapters obtain feature-owned data through direct imports, pass it to the shared mechanism, and return its `ImageResponse`. They contain no Article parsing, visibility policy, redirect lookup, CSS design, or independent fallback data.
 
 ## Renderer comparison
 

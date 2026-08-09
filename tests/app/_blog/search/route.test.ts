@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 
 import { createArticleSearchResponse } from "@/app/_blog/search/route";
-import type { ArticleSearchDocument } from "@/modules/blog/search/artifact";
+import type { ArticleSearchDocument } from "@/features/blog/articles/types";
 
 const document = (id: string): ArticleSearchDocument => ({
   id,

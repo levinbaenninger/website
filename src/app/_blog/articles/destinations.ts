@@ -1,4 +1,4 @@
-import type { FixedArticleDestination } from "@/modules/blog/articles";
+import type { FixedArticleDestination } from "@/features/blog/articles/collection";
 
 export const ARTICLE_FIXED_DESTINATIONS = [
   {

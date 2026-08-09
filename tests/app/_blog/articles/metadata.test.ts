@@ -4,7 +4,7 @@ import {
   createArticleMetadata,
   createPublishedArticleStructuredDataInput,
 } from "@/app/_blog/articles/metadata";
-import type { ArticleDetail } from "@/modules/blog/articles";
+import type { ArticleDetail } from "@/features/blog/articles/types";
 
 const Content = () => null;
 const cover = {

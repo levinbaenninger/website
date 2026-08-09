@@ -5,7 +5,7 @@ import {
   createSitemap,
   getArticleLastModified,
 } from "@/app/_blog/discovery/sitemap";
-import type { ArticleDiscoveryEntry } from "@/modules/blog/articles";
+import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
 
 const cover = { height: 630, src: "/cover.png", width: 1200 };
 

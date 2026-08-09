@@ -5,7 +5,7 @@ import {
   BLOG_IDENTITY,
   toCanonicalUrl,
 } from "@/app/_site/identity";
-import type { ArticleDiscoveryEntry } from "@/modules/blog/articles";
+import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
 import { isXml10CompatibleText } from "@/shared/xml/xml-characters";
 
 import { getLatestArticleDate } from "./sitemap";

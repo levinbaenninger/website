@@ -1,11 +1,11 @@
 import { expectTypeOf, test } from "vite-plus/test";
 
+import type { loadArticleSearch } from "@/features/blog/search/loader";
 import type {
   ArticleSearch,
   ArticleSearchResult,
   HighlightRange,
-  loadArticleSearch,
-} from "@/modules/blog/search";
+} from "@/features/blog/search/service";
 
 test("exposes the client search API without engine types", () => {
   expectTypeOf<

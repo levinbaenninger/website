@@ -1,7 +1,7 @@
 import { expect, test, vi } from "vite-plus/test";
 
 import { dynamic, GET } from "@/app/blog/search.json/route";
-import type { ArticleSearchDocument } from "@/modules/blog/search/artifact";
+import type { ArticleSearchDocument } from "@/features/blog/articles/types";
 
 const { listArticleSearchDocuments } = vi.hoisted(() => ({
   listArticleSearchDocuments:

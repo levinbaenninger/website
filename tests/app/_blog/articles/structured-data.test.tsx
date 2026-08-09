@@ -5,7 +5,7 @@ import {
   ArticleStructuredData,
   serializeJsonLd,
 } from "@/app/_blog/articles/structured-data";
-import type { ArticleDetail } from "@/modules/blog/articles";
+import type { ArticleDetail } from "@/features/blog/articles/types";
 
 const Content = () => null;
 const cover = { height: 630, src: "/cover.png", width: 1200 };

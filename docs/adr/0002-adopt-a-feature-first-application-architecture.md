@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # Adopt a feature-first application architecture
@@ -22,7 +22,7 @@ Playwright runs those journeys in three projects on every pull request: desktop 
 
 The Playwright projects share one production build served through `next start`. The existing build-time GitHub contributions request remains an allowed external build dependency, but browser assertions do not depend on its changing values.
 
-Fallow is the sole authority for architectural boundaries, using the Bulletproof preset and explicit zones; the duplicated module-specific Oxlint import restrictions are removed while Oxlint continues to enforce local code-quality rules. Architecture violations, dependency cycles, and source files that match no zone have zero tolerance across the repository. Dead-code, duplication, and complexity findings use a reviewed post-migration baseline and fail on new regressions. Suppressions are narrow and justified rather than disabling rule families.
+Fallow is the sole authority for architectural boundaries, using explicit application, Blog, Portfolio, and shared zones adapted from its Bulletproof model. The built-in preset's unused server zone is deliberately omitted. The duplicated module-specific Oxlint import restrictions are removed while Oxlint continues to enforce local code-quality rules. Architecture violations, dependency cycles, and source files that match no zone have zero tolerance across the repository. Dead-code, duplication, and complexity findings use a reviewed post-migration baseline and fail on new regressions. Suppressions are narrow and justified rather than disabling rule families.
 
 Fallow's generated agent hook gates Claude-issued `git commit` and `git push` commands, while repository guidance requires the equivalent audit for agents the hook cannot intercept and CI remains the universal enforcement boundary. The ordinary Git pre-commit hook remains limited to staged formatting and local checks.
 

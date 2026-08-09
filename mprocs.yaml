@@ -2,4 +2,4 @@ procs:
   site:
     shell: "next dev"
   articles:
-    shell: "node --experimental-strip-types src/modules/blog/tooling/cli.ts watch"
+    shell: "node --experimental-strip-types src/features/blog/tooling/cli.ts watch"

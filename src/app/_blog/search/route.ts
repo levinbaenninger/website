@@ -1,5 +1,5 @@
-import { serializeArticleSearchArtifact } from "@/modules/blog/search/artifact";
-import type { ArticleSearchDocument } from "@/modules/blog/search/artifact";
+import type { ArticleSearchDocument } from "@/features/blog/articles/types";
+import { serializeArticleSearchArtifact } from "@/features/blog/search/contract";
 
 export const createArticleSearchResponse = (
   documents: readonly ArticleSearchDocument[]

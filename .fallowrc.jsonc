@@ -1,0 +1,51 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": ["src/features/blog/tooling/cli.ts"],
+  "rules": {
+    "unused-exports": "warn",
+    "unused-types": "warn",
+    "unused-dependencies": "warn",
+  },
+  "boundaries": {
+    "zones": [
+      {
+        "name": "app",
+        "patterns": [
+          "src/app/**",
+          "src/mdx-components.tsx",
+          "src/mdx.d.ts",
+          "tests/app/**",
+          "tests/setup/**",
+          "e2e/**",
+          "next.config.ts",
+          "playwright.config.ts",
+          "vite.config.ts",
+        ],
+      },
+      {
+        "name": "features/blog",
+        "patterns": ["src/features/blog/**"],
+      },
+      {
+        "name": "features/portfolio",
+        "patterns": ["src/features/portfolio/**"],
+      },
+      {
+        "name": "shared",
+        "patterns": ["src/shared/**", "tests/shared/**"],
+      },
+    ],
+    "rules": [
+      {
+        "from": "app",
+        "allow": ["features/blog", "features/portfolio", "shared"],
+      },
+      { "from": "features/blog", "allow": ["shared"] },
+      { "from": "features/portfolio", "allow": ["shared"] },
+      { "from": "shared", "allow": [] },
+    ],
+    "coverage": {
+      "requireAllFiles": true,
+    },
+  },
+}

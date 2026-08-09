@@ -1,4 +1,4 @@
-import { BLOG_SOCIAL_IMAGE } from "@/modules/blog";
+import { BLOG_SOCIAL_IMAGE } from "@/features/blog/social-image";
 import { renderSocialImage } from "@/shared/social-image";
 
 export {

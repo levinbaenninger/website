@@ -2,7 +2,7 @@ import { DOMParser } from "@xmldom/xmldom";
 import { describe, expect, test } from "vite-plus/test";
 
 import { createRssResponse, serializeRss } from "@/app/_blog/discovery/rss";
-import type { ArticleDiscoveryEntry } from "@/modules/blog/articles";
+import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
 
 const cover = { height: 630, src: "/cover.png", width: 1200 };
 const article = (

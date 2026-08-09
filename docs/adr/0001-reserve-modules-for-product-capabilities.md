@@ -1,3 +1,8 @@
+---
+status: superseded
+superseded-by: 0002-adopt-a-feature-first-application-architecture.md
+---
+
 # Reserve modules for product capabilities
 
 A module represents a coherent product capability that serves an independently meaningful visitor goal, not merely a self-contained collection of code. Modules may contain their own views, components, utilities, data, and other implementation details, while generic UI, technical capabilities, development tooling, application-wide configuration, and cross-cutting experience preferences belong outside `src/modules`; this keeps the top-level structure aligned with what the website offers rather than with incidental technical groupings. Portfolio is one module: about, experience, education, projects, achievements, bookmarks, and social profiles are parts of that capability rather than peer modules. Theme is a cross-cutting capability because it supports the overall experience rather than an independent visitor goal.

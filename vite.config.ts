@@ -7,9 +7,7 @@ import react from "ultracite/oxlint/react";
 import { defineConfig } from "vite-plus";
 
 const blogTool = (subcommand: string): string =>
-  `node --experimental-strip-types src/modules/blog/tooling/cli.ts ${subcommand}`;
-
-const source = "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}";
+  `node --experimental-strip-types src/features/blog/tooling/cli.ts ${subcommand}`;
 
 export default defineConfig({
   resolve: {
@@ -34,20 +32,31 @@ export default defineConfig({
         dependsOn: ["build"],
         cache: false,
       },
+      architecture: {
+        command:
+          "fallow dead-code --boundary-violations --circular-deps --fail-on-issues",
+        cache: false,
+      },
+      fallow: {
+        command:
+          "fallow dead-code --regression-baseline .fallow-regression.json --fail-on-regression --format compact && fallow dupes --baseline .fallow-dupes-baseline.json --format compact && fallow health --complexity --baseline .fallow-health-baseline.json --baseline-mode identity --format compact",
+        dependsOn: ["architecture"],
+        cache: false,
+      },
       verify: {
         command: "vp check && vp test",
-        dependsOn: ["e2e"],
+        dependsOn: ["e2e", "fallow"],
         cache: false,
       },
       "blog:generate": {
         command: blogTool("generate"),
         input: [
-          { pattern: "src/modules/blog/content/**", base: "workspace" },
-          { pattern: "src/modules/blog/tooling/**", base: "workspace" },
+          { pattern: "src/features/blog/content/**", base: "workspace" },
+          { pattern: "src/features/blog/tooling/**", base: "workspace" },
         ],
         output: [
           {
-            pattern: "src/modules/blog/articles/manifest.generated.ts",
+            pattern: "src/features/blog/articles/manifest.generated.ts",
             base: "workspace",
           },
         ],
@@ -88,182 +97,15 @@ export default defineConfig({
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     overrides: [
       {
-        files: [`src/shared/**/${source}`],
-        rules: {
-          "no-restricted-imports": [
-            "error",
-            {
-              paths: [
-                {
-                  name: "@/app",
-                  message: "Shared foundations cannot depend on app.",
-                },
-                {
-                  name: "@/modules",
-                  message:
-                    "Shared foundations cannot depend on product modules.",
-                },
-              ],
-              patterns: [
-                {
-                  group: ["@/app/**", "@/modules/**"],
-                  message:
-                    "Shared foundations cannot depend on app or product modules.",
-                },
-              ],
-            },
-          ],
-        },
-      },
-      {
-        files: [`src/modules/**/${source}`],
-        rules: {
-          "no-restricted-imports": [
-            "error",
-            {
-              paths: [
-                {
-                  name: "@/app",
-                  message: "Product modules cannot depend on app.",
-                },
-                {
-                  name: "@/modules",
-                  message: "Product modules cannot import the modules root.",
-                },
-              ],
-              patterns: [
-                {
-                  group: ["@/app/**", "@/modules/**"],
-                  message:
-                    "Product modules cannot depend on app or peer modules; use relative imports within the module.",
-                },
-              ],
-            },
-          ],
-        },
-      },
-      {
-        files: [`src/modules/portfolio/**/${source}`],
-        rules: {
-          "no-restricted-imports": [
-            "error",
-            {
-              paths: [
-                {
-                  name: "@/app",
-                  message: "Portfolio cannot depend on app.",
-                },
-                {
-                  name: "@/modules",
-                  message: "Portfolio cannot import the modules root.",
-                },
-                {
-                  name: "@/modules/portfolio",
-                  message:
-                    "Portfolio internals must not import their public entrypoint.",
-                },
-              ],
-              patterns: [
-                {
-                  group: ["@/app/**"],
-                  message: "Portfolio cannot depend on app.",
-                },
-                {
-                  group: [
-                    "@/modules/*",
-                    "@/modules/*/**",
-                    "!@/modules/portfolio",
-                    "!@/modules/portfolio/**",
-                  ],
-                  message: "Portfolio cannot depend on peer modules.",
-                },
-              ],
-            },
-          ],
-        },
-      },
-      {
-        files: [`src/modules/blog/**/${source}`],
-        rules: {
-          "no-restricted-imports": [
-            "error",
-            {
-              paths: [
-                {
-                  name: "@/app",
-                  message: "Blog cannot depend on app.",
-                },
-                {
-                  name: "@/modules",
-                  message: "Blog cannot import the modules root.",
-                },
-                {
-                  name: "@/modules/blog",
-                  message:
-                    "Blog internals must not import their public entrypoint.",
-                },
-              ],
-              patterns: [
-                {
-                  group: ["@/app/**"],
-                  message: "Blog cannot depend on app.",
-                },
-                {
-                  group: [
-                    "@/modules/*",
-                    "@/modules/*/**",
-                    "!@/modules/blog",
-                    "!@/modules/blog/**",
-                  ],
-                  message: "Blog cannot depend on peer modules.",
-                },
-              ],
-            },
-          ],
-        },
-      },
-      {
-        files: [`src/app/**/${source}`, `tests/app/**/${source}`],
-        rules: {
-          "no-restricted-imports": [
-            "error",
-            {
-              paths: [
-                {
-                  name: "@/modules",
-                  message:
-                    "App code must consume a specific product module entrypoint.",
-                },
-              ],
-              patterns: [
-                {
-                  group: [
-                    "@/modules/*/**",
-                    "!@/modules/blog/articles",
-                    "!@/modules/blog/search",
-                    "!@/modules/blog/search/artifact",
-                  ],
-                  message:
-                    "App code must consume a product module through its public entrypoint.",
-                },
-              ],
-            },
-          ],
-        },
-      },
-      {
-        files: [
-          "src/modules/blog/tooling/**/*.ts",
-          "tests/modules/blog/tooling/**/*.ts",
-        ],
+        files: ["src/features/blog/tooling/**/*.ts"],
         rules: {
           "no-await-in-loop": "off",
         },
       },
       {
         files: [
-          "src/modules/blog/tooling/media.ts",
-          "src/modules/blog/rendering/contract.ts",
+          "src/features/blog/tooling/media.ts",
+          "src/features/blog/rendering/contract.ts",
         ],
         rules: {
           complexity: "off",

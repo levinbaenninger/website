@@ -8,7 +8,7 @@ import type {
   ArticleDetail,
   ArticleRedirect,
   ArticleSummary,
-} from "@/modules/blog/articles";
+} from "@/features/blog/articles/types";
 
 const Content = () => null;
 const cover = { height: 1, src: "/cover.png", width: 1 };

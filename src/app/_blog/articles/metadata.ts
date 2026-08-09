@@ -14,7 +14,7 @@ import {
   SITE_IDENTITY,
   toCanonicalUrl,
 } from "@/app/_site/identity";
-import type { ArticleDetail } from "@/modules/blog/articles";
+import type { ArticleDetail } from "@/features/blog/articles/types";
 
 export const createArticleMetadata = (article: ArticleDetail): Metadata => {
   const canonicalUrl = toCanonicalUrl(article.href);

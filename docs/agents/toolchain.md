@@ -13,7 +13,9 @@ Project tasks live in the `run.tasks` block of `vite.config.ts`. `package.json#s
 | `vp run dev` | Runs `blog:generate`, then starts **mprocs** with `site` (`next dev`) and `articles` (manifest watch). Use ↑/↓ to switch panes; `q` to quit. |
 | `vp run build` | Runs `blog:check`, then `next build`. |
 | `vp run e2e` | Runs `build` once, starts the production site with `next start`, then runs the visitor journeys in desktop Chromium, desktop Firefox, and mobile WebKit. |
-| `vp run verify` | Runs `build`, all Playwright projects, `vp check`, and `vp test`. |
+| `vp run architecture` | Rejects Fallow architecture violations, unmatched source zones, and dependency cycles. |
+| `vp run fallow` | Runs the reviewed Fallow regression baseline after the zero-tolerance architecture gate. |
+| `vp run verify` | Runs `build`, all Playwright projects, Fallow architecture and regression checks, `vp check`, and `vp test`. |
 | `vp run blog:generate` | Regenerates the committed Article manifest from source files. |
 | `vp run blog:check` | Validates Article source bundles and manifest drift. |
 | `vp run blog:watch` | Keeps the Article manifest in sync while you edit source files. Started automatically by `dev`; run alone only if needed. |
@@ -36,9 +38,12 @@ Before completing a code change:
 
 1. Run `vp check`.
 2. Run `vp test`.
-3. Inspect `vite.config.ts` for additional task-specific validation.
-4. Run `vp run build` with network access; static rendering fetches data from the external GitHub contributions API.
-5. Run `vp run e2e` for changes that affect visitor journeys or their production runtime.
+3. Run `vp run architecture`.
+4. Inspect `vite.config.ts` for additional task-specific validation.
+5. Run `vp run build` with network access; static rendering fetches data from the external GitHub contributions API.
+6. Run `vp run e2e` for changes that affect visitor journeys or their production runtime.
+
+Before committing or pushing, run `fallow audit --base <upstream-ref>`. Claude Code runs the generated project hook automatically; other agents must run the command explicitly.
 
 ## Troubleshooting
 

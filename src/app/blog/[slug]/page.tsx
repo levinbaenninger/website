@@ -6,7 +6,7 @@ import { requireCurrentArticle } from "@/app/_blog/articles/route";
 import { articleRouteContract } from "@/app/_blog/articles/route-server";
 import { ArticleStructuredData } from "@/app/_blog/articles/structured-data";
 import { toCanonicalUrl } from "@/app/_site/identity";
-import { ArticleView } from "@/modules/blog/articles";
+import { ArticleView } from "@/features/blog/articles/view";
 
 interface ArticlePageProps {
   readonly params: Promise<{ readonly slug: string }>;

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
 import { AppShell } from "@/app/_shell";
-import { BlogView } from "@/modules/blog";
+import { BlogView } from "@/features/blog/catalog/view";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 
 vi.mock(import("next/navigation"), async (importOriginal) => ({

@@ -4,12 +4,21 @@ This is Levin's Next.js personal website, containing the visitor-facing Portfoli
 
 ## Essentials
 
-- The package manager is pnpm 11.9.0, managed through Vite+ (`vp`).
+- The package manager is pnpm 11.17.0, managed through Vite+ (`vp`).
 - Install dependencies with `vp install`.
 - Run static validation and type checking with `vp check`.
 - Run tests with `vp test`.
+- Run architecture validation with `vp run architecture`.
 - Use `vp run dev` for local development.
 - Use `vp run build` for the Next.js production build; it requires network access because static rendering fetches the external GitHub contributions API.
+- Before committing or pushing, run `fallow audit --base <upstream-ref>`; the generated Claude hook enforces the same audit automatically.
+
+## Architecture
+
+- `src/app` owns Next.js adapters and application composition.
+- `src/features/blog` and `src/features/portfolio` are independent peer features. Import their implementation files directly; do not add feature barrels.
+- `src/shared` owns product-neutral foundations and never imports from the application or a feature.
+- Dependencies flow from app to features/shared and from each feature to shared. Run `fallow guard <files>` before architecture-sensitive edits.
 
 ## Task-specific guidance
 

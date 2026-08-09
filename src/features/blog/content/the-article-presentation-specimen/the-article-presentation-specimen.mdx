@@ -1,0 +1,465 @@
+---
+title: "Every construct the Article language allows"
+description: "One Article carrying the complete presentation language, then the same language pushed through nesting, overflow and degenerate shapes."
+status: "Published"
+publishedAt: "2026-08-08"
+updatedAt: "2026-08-09"
+tags:
+  - "nextjs"
+  - "react"
+  - "typescript"
+---
+
+import { LayersIcon, RocketIcon, TerminalIcon } from "lucide-react";
+
+import renderPipeline from "./assets/render-pipeline.png";
+
+This Article exists to be looked at rather than read. The first half carries every approved Markdown and MDX construct once each, in reading order; the second half puts the same constructs under nesting, overflow and the shapes nobody should write but somebody eventually will.
+
+## Prose, links and inline semantics
+
+A paragraph of ordinary Article prose, long enough to wrap at least twice inside the 768 px lined rail so the measure can be judged against a real column rather than against a single line. It carries an [internal link](/blog/streaming-with-suspense), an [external link](https://nextjs.org/docs/app/api-reference/directives/use-cache), a same-Article link to [the tables section](#tables), **strong text**, _emphasis_, ~~struck-through text~~ and `inlineCode` so the inline vocabulary sits in one place.
+
+Press <Kbd>⌘</Kbd> <Kbd>K</Kbd> to open the command menu. Inline `Kbd` has to sit on the prose baseline without pushing the line box, which is the whole reason it is worth looking at inside a paragraph rather than on its own.
+
+### A depth-3 heading
+
+Headings run h2 to h4, and the table of contents indents all three. Depths 5 and 6 are out of the language.
+
+#### A depth-4 heading
+
+## Lists
+
+- An unordered item.
+- A second item, long enough to wrap so the hanging indent and the marker colour can be judged rather than guessed.
+  - A nested item.
+    - A third level, which changes the marker again.
+- A final item.
+
+1. An ordered item.
+2. A second one.
+   1. A nested ordered item.
+3. A third one.
+
+- [x] A completed task-list input.
+- [ ] An open task-list input.
+- [ ] A task that wraps onto a second line so the checkbox alignment against a multi-line label is visible.
+
+## Quotes and breaks
+
+> A blockquote carrying a claim worth setting apart, long enough to wrap, so the rule, the indent and the muted treatment can be read together.
+>
+> A second paragraph inside the same quote.
+
+---
+
+## Callouts
+
+<Callout kind="note" title="A note">
+  Notes carry context the reader can skip. They can hold a
+  [link](https://nextjs.org/docs) and `inline code`.
+</Callout>
+
+<Callout kind="tip">Tips have no title, which is the shorter shape.</Callout>
+
+<Callout kind="warning" title="A warning">
+  Warnings tell the reader something will bite. This one wraps onto a second
+  line so the icon column and the text column stay legible.
+</Callout>
+
+<Callout kind="danger" title="Danger">
+  Danger is the loudest kind the language allows.
+</Callout>
+
+## Cards
+
+<Cards>
+  <Card
+    href="/blog/type-safe-routes"
+    icon={<RocketIcon />}
+    title="A linked Card"
+  >
+    Linked Cards are one link, so their children carry no interactive content.
+  </Card>
+  <Card icon={<TerminalIcon />} title="An unlinked Card">
+    Unlinked Cards are static, and can hold a [link](https://nextjs.org/docs) of
+    their own.
+  </Card>
+  <Card title="A Card with no icon">
+    The icon is optional, so the grid has to stay level without it.
+  </Card>
+  <Card
+    href="https://nextjs.org/docs"
+    icon={<LayersIcon />}
+    title="An external Card"
+  >
+    External destinations open in a new tab.
+  </Card>
+</Cards>
+
+## Steps
+
+<Steps>
+<Step title="Install the dependency">
+Run the installer and wait for the lockfile to settle.
+
+```bash
+pnpm add @js-temporal/polyfill
+```
+
+</Step>
+<Step title="Wire the module">
+Point the entry at the new module and re-export the operations it owns.
+</Step>
+<Step title="Verify">
+Steps hold ordinary Article content, including a list:
+
+- A check.
+- A second check.
+
+</Step>
+</Steps>
+
+## File trees
+
+```files
+src/
+  features/
+    blog/
+      rendering/
+        components.tsx
+        contract.ts
+      catalog/
+        view.tsx
+  app/
+    layout.tsx
+package.json
+```
+
+## Figures
+
+<Figure
+  alt="The Article compilation pipeline, from MDX source to rendered HTML."
+  src={renderPipeline}
+>
+  A Figure caption is inline content, so it can hold `code`, _emphasis_ and a
+  [link](https://nextjs.org/docs).
+</Figure>
+
+## Tables
+
+| Construct   | Owner | Client boundary        |
+| ----------- | ----- | ---------------------- |
+| `Callout`   | Blog  | Server                 |
+| `Accordion` | Blog  | Client                 |
+| `CodeTabs`  | Blog  | Client, `localStorage` |
+| `Figure`    | Blog  | Server, `next/image`   |
+
+## Code
+
+A plain block with no title, which is where the copy control floats over the code rather than taking a row of its own:
+
+```ts
+export const revalidate = 3600;
+
+export const load = async (slug) => {
+  const article = await findArticle(slug);
+  return article ?? notFound();
+};
+```
+
+A titled block with line numbers starting at 12:
+
+```tsx title="src/app/blog/[slug]/page.tsx" lineNumbers=12
+export default async function ArticlePage({ params }) {
+  const article = await resolveArticle(params);
+
+  return <ArticleView article={article} />;
+}
+```
+
+Annotations — added, removed, highlighted and word-highlighted lines:
+
+```ts title="Annotations"
+const themes = {
+  light: "github-light", // [!code --]
+  light: "github-light-default", // [!code ++]
+  dark: "github-dark", // [!code highlight]
+};
+
+const highlighter = await getHighlighter(themes); // [!code word:getHighlighter]
+```
+
+Focus, which dims everything the author did not point at:
+
+```ts title="Focus"
+const options = {
+  themes, // [!code focus]
+  transformers: [],
+};
+```
+
+A shell block, where wrapping is never wanted:
+
+```bash
+pnpm dlx shadcn@latest add dropdown-menu hover-card table --registry @shadcn
+```
+
+### Code tabs
+
+```ts tab="TypeScript" tab-group="language"
+export const slug = (value: string): string => value.toLowerCase();
+```
+
+```js tab="JavaScript"
+export const slug = (value) => value.toLowerCase();
+```
+
+### Twoslash
+
+Hover a token to read its inferred type:
+
+```ts twoslash
+const headings = ["Prose", "Lists", "Code"];
+
+const bySlug = new Map(headings.map((text) => [text.toLowerCase(), text]));
+//    ^?
+
+const first = bySlug.get("prose");
+```
+
+An expected error, which is the other Twoslash state the language allows:
+
+```ts twoslash
+// @errors: 2345
+const toDepth = (value: 2 | 3 | 4): number => value;
+
+toDepth(7);
+```
+
+## Accordions
+
+<Accordion>
+<AccordionItem title="What does a closed panel do to the table of contents?">
+Panels are force-mounted and hidden, so a heading inside a closed one is in the
+document but has no box.
+</AccordionItem>
+<AccordionItem defaultOpen title="An item that starts open">
+Open by default, with a `defaultOpen` prop. This one carries enough text to wrap
+so the closed and open heights are both judgeable.
+
+- Panels hold ordinary Article content.
+- Including lists.
+
+</AccordionItem>
+<AccordionItem title="A third item">
+Kept short, so a stack of three has both shapes in it.
+</AccordionItem>
+</Accordion>
+
+## Tabs
+
+<Tabs>
+<Tab icon={<TerminalIcon />} title="Node.js">
+The Node.js runtime has the full standard library.
+
+```ts
+import { readFile } from "node:fs/promises";
+```
+
+</Tab>
+<Tab title="Edge">
+The Edge runtime does not, so the same work goes through Web APIs.
+
+```ts
+const response = await fetch("https://example.com/data.json");
+```
+
+</Tab>
+</Tabs>
+
+## Overflow
+
+A paragraph carrying a token no line break can help with — `createArticleOperationsWithDeterministicManifestAndRecoveryPolicy` — followed by a bare URL used as its own link text: [https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages).
+
+A code block whose longest line is far wider than the rail, so horizontal scrolling has to work without the frame growing:
+
+```ts title="A line nobody should write"
+export const resolveDeterministicArticleSocialImageDescriptorForSlug = async (
+  slug: string,
+  { includeDrafts, today }: ArticleOperationsOptions
+): Promise<ArticleSocialImage | null> => findArticleSocialImage(slug);
+```
+
+The same width with line numbers, where the sticky gutter has to stay put while the code scrolls under it:
+
+```ts lineNumbers
+const contract = {
+  pathname: "/blog",
+  fragments: ["prose", "code", "tables", "figures", "callouts", "steps"],
+} as const;
+```
+
+A table with more columns than the rail can hold:
+
+| Construct | Element | Slot | Boundary | Reduced motion | Overflow |
+| --- | --- | --- | --- | --- | --- |
+| Callout | `aside` | `article-callout` | Server | n/a | wraps |
+| Cards | `div` | `article-cards` | Server | n/a | wraps |
+| Files | `ul` | `article-files` | Client | collapse | scrolls |
+| Steps | `ol` | `article-steps` | Server | n/a | wraps |
+| CodeTabs | `section` | `code-tabs` | Client | n/a | scrolls |
+
+A file tree with names long enough to run past the rail:
+
+```files
+src/
+  features/
+    blog/
+      rendering/
+        a-deliberately-long-file-name-that-will-not-fit-in-the-rail.tsx
+        components.tsx
+      articles/
+        collection.ts
+```
+
+## Nesting
+
+<Tabs>
+<Tab icon={<LayersIcon />} title="Panels inside panels">
+A Tab holding an Accordion, which is the deepest nesting the language allows.
+
+<Accordion>
+<AccordionItem title="A closed item inside a tab">
+Two collapsed layers between the reader and this sentence.
+</AccordionItem>
+<AccordionItem defaultOpen title="An open item inside a tab">
+Panels hold ordinary content, including code:
+
+```ts
+export const depth = 2;
+```
+
+</AccordionItem>
+</Accordion>
+</Tab>
+<Tab title="Everything else">
+A Tab holding a Callout, a file tree and a Figure in one panel.
+
+<Callout kind="warning" title="Inside a panel">
+  Surfaces stacked on surfaces are where a filled treatment either holds up or
+  turns into mud.
+</Callout>
+
+```files
+app/
+  layout.tsx
+  page.tsx
+```
+
+<Figure decorative src={renderPipeline}>
+A decorative Figure inside a panel, so the caption sits over a nested surface.
+</Figure>
+</Tab>
+</Tabs>
+
+## Steps carrying everything
+
+<Steps>
+<Step title="A Step holding a Callout">
+<Callout kind="note" title="Nested">
+Steps have no child restriction, so a Callout can sit inside one.
+</Callout>
+</Step>
+<Step title="A Step holding a nested list and a quote">
+1. An ordered item.
+2. A second one holding a task list:
+   - [x] Done.
+   - [ ] Not done.
+
+> A quote inside a Step, inside the counter's rule.
+
+</Step>
+</Steps>
+
+## Deep folders
+
+```files
+repository/
+  packages/
+    core/
+      src/
+        rendering/
+          transforms/
+            article/
+              contract.ts
+    ui/
+      src/
+        index.ts
+```
+
+## Long content
+
+<Callout kind="danger" title="A Callout nobody should write">
+This Callout runs for several lines on purpose. Its job is to show what a filled
+surface does when it stops being an aside and starts being a section: whether the
+inset ring still reads at this height, whether the icon column looks abandoned
+next to a block of text, and whether the reader's eye can still find the prose
+that follows it. It carries a [link](https://nextjs.org/docs), some `inline
+code`, **strong text**, and a second paragraph.
+
+The second paragraph exists because a Callout's internal rhythm is not the prose column's rhythm, and the difference only shows up when there is more than one block inside it.
+
+</Callout>
+
+<Cards>
+  <Card title="A single Card">
+    A Cards grid with one child has to look deliberate rather than broken,
+    because one is a shape authors will reach for.
+  </Card>
+</Cards>
+
+## Degenerate shapes
+
+### A heading immediately followed by another heading
+
+#### With nothing between them
+
+Prose finally arrives here, which is where the stacked heading margins become visible.
+
+```ts
+const immediatelyAfterAHeading = true;
+```
+
+- A list opening directly on a code block, with no paragraph between them.
+- A second item.
+
+> A quote holding a list and a fence:
+>
+> - One.
+> - Two.
+>
+> ```bash
+> pnpm install
+> ```
+
+<Accordion>
+  <AccordionItem title="An Accordion with exactly one item">
+    A single disclosure still has to read as a disclosure and not as a stray
+    button.
+  </AccordionItem>
+</Accordion>
+
+<Tabs>
+  <Tab title="A tab with one sentence">That is all this panel holds.</Tab>
+  <Tab title="A tab whose title is far longer">
+    Unequal trigger widths are what make a tab strip drift, so both shapes are
+    here.
+  </Tab>
+</Tabs>
+
+---
+
+## A heading long enough to wrap onto a second line inside the lined rail and keep going
+
+The heading above is the one the table of contents has to clamp. Below it is the last paragraph, so the bottom of the prose column can be measured against the rule that closes the rail.

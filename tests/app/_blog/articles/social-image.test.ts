@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vite-plus/test";
 
 import { createArticleSocialImageContract } from "@/app/_blog/articles/social-image";
-import type { ArticleSocialImage } from "@/modules/blog/articles";
+import type { ArticleSocialImage } from "@/features/blog/articles/types";
 
 const INPUT = {
   alt: "Visible Article — Levin Bänninger",
