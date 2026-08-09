@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { createArticleMetadata } from "@/app/_blog/articles/metadata";
-import { requireCurrentArticle } from "@/app/_blog/articles/route";
-import { articleRouteContract } from "@/app/_blog/articles/route-server";
+import {
+  generateArticleStaticParams,
+  resolveArticleDelivery,
+} from "@/app/_blog/articles/server";
 import { ArticleStructuredData } from "@/app/_blog/articles/structured-data";
 import { toCanonicalUrl } from "@/app/_config/site-identity";
+import { requireCurrentArticle } from "@/app/blog/[slug]/article-navigation";
 import { ArticleView } from "@/features/blog/articles/view";
 
 interface ArticlePageProps {
@@ -14,7 +17,7 @@ interface ArticlePageProps {
 
 const resolveArticle = async ({ params }: ArticlePageProps) => {
   const { slug } = await params;
-  const resolution = await articleRouteContract.resolve(slug);
+  const resolution = await resolveArticleDelivery(slug);
   return requireCurrentArticle(resolution, {
     notFound,
     permanentRedirect,
@@ -24,7 +27,7 @@ const resolveArticle = async ({ params }: ArticlePageProps) => {
 export const dynamicParams = false;
 
 export const generateStaticParams = async () => {
-  const params = await articleRouteContract.generateStaticParams();
+  const params = await generateArticleStaticParams();
   return params;
 };
 
