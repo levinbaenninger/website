@@ -29,9 +29,14 @@ export default defineConfig({
         dependsOn: ["blog:check"],
         cache: false,
       },
+      e2e: {
+        command: "playwright test",
+        dependsOn: ["build"],
+        cache: false,
+      },
       verify: {
         command: "vp check && vp test",
-        dependsOn: ["build"],
+        dependsOn: ["e2e"],
         cache: false,
       },
       "blog:generate": {
