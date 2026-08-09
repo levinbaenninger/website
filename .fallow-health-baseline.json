@@ -1,6 +1,6 @@
 {
   "finding_counts": {
-    "src/app/_not-found/plotter-figure.tsx": {
+    "src/app/_components/not-found/plotter-figure.tsx": {
       "complexity_high": {
         "count": 1
       }
@@ -71,7 +71,7 @@
     }
   },
   "identity_finding_counts": {
-    "src/app/_not-found/plotter-figure.tsx\u0000PlotterFigure": {
+    "src/app/_components/not-found/plotter-figure.tsx\u0000PlotterFigure": {
       "complexity_high": {
         "count": 1
       }

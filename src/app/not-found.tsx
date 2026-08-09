@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { NOT_FOUND_COPY } from "@/app/_not-found/content";
-import { NotFoundView } from "@/app/_not-found/not-found-view";
+import { NotFoundView } from "@/app/_components/not-found/not-found-view";
+import { NOT_FOUND_COPY } from "@/app/_config/not-found";
 
 export const metadata: Metadata = {
   title: NOT_FOUND_COPY.generic.title,

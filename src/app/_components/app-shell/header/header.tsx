@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-import { BrandMark } from "@/app/_shell/branding/brand-mark";
-import { CommandMenu } from "@/app/_shell/command-menu/command-menu";
-import { HeaderNavigation } from "@/app/_shell/header/header-navigation";
-import { MobileNavigation } from "@/app/_shell/navigation/mobile-navigation";
-import { ThemeToggle } from "@/app/_theme/theme-toggle";
+import { BrandMark } from "@/app/_components/app-shell/branding/brand-mark";
+import { CommandMenu } from "@/app/_components/app-shell/command-menu/command-menu";
+import { HeaderNavigation } from "@/app/_components/app-shell/header/header-navigation";
+import { MobileNavigation } from "@/app/_components/app-shell/navigation/mobile-navigation";
+import { ThemeToggle } from "@/app/_components/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
 
 export const Header = () => (

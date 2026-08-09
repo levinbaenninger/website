@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import { truncatePath } from "@/app/_not-found/truncate-path";
+import { truncatePath } from "@/app/_components/not-found/truncate-path";
 
 const DISPLAY_LIMIT = 34;
 

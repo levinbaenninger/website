@@ -1,11 +1,10 @@
 import { Fragment } from "react";
 
+import { FOOTER_CONTENT } from "@/app/_config/footer";
 import { SOCIAL_PROFILES } from "@/features/portfolio/about/social/profiles";
 import { FluidGradientText } from "@/shared/ui/fluid-gradient-text";
 import { Separator } from "@/shared/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
-
-import { FOOTER_CONTENT } from "./content";
 
 const authorProfile = SOCIAL_PROFILES.find(
   (profile) => profile.name === FOOTER_CONTENT.authorProfile

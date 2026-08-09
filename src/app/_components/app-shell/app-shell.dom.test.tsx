@@ -2,7 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
-import { AppShell } from "@/app/_shell";
+import { AppShell } from "@/app/_components/app-shell/app-shell";
 import { BlogView } from "@/features/blog/catalog/view";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 

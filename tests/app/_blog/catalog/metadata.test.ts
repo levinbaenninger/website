@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 
 import { createBlogMetadata } from "@/app/_blog/catalog/metadata";
-import { createRootMetadata } from "@/app/_site/metadata";
+import { createRootMetadata } from "@/app/_config/site-metadata";
 
 describe("catalog metadata adapters", () => {
   test("maps exact root and Blog identity", () => {

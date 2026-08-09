@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vite-plus/test";
 
-import { NotFoundPanel } from "@/app/_not-found/not-found-panel";
+import { NotFoundPanel } from "@/app/_components/not-found/not-found-panel";
 
 const linkNames = () =>
   screen.getAllByRole("link").map((link) => link.textContent);
