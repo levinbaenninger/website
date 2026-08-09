@@ -9,7 +9,7 @@ import {
 import { ArticleStructuredData } from "@/app/_blog/articles/structured-data";
 import { toCanonicalUrl } from "@/app/_config/site-identity";
 import { requireCurrentArticle } from "@/app/blog/[slug]/article-navigation";
-import { ArticleView } from "@/features/blog/articles/view";
+import { ArticleView } from "@/features/blog/articles/reader/view";
 
 interface ArticlePageProps {
   readonly params: Promise<{ readonly slug: string }>;

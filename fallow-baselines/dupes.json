@@ -10,7 +10,7 @@
     "src/app/globals.css:233-247|src/app/globals.css:263-277|src/app/globals.css:310-324",
     "src/app/globals.css:235-247|src/app/globals.css:250-262|src/app/globals.css:265-277|src/app/globals.css:280-292|src/app/globals.css:295-307|src/app/globals.css:312-324|src/app/globals.css:329-341",
     "src/app/globals.css:293-307|src/app/globals.css:327-341",
-    "src/features/blog/rendering/code-tabs.tsx:128-142|src/features/portfolio/timeline/list.tsx:13-27",
+    "src/features/blog/rendering/code/code-tabs.tsx:129-143|src/features/portfolio/timeline/list.tsx:13-27",
     "src/features/blog/rendering/contract.ts:1489-1497|src/features/blog/rendering/contract.ts:1858-1866",
     "src/features/blog/rendering/contract.ts:1524-1543|src/features/blog/rendering/contract.ts:1882-1901",
     "src/shared/ui/icons/moon-icon.tsx:33-62|src/shared/ui/icons/sun-icon.tsx:27-53"

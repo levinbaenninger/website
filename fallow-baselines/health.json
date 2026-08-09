@@ -210,14 +210,5 @@
     }
   },
   "runtime_coverage_findings": [],
-  "target_keys": [
-    "src/features/blog/rendering/contract.ts:complexity",
-    "src/features/blog/tooling/diagnostics.ts:high impact",
-    "src/shared/ui/dropdown-menu.tsx:dead code",
-    "src/shared/ui/dialog.tsx:dead code",
-    "src/features/blog/articles/collection.ts:complexity",
-    "src/shared/ui/alert.tsx:dead code",
-    "src/features/blog/tooling/source-manifest.ts:dead code",
-    "src/features/blog/tooling/media.ts:complexity"
-  ]
+  "target_keys": []
 }

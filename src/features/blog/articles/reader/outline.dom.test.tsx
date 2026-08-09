@@ -16,16 +16,16 @@ import {
   vi,
 } from "vite-plus/test";
 
+import type {
+  ArticleDetail,
+  ArticleOutlineHeading,
+  ArticleReaderNavigation,
+} from "@/features/blog/articles/types";
 import {
   ArticleAccordion,
   ArticleAccordionItem,
 } from "@/features/blog/rendering/interactions";
 
-import type {
-  ArticleDetail,
-  ArticleOutlineHeading,
-  ArticleReaderNavigation,
-} from "./types";
 import { ArticleView } from "./view";
 
 const { playOpen, reducedMotion } = vi.hoisted(() => ({

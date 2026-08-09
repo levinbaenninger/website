@@ -11,6 +11,10 @@
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"]
+    },
+    "fallow": {
+      "command": "pnpm",
+      "args": ["exec", "fallow-mcp"]
     }
   }
 }

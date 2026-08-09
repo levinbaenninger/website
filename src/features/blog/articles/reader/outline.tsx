@@ -14,6 +14,7 @@ import { useReducedMotion } from "motion/react";
 import { Popover } from "radix-ui";
 import { useRef } from "react";
 
+import type { ArticleOutlineHeading } from "@/features/blog/articles/types";
 import { useArticleFragmentNavigation } from "@/features/blog/rendering/reveal";
 import { tick002Sound } from "@/shared/audio/sounds/tick-002";
 import { useSound } from "@/shared/audio/use-sound";
@@ -28,7 +29,6 @@ import {
   selectOutlineHeading,
   useActiveOutlineHeadingId,
 } from "./outline-navigation";
-import type { ArticleOutlineHeading } from "./types";
 
 interface ArticleOutlineProps {
   readonly outline: readonly ArticleOutlineHeading[];

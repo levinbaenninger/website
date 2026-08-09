@@ -1,6 +1,11 @@
 import type { MDXComponents } from "mdx/types";
 
-import { ArticleCodeTabs } from "./code-tabs";
+import { ArticleCodeTabs } from "./code/code-tabs";
+import {
+  ArticleTwoslashHover,
+  ArticleTwoslashPopup,
+  ArticleTwoslashTrigger,
+} from "./code/twoslash";
 import {
   ArticleCallout,
   ArticleCard,
@@ -33,11 +38,6 @@ import {
   ArticleTab,
   ArticleTabs,
 } from "./interactions";
-import {
-  ArticleTwoslashHover,
-  ArticleTwoslashPopup,
-  ArticleTwoslashTrigger,
-} from "./twoslash";
 
 const articleMdxComponents: MDXComponents = Object.freeze({
   Accordion: ArticleAccordion,

@@ -9,7 +9,7 @@
 import type { ReactNode } from "react";
 
 import "./article.css";
-import "./code.css";
+import "./code/code.css";
 import { ArticleCanonicalUrlProvider } from "./canonical-url";
 
 interface ArticleBodyProps {

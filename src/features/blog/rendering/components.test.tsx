@@ -6,7 +6,7 @@ import {
   matchSynchronizedCodeTab,
   readCodeTabPreference,
   writeCodeTabPreference,
-} from "./code-tabs";
+} from "./code/code-tabs";
 import {
   ArticleCallout,
   ArticleCard,

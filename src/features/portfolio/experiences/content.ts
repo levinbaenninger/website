@@ -27,4 +27,3 @@ export const EXPERIENCES = [
 ] as const;
 
 export type Experience = (typeof EXPERIENCES)[number];
-export type ExperiencePosition = Experience["positions"][number];

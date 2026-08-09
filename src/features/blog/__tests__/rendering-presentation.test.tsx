@@ -5,9 +5,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import * as runtime from "react/jsx-runtime";
 import { beforeAll, describe, expect, test } from "vite-plus/test";
 
+import { ArticleView } from "@/features/blog/articles/reader/view.tsx";
 import type { ArticleDetail } from "@/features/blog/articles/types.ts";
-import { ArticleView } from "@/features/blog/articles/view.tsx";
-import type { ArticleCodeThemes } from "@/features/blog/rendering/code-theme-contract.ts";
+import type { ArticleCodeThemes } from "@/features/blog/rendering/code/code-theme-contract.ts";
 import { loadArticleMdxProcessorOptions } from "@/features/blog/rendering/compiler.ts";
 import { getArticleMdxComponents } from "@/features/blog/rendering/mdx-components.ts";
 

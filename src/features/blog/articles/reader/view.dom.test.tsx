@@ -6,7 +6,8 @@ import type {
   ArticleDetail,
   ArticleOutlineHeading,
   ArticleReaderNavigation,
-} from "./types";
+} from "@/features/blog/articles/types";
+
 import { ArticleView } from "./view";
 
 const COVER = { height: 630, src: "/cover.png", width: 1200 };

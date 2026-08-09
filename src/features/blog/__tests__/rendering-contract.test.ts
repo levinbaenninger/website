@@ -7,7 +7,7 @@ import * as runtime from "react/jsx-runtime";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
 import type { ArticleCompilationFacts } from "@/features/blog/articles/facts.ts";
-import type { ArticleCodeThemes } from "@/features/blog/rendering/code-theme-contract.ts";
+import type { ArticleCodeThemes } from "@/features/blog/rendering/code/code-theme-contract.ts";
 import { loadArticleMdxProcessorOptions } from "@/features/blog/rendering/compiler.ts";
 import { ArticleCodeBlock } from "@/features/blog/rendering/components.tsx";
 import {

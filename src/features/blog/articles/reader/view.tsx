@@ -1,3 +1,4 @@
+import type { ArticleDetail } from "@/features/blog/articles/types";
 import { ArticleBody } from "@/features/blog/rendering/body";
 
 import { ArticleOutlineCard, ArticleOutlineMinimap } from "./outline";
@@ -11,7 +12,6 @@ import {
   ReaderToolbar,
   ReaderTopLine,
 } from "./reader-chrome";
-import type { ArticleDetail } from "./types";
 
 interface ArticleViewProps {
   readonly article: ArticleDetail;

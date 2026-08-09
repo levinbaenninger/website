@@ -37,8 +37,10 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
+import { ArticlePanel } from "@/features/blog/rendering/article-panel";
+import { useArticleFoundPanel } from "@/features/blog/rendering/interactions";
+
 import { parseCodeTabLabels } from "./code-tabs-contract.ts";
-import { useArticleFoundPanel } from "./interactions";
 
 const CODE_TAB_STORAGE_PREFIX = "blog:code-tabs:";
 const CODE_TAB_EVENT = "blog:code-tabs-change";
@@ -167,14 +169,14 @@ const ArticleCodeTabPanel = ({
 
   return (
     <TabsPrimitive.Content asChild forceMount value={label}>
-      <article-panel
+      <ArticlePanel
         data-article-panel="code-tab"
         hidden={active ? undefined : "until-found"}
         ref={panelRef}
         style={{ display: "block" }}
       >
         {children}
-      </article-panel>
+      </ArticlePanel>
     </TabsPrimitive.Content>
   );
 };

@@ -39,7 +39,7 @@ export default defineConfig({
       },
       fallow: {
         command:
-          "fallow dead-code --regression-baseline .fallow-regression.json --fail-on-regression --format compact && fallow dupes --baseline .fallow-dupes-baseline.json --format compact && fallow health --complexity --baseline .fallow-health-baseline.json --baseline-mode identity --format compact",
+          "fallow dead-code --regression-baseline fallow-baselines/regression.json --fail-on-regression --format compact && fallow dupes --baseline fallow-baselines/dupes.json --format compact && fallow health --complexity --baseline fallow-baselines/health.json --baseline-mode identity --format compact",
         dependsOn: ["architecture"],
         cache: false,
       },

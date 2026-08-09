@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 
+import type { ArticleOutlineHeading } from "@/features/blog/articles/types";
 import {
   afterArticleLayoutSettles,
   findArticleElement,
@@ -14,7 +15,6 @@ import {
 } from "@/features/blog/rendering/reveal";
 
 import { STICKY_CHROME_PX } from "./reader-contract";
-import type { ArticleOutlineHeading } from "./types";
 
 /**
  * The activation line: the first pixel of the Article a visitor can actually

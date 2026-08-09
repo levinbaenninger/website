@@ -22,7 +22,6 @@ const SUPPORTED_EXTENSIONS = new Set([
   ".svg",
   ".webp",
 ]);
-const RASTER_EXTENSIONS = new Set([".avif", ".jpeg", ".jpg", ".png", ".webp"]);
 const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const IMPORT_PATTERN =
   /^[\t ]*import(?:[\t \r\n]+[\s\S]*?[\t \r\n]+from)?[\t \r\n]*["']([^"'\r\n]+)["'][\t ]*;?/gmu;
@@ -767,6 +766,3 @@ export const watchArticleSource = async (
     }
   }
 };
-
-export const isRasterExtension = (extension: string): boolean =>
-  RASTER_EXTENSIONS.has(extension);

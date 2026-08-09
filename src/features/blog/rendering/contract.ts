@@ -10,7 +10,7 @@ import type {
   ArticleLinkFact,
 } from "@/features/blog/articles/facts.ts";
 
-import { serializeCodeTabLabels } from "./code-tabs-contract.ts";
+import { serializeCodeTabLabels } from "./code/code-tabs-contract.ts";
 import {
   createArticleAccordionPanels,
   createArticleTabPanels,

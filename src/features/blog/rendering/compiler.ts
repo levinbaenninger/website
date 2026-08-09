@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 
 import type { CompileOptions } from "@mdx-js/mdx";
 
-import type { ArticleCodeThemes } from "./code-theme-contract.ts";
+import type { ArticleCodeThemes } from "./code/code-theme-contract.ts";
 
 type ArticleMdxProcessorOptions = Pick<
   CompileOptions,
@@ -26,7 +26,9 @@ interface ArticleMdxPlugins<
 const articleContractPlugin = fileURLToPath(
   new URL("contract.ts", import.meta.url)
 );
-const articleCodePlugin = fileURLToPath(new URL("code.ts", import.meta.url));
+const articleCodePlugin = fileURLToPath(
+  new URL("code/code.ts", import.meta.url)
+);
 
 const createArticleProcessorOptions = <
   TCodePlugin,
@@ -77,7 +79,7 @@ export const loadArticleMdxProcessorOptions = async (
     { default: remarkGfm },
     { default: remarkMdxFrontmatter },
   ] = await Promise.all([
-    import("./code.ts"),
+    import("./code/code.ts"),
     import("./contract.ts"),
     import("remark-frontmatter"),
     import("remark-gfm"),

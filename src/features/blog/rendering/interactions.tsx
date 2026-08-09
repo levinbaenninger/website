@@ -15,6 +15,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
+import { ArticlePanel } from "./article-panel";
 import {
   parseArticleAccordionPanels,
   parseArticleTabPanels,
@@ -128,14 +129,14 @@ export const ArticleAccordionItem = ({
         </div>
       </AccordionPrimitive.Header>
       <AccordionPrimitive.Content asChild forceMount>
-        <article-panel
+        <ArticlePanel
           data-article-panel="accordion"
           hidden={open ? undefined : "until-found"}
           ref={panelRef}
           style={{ display: "block" }}
         >
           {children}
-        </article-panel>
+        </ArticlePanel>
       </AccordionPrimitive.Content>
     </AccordionPrimitive.Item>
   );
@@ -204,14 +205,14 @@ export const ArticleTab = ({
 
   return (
     <TabsPrimitive.Content asChild forceMount value={value}>
-      <article-panel
+      <ArticlePanel
         data-article-panel="tab"
         hidden={context.selectedValue === value ? undefined : "until-found"}
         ref={panelRef}
         style={{ display: "block" }}
       >
         {children}
-      </article-panel>
+      </ArticlePanel>
     </TabsPrimitive.Content>
   );
 };

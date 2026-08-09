@@ -3,7 +3,7 @@ export interface Tag {
   readonly label: string;
 }
 
-export const TAGS = [
+const TAGS = [
   { id: "nextjs", label: "Next.js" },
   { id: "react", label: "React" },
   { id: "testing", label: "Testing" },

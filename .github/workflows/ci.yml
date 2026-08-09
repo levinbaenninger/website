@@ -36,9 +36,17 @@ jobs:
     name: Architecture
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: write
+      id-token: write
+      pull-requests: write
+      security-events: write
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
         with:
@@ -46,8 +54,50 @@ jobs:
           node-version-file: package.json
           run-install: true
           cache: true
-      - name: Enforce architecture and Fallow regressions
-        run: vp run fallow
+      - name: Enforce architecture boundaries
+        run: vp run architecture
+      - name: Enforce dead-code regression baseline
+        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
+        with:
+          command: dead-code
+          format: compact
+          fail-on-issues: false
+          fail-on-regression: true
+          regression-baseline: fallow-baselines/regression.json
+          auto-changed-since: false
+          annotations: false
+          comment: false
+      - name: Enforce duplication baseline
+        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
+        with:
+          command: dupes
+          format: compact
+          baseline: fallow-baselines/dupes.json
+          auto-changed-since: false
+          annotations: false
+          comment: false
+      - name: Enforce complexity baseline
+        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
+        with:
+          command: health
+          format: compact
+          complexity: true
+          baseline: fallow-baselines/health.json
+          args: --baseline-mode identity
+          auto-changed-since: false
+          annotations: false
+          comment: false
+      - name: Audit changed code with fallow
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
+        with:
+          command: audit
+          gate: new-only
+          comment: true
+          review-comments: true
+          review-guidance: true
+          health-baseline: fallow-baselines/health.json
+          dupes-baseline: fallow-baselines/dupes.json
 
   tests:
     name: Tests

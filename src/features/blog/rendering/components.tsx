@@ -35,9 +35,9 @@ import {
 } from "@/shared/ui/collapsible";
 import { Kbd } from "@/shared/ui/kbd";
 
-import { ArticleCopyButton } from "./copy-button";
+import { ArticleCopyButton } from "./code/copy-button";
+import { ArticleTwoslashScope } from "./code/twoslash";
 import { ArticleHeadingCopyLink } from "./heading-copy";
-import { ArticleTwoslashScope } from "./twoslash";
 
 interface FigureProps {
   readonly alt?: string;
