@@ -2,7 +2,6 @@ import { describe, expect, test } from "vite-plus/test";
 
 import {
   AUTHOR_IDENTITY,
-  BLOG_IDENTITY,
   PORTFOLIO_IDENTITY,
   SITE_IDENTITY,
   toCanonicalUrl,
@@ -28,12 +27,6 @@ describe("canonical app identity", () => {
       },
       tagline:
         "Wrangling components by day, tinkering with side projects by night.",
-    });
-    expect(BLOG_IDENTITY).toEqual({
-      description:
-        "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.",
-      name: "Levin Bänninger’s Blog",
-      title: "Blog | Levin Bänninger",
     });
     expect(AUTHOR_IDENTITY).toEqual({
       email: "levin@baenninger.me",

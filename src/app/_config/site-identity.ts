@@ -19,13 +19,6 @@ export const PORTFOLIO_IDENTITY = {
     "Wrangling components by day, tinkering with side projects by night.",
 } as const;
 
-export const BLOG_IDENTITY = {
-  description:
-    "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.",
-  name: "Levin Bänninger’s Blog",
-  title: `Blog | ${SITE_IDENTITY.name}`,
-} as const;
-
 export const AUTHOR_IDENTITY = {
   email: PORTFOLIO_IDENTITY.email,
   handle: PORTFOLIO_IDENTITY.handle,

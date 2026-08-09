@@ -4,9 +4,6 @@ import { describe, expect, test, vi } from "vite-plus/test";
 
 import { createArticleRouteContract } from "@/app/_blog/articles/route";
 import { createArticleSocialImageContract } from "@/app/_blog/articles/social-image";
-import { createRssResponse } from "@/app/_blog/discovery/rss";
-import { createSitemap } from "@/app/_blog/discovery/sitemap";
-import { createArticleSearchResponse } from "@/app/_blog/search/route";
 import { createArticleOperations } from "@/features/blog/articles/collection";
 import type { ArticleManifestEntry } from "@/features/blog/articles/collection";
 
@@ -46,9 +43,6 @@ describe("production Draft canary", () => {
       today: Temporal.PlainDate.from("2026-07-28"),
     });
     const route = createArticleRouteContract(articles);
-    const discoveryEntries =
-      await articles.listPublishedArticleDiscoveryEntries();
-    const searchDocuments = await articles.listArticleSearchDocuments();
     const notFound = vi.fn((): never => {
       throw new Error("not found");
     });
@@ -63,9 +57,6 @@ describe("production Draft canary", () => {
       currentRoute: await route.resolve(SENTINEL),
       formerRoute: await route.resolve(FORMER_SLUG),
       routeParams: await route.generateStaticParams(),
-      rss: await createRssResponse(discoveryEntries).text(),
-      search: await createArticleSearchResponse(searchDocuments).text(),
-      sitemap: createSitemap(discoveryEntries),
       socialImageParams: await socialImages.generateStaticParams(),
     };
 

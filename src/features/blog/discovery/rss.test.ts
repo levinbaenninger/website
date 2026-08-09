@@ -1,8 +1,18 @@
 import { DOMParser } from "@xmldom/xmldom";
 import { describe, expect, test } from "vite-plus/test";
 
-import { createRssResponse, serializeRss } from "@/app/_blog/discovery/rss";
 import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
+
+import { serializeRss } from "./rss";
+
+const identity = {
+  author: { email: "levin@baenninger.me", name: "Levin Bänninger" },
+  canonicalUrl: (pathname: `/${string}`) =>
+    new URL(pathname, "https://levin.baenninger.me").href,
+  description:
+    "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.",
+  name: "Levin Bänninger’s Blog",
+} as const;
 
 const cover = { height: 630, src: "/cover.png", width: 1200 };
 const article = (
@@ -46,35 +56,30 @@ const getElements = (
   tagName: string
 ): readonly XmlElement[] => [...parent.getElementsByTagNameNS("*", tagName)];
 
-describe("RSS adapter", () => {
-  test("returns valid deterministic RSS for an empty corpus", async () => {
-    const first = createRssResponse([]);
-    const second = createRssResponse([]);
-    const [firstBody, secondBody] = await Promise.all([
-      first.text(),
-      second.text(),
-    ]);
+describe("RSS discovery", () => {
+  test("serializes valid deterministic RSS for an empty corpus", () => {
+    const first = serializeRss([], identity);
+    const second = serializeRss([], identity);
 
-    expect(first.headers.get("content-type")).toBe(
-      "application/rss+xml; charset=utf-8"
-    );
-    expect(first.headers.get("x-robots-tag")).toBe("noindex, follow");
-    expect(firstBody).toBe(secondBody);
+    expect(first).toBe(second);
 
-    const document = parseXml(firstBody);
+    const document = parseXml(first);
     expect(document.documentElement?.tagName).toBe("rss");
     expect(getElements(document, "item")).toHaveLength(0);
     expect(getElements(document, "lastBuildDate")).toHaveLength(0);
   });
 
   test("serializes every Article in canonical order with exact identity and dates", () => {
-    const xml = serializeRss([
-      article("newer", {
-        publishedAt: "2026-07-20",
-        updatedAt: "2026-07-21",
-      }),
-      article("older", { publishedAt: "2026-01-15" }),
-    ]);
+    const xml = serializeRss(
+      [
+        article("newer", {
+          publishedAt: "2026-07-20",
+          updatedAt: "2026-07-21",
+        }),
+        article("older", { publishedAt: "2026-01-15" }),
+      ],
+      identity
+    );
     const document = parseXml(xml);
     const [channel] = getElements(document, "channel");
     const items = getElements(document, "item");
@@ -118,13 +123,16 @@ describe("RSS adapter", () => {
   });
 
   test("escapes text and attributes without allowing markup injection", () => {
-    const xml = serializeRss([
-      article("injection", {
-        description: `A & B <script>"quoted" 'value'</script>`,
-        tags: [{ id: "safe", label: `Web & "XML"` }],
-        title: `A <dangerous> & "quoted"`,
-      }),
-    ]);
+    const xml = serializeRss(
+      [
+        article("injection", {
+          description: `A & B <script>"quoted" 'value'</script>`,
+          tags: [{ id: "safe", label: `Web & "XML"` }],
+          title: `A <dangerous> & "quoted"`,
+        }),
+      ],
+      identity
+    );
 
     expect(xml).toContain("A &lt;dangerous&gt; &amp; &quot;quoted&quot;");
     expect(xml).toContain(
@@ -143,24 +151,30 @@ describe("RSS adapter", () => {
 
   test("refuses characters forbidden by XML 1.0", () => {
     expect(() =>
-      serializeRss([
-        article("invalid-xml", {
-          title: "Invalid\u0001title",
-        }),
-      ])
+      serializeRss(
+        [
+          article("invalid-xml", {
+            title: "Invalid\u0001title",
+          }),
+        ],
+        identity
+      )
     ).toThrow(/XML 1\.0/u);
   });
 
   test("includes summary, creator identity, and every Tag but no Article body", () => {
-    const xml = serializeRss([
-      article("summary", {
-        description: "Only the authored summary.",
-        tags: [
-          { id: "nextjs", label: "Next.js" },
-          { id: "web-performance", label: "Web performance" },
-        ],
-      }),
-    ]);
+    const xml = serializeRss(
+      [
+        article("summary", {
+          description: "Only the authored summary.",
+          tags: [
+            { id: "nextjs", label: "Next.js" },
+            { id: "web-performance", label: "Web performance" },
+          ],
+        }),
+      ],
+      identity
+    );
     const document = parseXml(xml);
     const [item] = getElements(document, "item");
 

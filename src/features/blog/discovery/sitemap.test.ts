@@ -1,11 +1,8 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import {
-  createRobotsPolicy,
-  createSitemap,
-  getArticleLastModified,
-} from "@/app/_blog/discovery/sitemap";
 import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
+
+import { createBlogSitemapEntries, getArticleLastModified } from "./sitemap";
 
 const cover = { height: 630, src: "/cover.png", width: 1200 };
 
@@ -23,35 +20,31 @@ const article = (
   updatedAt,
 });
 
-describe("crawler discovery adapters", () => {
-  test("publishes only canonical HTML destinations with grounded dates", () => {
+describe("Blog sitemap discovery", () => {
+  test("publishes only Blog HTML destinations with grounded dates", () => {
     const entries = [
       article("older", "2025-01-10", "2025-02-10"),
       article("newer", "2026-03-20"),
     ];
 
-    expect(createSitemap(entries)).toEqual([
-      { url: "https://levin.baenninger.me/" },
+    expect(createBlogSitemapEntries(entries)).toEqual([
       {
+        href: "/blog",
         lastModified: "2026-03-20",
-        url: "https://levin.baenninger.me/blog",
       },
       {
+        href: "/blog/older",
         lastModified: "2025-02-10",
-        url: "https://levin.baenninger.me/blog/older",
       },
       {
+        href: "/blog/newer",
         lastModified: "2026-03-20",
-        url: "https://levin.baenninger.me/blog/newer",
       },
     ]);
   });
 
   test("omits ungrounded dates for an empty Published corpus", () => {
-    expect(createSitemap([])).toEqual([
-      { url: "https://levin.baenninger.me/" },
-      { url: "https://levin.baenninger.me/blog" },
-    ]);
+    expect(createBlogSitemapEntries([])).toEqual([{ href: "/blog" }]);
   });
 
   test("uses updates only when they are explicitly authored", () => {
@@ -61,12 +54,5 @@ describe("crawler discovery adapters", () => {
     expect(
       getArticleLastModified(article("updated", "2026-01-10", "2026-02-20"))
     ).toBe("2026-02-20");
-  });
-
-  test("allows ordinary crawling and declares only the production sitemap", () => {
-    expect(createRobotsPolicy()).toEqual({
-      rules: { allow: "/", userAgent: "*" },
-      sitemap: "https://levin.baenninger.me/sitemap.xml",
-    });
   });
 });

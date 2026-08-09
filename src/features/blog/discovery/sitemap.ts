@@ -1,7 +1,9 @@
-import type { MetadataRoute } from "next";
-
-import { toCanonicalUrl } from "@/app/_config/site-identity";
 import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
+
+export interface BlogSitemapEntry {
+  readonly href: `/blog${string}`;
+  readonly lastModified?: string;
+}
 
 export const getArticleLastModified = (
   article: ArticleDiscoveryEntry
@@ -22,30 +24,21 @@ export const getLatestArticleDate = (
   return latest;
 };
 
-export const createSitemap = (
+export const createBlogSitemapEntries = (
   articles: readonly ArticleDiscoveryEntry[]
-): MetadataRoute.Sitemap => {
+): BlogSitemapEntry[] => {
   const blogLastModified = getLatestArticleDate(articles);
 
   return [
-    { url: toCanonicalUrl("/") },
     {
-      url: toCanonicalUrl("/blog"),
+      href: "/blog",
       ...(blogLastModified === undefined
         ? {}
         : { lastModified: blogLastModified }),
     },
     ...articles.map((article) => ({
-      url: toCanonicalUrl(article.href),
+      href: article.href,
       lastModified: getArticleLastModified(article),
     })),
   ];
 };
-
-export const createRobotsPolicy = (): MetadataRoute.Robots => ({
-  rules: {
-    userAgent: "*",
-    allow: "/",
-  },
-  sitemap: toCanonicalUrl("/sitemap.xml"),
-});

@@ -1,8 +1,19 @@
 import type { MetadataRoute } from "next";
 
 import { listPublishedArticleDiscoveryEntries } from "@/app/_blog/articles/server";
-import { createSitemap } from "@/app/_blog/discovery/sitemap";
+import { toCanonicalUrl } from "@/app/_config/site-identity";
+import { createBlogSitemapEntries } from "@/features/blog/discovery/sitemap";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  return createSitemap(await listPublishedArticleDiscoveryEntries());
+  const blogEntries = createBlogSitemapEntries(
+    await listPublishedArticleDiscoveryEntries()
+  );
+
+  return [
+    { url: toCanonicalUrl("/") },
+    ...blogEntries.map(({ href, lastModified }) => ({
+      url: toCanonicalUrl(href),
+      ...(lastModified === undefined ? {} : { lastModified }),
+    })),
+  ];
 }

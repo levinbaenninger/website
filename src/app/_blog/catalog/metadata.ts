@@ -1,30 +1,33 @@
 import type { Metadata } from "next";
 
-import { rssAlternate, twitterIdentity } from "@/app/_blog/shared/metadata";
-import {
-  BLOG_IDENTITY,
-  SITE_IDENTITY,
-  toCanonicalUrl,
-} from "@/app/_config/site-identity";
+import { twitterIdentity } from "@/app/_blog/shared/metadata";
+import { SITE_IDENTITY, toCanonicalUrl } from "@/app/_config/site-identity";
+import { createBlogCatalogMetadata } from "@/features/blog/catalog/metadata";
 
 export const createBlogMetadata = (): Metadata => {
-  const canonicalUrl = toCanonicalUrl("/blog");
+  const catalog = createBlogCatalogMetadata(SITE_IDENTITY.name);
+  const canonicalUrl = toCanonicalUrl(catalog.canonicalHref);
 
   return {
-    title: { absolute: BLOG_IDENTITY.title },
-    description: BLOG_IDENTITY.description,
-    alternates: { canonical: canonicalUrl, types: rssAlternate },
+    title: { absolute: catalog.title },
+    description: catalog.description,
+    alternates: {
+      canonical: canonicalUrl,
+      types: {
+        [catalog.rss.mediaType]: toCanonicalUrl(catalog.rss.href),
+      },
+    },
     openGraph: {
       type: "website",
-      title: BLOG_IDENTITY.title,
-      description: BLOG_IDENTITY.description,
+      title: catalog.title,
+      description: catalog.description,
       url: canonicalUrl,
       siteName: SITE_IDENTITY.name,
     },
     twitter: {
       ...twitterIdentity,
-      title: BLOG_IDENTITY.title,
-      description: BLOG_IDENTITY.description,
+      title: catalog.title,
+      description: catalog.description,
     },
   };
 };
