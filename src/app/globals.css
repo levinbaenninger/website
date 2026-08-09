@@ -182,13 +182,6 @@
   html:has(body[data-scroll-locked]) {
     overflow-y: hidden;
   }
-
-  /* Set only once the custom cursor is actually running, so touch, reduced
-     motion, and a failed hydration all keep the native cursor. */
-  html[data-custom-cursor],
-  html[data-custom-cursor] * {
-    cursor: none !important;
-  }
 }
 
 .typeset-docs {

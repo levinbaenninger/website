@@ -1,4 +1,3 @@
-import { SmoothCursor } from "./cursor/smooth-cursor";
 import { Footer } from "./footer/footer";
 import { Header } from "./header/header";
 import { ScrollToTop } from "./scroll-to-top";
@@ -24,6 +23,5 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => (
     </main>
     <Footer />
     <ScrollToTop />
-    <SmoothCursor />
   </>
 );
