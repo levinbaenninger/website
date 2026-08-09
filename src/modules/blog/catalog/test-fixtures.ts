@@ -1,5 +1,6 @@
 // Catalog fixtures shared by the server and DOM tests for this directory.
 
+import type { Tag } from "@/modules/blog/articles/tags";
 import type {
   ArticleTagFacet,
   DraftArticleSummary,
@@ -16,11 +17,13 @@ export const publishedArticle = ({
   description = "A representative Article.",
   publishedAt = "2026-07-28",
   slug,
+  tags = [],
   title = `Article ${slug}`,
 }: {
   description?: string;
   publishedAt?: string;
   slug: string;
+  tags?: readonly Tag[];
   title?: string;
 }): PublishedArticleSummary => ({
   cover: coverFor(slug),
@@ -29,7 +32,7 @@ export const publishedArticle = ({
   publishedAt,
   slug,
   status: "published",
-  tags: [],
+  tags,
   title,
   updatedAt: null,
 });
@@ -37,10 +40,12 @@ export const publishedArticle = ({
 export const draftArticle = ({
   publishedAt = null,
   slug,
+  tags = [],
   title = `Draft ${slug}`,
 }: {
   publishedAt?: string | null;
   slug: string;
+  tags?: readonly Tag[];
   title?: string;
 }): DraftArticleSummary => ({
   cover: coverFor(slug),
@@ -49,12 +54,18 @@ export const draftArticle = ({
   publishedAt,
   slug,
   status: "draft",
-  tags: [],
+  tags,
   title,
   updatedAt: null,
 });
 
+export const NEXTJS: Tag = { id: "nextjs", label: "Next.js" };
+export const WEB_PERFORMANCE: Tag = {
+  id: "web-performance",
+  label: "Web performance",
+};
+
 export const TAG_FACETS: readonly ArticleTagFacet[] = [
-  { articleCount: 2, id: "nextjs", label: "Next.js" },
-  { articleCount: 1, id: "web-performance", label: "Web performance" },
+  { ...NEXTJS, articleCount: 2 },
+  { ...WEB_PERFORMANCE, articleCount: 1 },
 ];

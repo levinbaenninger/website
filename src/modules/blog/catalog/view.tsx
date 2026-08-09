@@ -6,7 +6,6 @@ import type {
 } from "@/modules/blog/articles/types";
 
 import { CatalogEmpty } from "./catalog-empty";
-import { CatalogGrid } from "./catalog-grid";
 import { PageHeading } from "./chrome";
 import { CatalogDiscovery } from "./discovery";
 
@@ -27,7 +26,7 @@ interface BlogViewProps {
  *
  * Everything a visitor needs in order to find and open an Article is rendered
  * on the server: the heading, every card, and every Article link. The
- * discovery island layers search and Tag filtering on top once it hydrates.
+ * discovery island layers Tag filtering on top once the client takes over.
  *
  * An empty catalog drops the discovery controls entirely — there is nothing to
  * search or filter — and puts the zero state directly under the heading.
@@ -53,9 +52,7 @@ export const BlogView = ({ articles, tags }: BlogViewProps) => (
           </p>
         </noscript>
 
-        <CatalogDiscovery articleCount={articles.length} tags={tags} />
-
-        <CatalogGrid articles={articles} />
+        <CatalogDiscovery articles={articles} tags={tags} />
       </>
     )}
   </div>
