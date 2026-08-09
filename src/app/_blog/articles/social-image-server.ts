@@ -1,26 +1,26 @@
 import { notFound } from "next/navigation";
 
 import {
-  findArticleSocialImage,
-  listArticleSocialImages,
+  findArticleSocialImageInput,
+  listArticleSocialImageRouteParams,
 } from "@/app/_blog/articles/server";
 import { renderSocialImage } from "@/shared/social-image";
 
-import { createArticleSocialImageContract } from "./social-image";
+import { createArticleSocialImageAdapter } from "./social-image";
 
-const articleSocialImageContract = createArticleSocialImageContract({
-  findArticleSocialImage,
-  listArticleSocialImages,
+const articleSocialImageAdapter = createArticleSocialImageAdapter({
+  findInput: findArticleSocialImageInput,
+  generateStaticParams: listArticleSocialImageRouteParams,
   notFound,
   render: renderSocialImage,
 });
 
 export const generateArticleSocialImageStaticParams = async (
   ...arguments_: Parameters<
-    typeof articleSocialImageContract.generateStaticParams
+    typeof articleSocialImageAdapter.generateStaticParams
   >
-) => await articleSocialImageContract.generateStaticParams(...arguments_);
+) => await articleSocialImageAdapter.generateStaticParams(...arguments_);
 
 export const renderArticleSocialImage = async (
-  ...arguments_: Parameters<typeof articleSocialImageContract.render>
-) => await articleSocialImageContract.render(...arguments_);
+  ...arguments_: Parameters<typeof articleSocialImageAdapter.render>
+) => await articleSocialImageAdapter.render(...arguments_);

@@ -33,7 +33,7 @@ const publishedArticle = {
   outline: [],
 } as const satisfies ArticleDetail;
 
-describe("Article structured data", () => {
+describe("Article structured-data adapter", () => {
   test("renders a grounded BlogPosting for a Published Article", () => {
     const markup = renderToStaticMarkup(
       <ArticleStructuredData article={publishedArticle} />

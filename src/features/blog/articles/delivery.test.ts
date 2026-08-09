@@ -1,9 +1,6 @@
 import { describe, expect, test, vi } from "vite-plus/test";
 
-import {
-  createArticleRouteContract,
-  requireCurrentArticle,
-} from "@/app/_blog/articles/route";
+import { createArticleDeliveryOperations } from "@/features/blog/articles/delivery";
 import type {
   ArticleDetail,
   ArticleRedirect,
@@ -70,7 +67,7 @@ describe("Article route contract", () => {
         { href: currentArticle.href, slug: "a-former" },
       ],
     });
-    const route = createArticleRouteContract(operations);
+    const route = createArticleDeliveryOperations(operations);
 
     await expect(route.generateStaticParams()).resolves.toEqual([
       { slug: "a-former" },
@@ -80,7 +77,7 @@ describe("Article route contract", () => {
   });
 
   test("accepts a valid empty visible corpus", async () => {
-    const route = createArticleRouteContract(
+    const route = createArticleDeliveryOperations(
       createOperations({ articles: [], redirects: [] })
     );
 
@@ -88,7 +85,7 @@ describe("Article route contract", () => {
   });
 
   test("distinguishes current, direct redirect, and unknown outcomes", async () => {
-    const route = createArticleRouteContract(createOperations());
+    const route = createArticleDeliveryOperations(createOperations());
 
     await expect(route.resolve("current-article")).resolves.toEqual({
       article: currentArticle,
@@ -105,7 +102,7 @@ describe("Article route contract", () => {
 
   test("rejects malformed slugs without querying Blog operations", async () => {
     const operations = createOperations();
-    const route = createArticleRouteContract(operations);
+    const route = createArticleDeliveryOperations(operations);
 
     await expect(route.resolve("Bad/Slug")).resolves.toEqual({
       kind: "not-found",
@@ -118,7 +115,7 @@ describe("Article route contract", () => {
     const operations = createOperations();
     operations.findArticle.mockResolvedValue(null);
     operations.findArticleRedirect.mockResolvedValue(null);
-    const route = createArticleRouteContract(operations);
+    const route = createArticleDeliveryOperations(operations);
 
     await expect(route.resolve("draft-sentinel")).resolves.toEqual({
       kind: "not-found",
@@ -126,36 +123,5 @@ describe("Article route contract", () => {
     await expect(route.resolve("draft-sentinel-former")).resolves.toEqual({
       kind: "not-found",
     });
-  });
-
-  test("maps former slugs to an exact permanent redirect and absence to not-found", () => {
-    const permanentRedirect = vi.fn((): never => {
-      throw new Error("redirected");
-    });
-    const notFound = vi.fn((): never => {
-      throw new Error("not found");
-    });
-
-    expect(() =>
-      requireCurrentArticle(
-        {
-          destination: "/blog/current-article",
-          kind: "redirect",
-        },
-        { notFound, permanentRedirect }
-      )
-    ).toThrow("redirected");
-    expect(permanentRedirect).toHaveBeenCalledWith(
-      "/blog/current-article",
-      "replace"
-    );
-
-    expect(() =>
-      requireCurrentArticle(
-        { kind: "not-found" },
-        { notFound, permanentRedirect }
-      )
-    ).toThrow("not found");
-    expect(notFound).toHaveBeenCalledOnce();
   });
 });

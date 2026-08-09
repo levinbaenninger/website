@@ -3,13 +3,12 @@ import { createArticleServer } from "@/features/blog/articles/server-api";
 import { ARTICLE_FIXED_DESTINATIONS } from "./destinations";
 
 export const {
-  findArticleSocialImage,
-  findArticle,
-  findArticleRedirect,
-  listArticleRedirects,
+  findArticleSocialImageInput,
+  generateArticleStaticParams,
+  listArticleSocialImageRouteParams,
   listArticleSearchDocuments,
-  listArticleSocialImages,
   listArticleTags,
   listArticles,
   listPublishedArticleDiscoveryEntries,
+  resolveArticleDelivery,
 } = createArticleServer(ARTICLE_FIXED_DESTINATIONS);

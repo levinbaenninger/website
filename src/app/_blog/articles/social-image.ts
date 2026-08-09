@@ -1,22 +1,10 @@
 import type { ArticleSocialImage } from "@/features/blog/articles/types";
 import type { SocialImageInput } from "@/shared/social-image";
 
-import { isArticleSlug } from "./route";
-
-interface ArticleSocialImageOperations {
-  readonly findArticleSocialImage: (
-    slug: string
-  ) => Promise<ArticleSocialImage | null>;
-  readonly listArticleSocialImages: () => Promise<
-    readonly ArticleSocialImage[]
-  >;
-}
-
-interface ArticleSocialImageNavigation {
+interface ArticleSocialImageAdapterDependencies {
+  readonly findInput: (slug: string) => Promise<ArticleSocialImage | null>;
+  readonly generateStaticParams: () => Promise<{ readonly slug: string }[]>;
   readonly notFound: () => never;
-}
-
-interface ArticleSocialImageRenderer {
   readonly render: (input: SocialImageInput) => Response;
 }
 
@@ -24,30 +12,20 @@ interface ArticleSocialImageRenderProps {
   readonly params: Promise<{ readonly slug: string }>;
 }
 
-export const createArticleSocialImageContract = ({
-  findArticleSocialImage,
-  listArticleSocialImages,
+export const createArticleSocialImageAdapter = ({
+  findInput,
+  generateStaticParams,
   notFound,
   render,
-}: ArticleSocialImageOperations &
-  ArticleSocialImageNavigation &
-  ArticleSocialImageRenderer) => {
-  const findInput = async (slug: string) =>
-    isArticleSlug(slug) ? await findArticleSocialImage(slug) : null;
+}: ArticleSocialImageAdapterDependencies) => ({
+  generateStaticParams,
+  async render({ params }: ArticleSocialImageRenderProps) {
+    const { slug } = await params;
+    const input = await findInput(slug);
+    if (input === null) {
+      return notFound();
+    }
 
-  return {
-    async generateStaticParams() {
-      const inputs = await listArticleSocialImages();
-      return inputs.map(({ slug }) => ({ slug }));
-    },
-    async render({ params }: ArticleSocialImageRenderProps) {
-      const { slug } = await params;
-      const input = await findInput(slug);
-      if (input === null) {
-        return notFound();
-      }
-
-      return render(input);
-    },
-  };
-};
+    return render(input);
+  },
+});

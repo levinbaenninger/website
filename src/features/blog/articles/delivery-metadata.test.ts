@@ -1,9 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 
 import {
-  createArticleMetadata,
-  createPublishedArticleStructuredDataInput,
-} from "@/app/_blog/articles/metadata";
+  createArticleMetadataValues,
+  createArticleStructuredData,
+  createPublishedArticleStructuredData,
+} from "@/features/blog/articles/delivery-metadata";
 import type { ArticleDetail } from "@/features/blog/articles/types";
 
 const Content = () => null;
@@ -12,6 +13,13 @@ const cover = {
   src: "/article-cover.png",
   width: 1200,
 };
+
+const identity = {
+  authorName: "Levin Bänninger",
+  origin: "https://levin.baenninger.me",
+  siteName: "Levin Bänninger",
+  twitterHandle: "@levinbaenninger",
+} as const;
 
 const publishedArticle = {
   Content,
@@ -43,9 +51,9 @@ const publishedArticle = {
   outline: [],
 } as const satisfies ArticleDetail;
 
-describe("article metadata adapters", () => {
+describe("Article delivery metadata", () => {
   test("maps Published Article facts, author, Tags, and Zurich dates", () => {
-    expect(createArticleMetadata(publishedArticle)).toEqual({
+    expect(createArticleMetadataValues(publishedArticle, identity)).toEqual({
       alternates: {
         canonical: "https://levin.baenninger.me/blog/canonical-article",
         types: {
@@ -109,7 +117,7 @@ describe("article metadata adapters", () => {
       outline: [],
     } as const satisfies ArticleDetail;
 
-    const metadata = createArticleMetadata(draft);
+    const metadata = createArticleMetadataValues(draft, identity);
 
     expect(metadata.openGraph).not.toHaveProperty("publishedTime");
     expect(metadata.openGraph).not.toHaveProperty("modifiedTime");
@@ -135,24 +143,41 @@ describe("article metadata adapters", () => {
   });
 
   test("keeps Published structured-data inputs grounded and Cover-specific", () => {
-    expect(createPublishedArticleStructuredDataInput(publishedArticle)).toEqual(
-      {
-        author: {
-          id: "https://levin.baenninger.me/#person",
-          name: "Levin Bänninger",
-          url: "https://levin.baenninger.me/",
-        },
-        dateModified: "2026-07-15T00:00:00+02:00",
-        datePublished: "2026-01-15T00:00:00+01:00",
-        description: "A precise description.",
-        headline: "Canonical Article",
-        id: "https://levin.baenninger.me/blog/canonical-article#article",
-        image: "https://levin.baenninger.me/article-cover.png",
-        inLanguage: "en",
-        keywords: ["Next.js", "Web performance"],
-        mainEntityOfPage: "https://levin.baenninger.me/blog/canonical-article",
-        url: "https://levin.baenninger.me/blog/canonical-article",
-      }
-    );
+    expect(
+      createPublishedArticleStructuredData(publishedArticle, identity)
+    ).toEqual({
+      "@context": "https://schema.org",
+      "@id": "https://levin.baenninger.me/blog/canonical-article#article",
+      "@type": "BlogPosting",
+      author: {
+        "@id": "https://levin.baenninger.me/#person",
+        "@type": "Person",
+        name: "Levin Bänninger",
+        url: "https://levin.baenninger.me/",
+      },
+      dateModified: "2026-07-15T00:00:00+02:00",
+      datePublished: "2026-01-15T00:00:00+01:00",
+      description: "A precise description.",
+      headline: "Canonical Article",
+      image: "https://levin.baenninger.me/article-cover.png",
+      inLanguage: "en",
+      keywords: ["Next.js", "Web performance"],
+      mainEntityOfPage: "https://levin.baenninger.me/blog/canonical-article",
+      url: "https://levin.baenninger.me/blog/canonical-article",
+    });
+  });
+
+  test("omits structured data for a Draft", () => {
+    const draft = {
+      ...publishedArticle,
+      discovery: null,
+      publishedAt: null,
+      status: "draft",
+      updatedAt: null,
+      navigation: { next: null, previous: null },
+      outline: [],
+    } as const satisfies ArticleDetail;
+
+    expect(createArticleStructuredData(draft, identity)).toBeNull();
   });
 });
