@@ -2,6 +2,7 @@
 
 import type { Tag } from "@/modules/blog/articles/tags";
 import type {
+  ArticleSearchDocument,
   ArticleTagFacet,
   DraftArticleSummary,
   PublishedArticleSummary,
@@ -69,3 +70,30 @@ export const TAG_FACETS: readonly ArticleTagFacet[] = [
   { ...NEXTJS, articleCount: 2 },
   { ...WEB_PERFORMANCE, articleCount: 1 },
 ];
+
+export const searchDocument = ({
+  body = "Unrelated prose.",
+  description = "A representative Article.",
+  headings = [],
+  slug,
+  status = "published",
+  tags = [],
+  title,
+}: {
+  body?: string;
+  description?: string;
+  headings?: readonly string[];
+  slug: string;
+  status?: "published" | "draft";
+  tags?: readonly Tag[];
+  title: string;
+}): ArticleSearchDocument => ({
+  body,
+  description,
+  headings,
+  href: `/blog/${slug}`,
+  id: slug,
+  status,
+  tags,
+  title,
+});

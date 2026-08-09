@@ -1,4 +1,5 @@
 import type { ArticleSummary } from "@/modules/blog/articles/types";
+import type { ArticleSearchResult } from "@/modules/blog/search/service";
 import { cn } from "@/shared/ui/cn";
 
 import { ArticleCard } from "./article-card";
@@ -14,10 +15,18 @@ const GRID_ITEM_CLASS = cn(
   "sm:nth-[2n+1]:screen-line-top sm:nth-[2n+1]:screen-line-bottom"
 );
 
+/**
+ * `explanations` is what an active query contributes, keyed by slug. It is
+ * deliberately a lookup rather than a second list: the grid renders the same
+ * Articles in the same geometry either way, and a missing entry simply means
+ * this card has nothing to highlight.
+ */
 export const CatalogGrid = ({
   articles,
+  explanations,
 }: {
   articles: readonly ArticleSummary[];
+  explanations?: ReadonlyMap<string, ArticleSearchResult>;
 }) => (
   <div className="relative pt-4">
     <div
@@ -30,11 +39,20 @@ export const CatalogGrid = ({
     {/* `items-stretch` is the grid default; cards in a row therefore share a
         height and their pinned meta rows line up. */}
     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {articles.map((article, index) => (
-        <li className={GRID_ITEM_CLASS} key={article.slug}>
-          <ArticleCard article={article} eager={index < EAGER_CARD_COUNT} />
-        </li>
-      ))}
+      {articles.map((article, index) => {
+        const explanation = explanations?.get(article.slug);
+
+        return (
+          <li className={GRID_ITEM_CLASS} key={article.slug}>
+            <ArticleCard
+              article={article}
+              eager={index < EAGER_CARD_COUNT}
+              snippet={explanation?.snippet ?? null}
+              title={explanation?.title ?? null}
+            />
+          </li>
+        );
+      })}
     </ul>
   </div>
 );

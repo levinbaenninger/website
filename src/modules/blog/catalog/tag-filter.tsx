@@ -4,8 +4,11 @@ import type { RefObject } from "react";
 import { useRef } from "react";
 
 import type { ArticleTagFacet } from "@/modules/blog/articles/types";
+import type { HighlightRange } from "@/modules/blog/search/service";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/ui/cn";
+
+import { HighlightedText } from "./highlighted-text";
 
 // The `All` option is a UI value only: an unfiltered catalog carries no `tag`
 // parameter, so this string never reaches the URL.
@@ -17,9 +20,12 @@ export const articleCountLabel = (count: number): string =>
 interface TagFilterOption {
   readonly count: number;
   readonly disabled: boolean;
+  readonly highlights: readonly HighlightRange[];
   readonly label: string;
   readonly value: string;
 }
+
+const NO_HIGHLIGHTS: readonly HighlightRange[] = [];
 
 const STEP_BY_KEY: Readonly<Record<string, number>> = {
   ArrowDown: 1,
@@ -31,6 +37,7 @@ const STEP_BY_KEY: Readonly<Record<string, number>> = {
 const TagOption = ({
   count,
   disabled,
+  highlights,
   label,
   onKeyDown,
   onSelect,
@@ -40,6 +47,7 @@ const TagOption = ({
 }: {
   count: number;
   disabled: boolean;
+  highlights: readonly HighlightRange[];
   label: string;
   onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   onSelect: (value: string) => void;
@@ -66,16 +74,20 @@ const TagOption = ({
       type="radio"
       value={value}
     />
+    {/* The chip is the visual half only, and the sr-only line beside it is the
+        whole accessible name. Highlighting splits a label into several
+        elements, and an accessible name computed from those reads `Next . js`
+        — the option's name must not depend on what a query happened to
+        match. */}
     <Badge
+      aria-hidden
       className="peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:opacity-50"
       variant={selected ? "default" : "outline"}
     >
-      {label}
-      <span aria-hidden className="tabular-nums opacity-70">
-        {count}
-      </span>
+      <HighlightedText value={{ highlights, text: label }} />
+      <span className="tabular-nums opacity-70">{count}</span>
     </Badge>
-    <span className="sr-only">{articleCountLabel(count)}</span>
+    <span className="sr-only">{`${label} ${articleCountLabel(count)}`}</span>
   </label>
 );
 
@@ -91,18 +103,30 @@ const TagOption = ({
  * A Tag that matches nothing is a dead end and is disabled — unless it is the
  * selected one, which would leave the visitor unable to leave an empty
  * catalog from the keyboard.
+ *
+ * The strip is also where a Tag-only search match is explained: `highlights`
+ * marks the part of a visible Tag label the query matched. Nothing about that
+ * belongs on a result card, which is why the card never grows a Badge.
+ *
+ * `busy` covers the first search load. The counts stay catalog-wide until
+ * results exist, so no chip changes width mid-load and nothing under the
+ * visitor's pointer moves.
  */
 export const TagFilter = ({
   allOptionRef,
   articleCount,
+  busy = false,
   enabled,
+  highlights,
   onSelect,
   selected,
   tags,
 }: {
   allOptionRef?: RefObject<HTMLInputElement | null>;
   articleCount: number;
+  busy?: boolean;
   enabled: boolean;
+  highlights?: ReadonlyMap<string, readonly HighlightRange[]>;
   onSelect: (value: string) => void;
   selected: string;
   tags: readonly ArticleTagFacet[];
@@ -110,10 +134,17 @@ export const TagFilter = ({
   const optionRefs = useRef(new Map<string, HTMLInputElement>());
 
   const options: readonly TagFilterOption[] = [
-    { count: articleCount, disabled: false, label: "All", value: ALL_TAGS },
+    {
+      count: articleCount,
+      disabled: false,
+      highlights: NO_HIGHLIGHTS,
+      label: "All",
+      value: ALL_TAGS,
+    },
     ...tags.map((tag) => ({
       count: tag.articleCount,
       disabled: tag.articleCount === 0 && tag.id !== selected,
+      highlights: highlights?.get(tag.id) ?? NO_HIGHLIGHTS,
       label: tag.label,
       value: tag.id,
     })),
@@ -162,6 +193,7 @@ export const TagFilter = ({
 
   return (
     <div
+      aria-busy={busy || undefined}
       aria-label="Filter Articles by Tag"
       className="screen-line-bottom flex flex-wrap items-center gap-1.5 p-2"
       role="radiogroup"
@@ -170,6 +202,7 @@ export const TagFilter = ({
         <TagOption
           count={option.count}
           disabled={!enabled || option.disabled}
+          highlights={option.highlights}
           key={option.value}
           label={option.label}
           onKeyDown={handleKeyDown}
