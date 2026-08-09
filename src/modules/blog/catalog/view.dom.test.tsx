@@ -902,7 +902,11 @@ describe("shareable query state", () => {
 
     renderHydrated(taggedArticles, { onUrlUpdate });
 
-    await user.type(searchBox(), "  Cache   Components");
+    // One committed edit rather than twenty keystrokes: the contract here is
+    // what a settled query looks like in the URL, and the adapter coalesces a
+    // burst of writes into an arbitrary subset of them.
+    await user.click(searchBox());
+    await user.paste("  Cache   Components");
 
     await waitFor(() => {
       expect(lastUpdate(onUrlUpdate)?.searchParams.get("q")).toBe(

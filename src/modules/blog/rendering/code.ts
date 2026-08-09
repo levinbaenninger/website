@@ -256,8 +256,9 @@ const labelAnnotatedLines = (root: Root): void => {
  * the client. That is the defect #50 exists to have removed, and the compiler is
  * the one place that can partition a tree without guessing at it.
  *
- * Class names are preserved rather than replaced: they are how the accepted
- * prototype still selects this markup, and #60 retires the prototypes.
+ * Class names are preserved rather than replaced: Shiki's own
+ * `twoslash-popup-*` classes are what `code.css` styles the popup's contents
+ * with, and the lifted elements carry them through unchanged.
  */
 const liftTwoslashHovers = (root: Root): void => {
   visit(root, "element", (node: Element) => {

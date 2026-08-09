@@ -166,12 +166,27 @@ const placeHeading = (id: string, top: number) => {
   } as DOMRect);
 };
 
-/** Lets every scheduled frame and microtask from the previous step run out. */
+/**
+ * Lets every scheduled frame and microtask from the previous step run out.
+ *
+ * Turns of the macrotask queue rather than a fixed wait: the reveal path is a
+ * nested pair of frames, `requestAnimationFrame` is stubbed onto zero-delay
+ * timers below, and a zero-delay timer queued here is always served after the
+ * ones already waiting. A wall-clock sleep only looks equivalent on a machine
+ * with a spare core.
+ */
+const nextTurn = async () =>
+  await new Promise((resolve) => {
+    window.setTimeout(resolve, 0);
+  });
+
 const settle = async () => {
   await act(async () => {
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 5);
-    });
+    // One turn per frame the reveal path schedules, and two to spare.
+    await nextTurn();
+    await nextTurn();
+    await nextTurn();
+    await nextTurn();
   });
 };
 

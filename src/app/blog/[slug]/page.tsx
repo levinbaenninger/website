@@ -6,22 +6,10 @@ import { requireCurrentArticle } from "@/app/_blog/articles/route";
 import { articleRouteContract } from "@/app/_blog/articles/route-server";
 import { ArticleStructuredData } from "@/app/_blog/articles/structured-data";
 import { toCanonicalUrl } from "@/app/_site/identity";
-// PROTOTYPE — issues #33 and #34. Remove these imports together with the
-// prototype directories once a reader composition and a presentation language
-// are chosen.
-import {
-  ArticleLanguagePrototype,
-  ArticleReaderPrototype,
-  readLanguageSelection,
-  readPrototypeSelection,
-} from "@/modules/blog";
 import { ArticleView } from "@/modules/blog/articles";
 
 interface ArticlePageProps {
   readonly params: Promise<{ readonly slug: string }>;
-  readonly searchParams?: Promise<
-    Record<string, string | string[] | undefined>
-  >;
 }
 
 const resolveArticle = async ({ params }: ArticlePageProps) => {
@@ -46,34 +34,6 @@ export const generateMetadata = async (
 
 export default async function ArticlePage(props: ArticlePageProps) {
   const article = await resolveArticle(props);
-
-  // PROTOTYPE — issues #33 and #34. `searchParams` is only awaited outside
-  // production so the real route stays statically prerendered. `?language=`
-  // mounts the presentation-language specimen; `?variant=` mounts the reader.
-  if (process.env.NODE_ENV !== "production") {
-    const searchParams = (await props.searchParams) ?? {};
-    const language = readLanguageSelection(searchParams);
-
-    if (language !== null) {
-      return <ArticleLanguagePrototype selection={language} />;
-    }
-
-    const selection = readPrototypeSelection(searchParams);
-
-    if (selection !== null) {
-      return (
-        <ArticleReaderPrototype
-          article={{
-            description: article.description,
-            slug: article.slug,
-            tags: article.tags,
-            title: article.title,
-          }}
-          selection={selection}
-        />
-      );
-    }
-  }
 
   return (
     <>
