@@ -1,0 +1,51 @@
+---
+title: "Type-safe routes without a router rewrite"
+description: "Template literal types turn a route table into a compile-time contract, and the whole trick fits in about fifteen lines."
+status: "Published"
+publishedAt: "2026-08-02"
+tags:
+  - "nextjs"
+  - "typescript"
+---
+
+A string is a terrible URL. It compiles when it is wrong, it survives a rename, and it fails in front of a visitor. TypeScript has had the tools to fix this for years, and the fix is smaller than most people expect.
+
+## The whole trick
+
+```ts twoslash
+type ArticleHref = `/blog/${string}`;
+
+const toArticleHref = (slug: string): ArticleHref => `/blog/${slug}`;
+
+const href = toArticleHref("seams-worth-testing");
+//    ^?
+```
+
+That single template literal type is enough to stop a `/blogs/…` typo at the call site, and it costs nothing at runtime.
+
+## Where to put the boundary
+
+<Tabs>
+<Tab title="At the edge">
+Return the branded type from the one function that builds hrefs. Everything
+downstream inherits it for free.
+
+```ts
+export const articleHref = (slug: string) => `/blog/${slug}` as const;
+```
+
+</Tab>
+<Tab title="Everywhere">
+Annotating every prop that takes a URL sounds thorough and reads as noise. One
+producer, many consumers.
+</Tab>
+</Tabs>
+
+<Callout kind="tip" title="Fragments too">
+  The same shape covers `#section` targets. A route table that lists its own
+  fragments turns a dead anchor into a build failure.
+</Callout>
+
+## What it does not buy
+
+It will not tell you the page exists — only that the shape is right. For that you still need the route table itself to be the source of truth, which is the same argument as [seams worth testing](/blog/seams-worth-testing) in a different suit.

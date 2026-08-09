@@ -1,0 +1,42 @@
+---
+title: "Budgeting images before they budget you"
+description: "A page-weight budget only works when something fails the build. Here is the smallest version of that machinery I have been happy with."
+status: "Published"
+publishedAt: "2026-05-14"
+tags:
+  - "web-performance"
+---
+
+Every image budget dies in a spreadsheet. Somebody measures the homepage, writes down a number everyone agrees with, and nine months later the hero is a 4 MB PNG again. The number was never the problem — nothing was checking it.
+
+## Put the number where the build can see it
+
+A budget is a test. It belongs beside the assets it constrains, in a file the build reads, and it fails loudly:
+
+```ts title="image-budget.ts"
+export const IMAGE_BUDGET_BYTES = {
+  cover: 250 * 1024,
+  figure: 400 * 1024,
+} as const;
+```
+
+<Callout kind="tip" title="Keep it boring">
+  One number per role, not one per file. A per-file allowance is a list nobody
+  maintains; a per-role allowance is a decision.
+</Callout>
+
+## Measure the encoded bytes, not the source
+
+The number that matters is what crosses the wire after the image pipeline has had its turn. Measuring the source file flatters you: it is usually the largest number in the chain and the one no visitor ever downloads.
+
+| Stage           | What it tells you            | Worth budgeting |
+| --------------- | ---------------------------- | --------------- |
+| Source file     | How careless the export was  | No              |
+| Encoded variant | What a visitor actually pays | Yes             |
+| Rendered pixels | Whether the variant fits     | Yes             |
+
+## Fail the build, not the review
+
+A budget enforced in code review is a budget enforced on whoever is tired. Wire it into the same command that already runs on every change, and the conversation stops being about discipline.
+
+Related: [streaming with Suspense](/blog/streaming-with-suspense) covers the other half of a slow page, which is everything that is not an image.
