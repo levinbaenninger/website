@@ -12,7 +12,14 @@ import {
   parseISO,
   subWeeks,
 } from "date-fns";
-import { createContext, Fragment, useContext, useMemo } from "react";
+import {
+  createContext,
+  Fragment,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/shared/ui/cn";
@@ -391,11 +398,22 @@ export const ContributionGraphCalendar = ({
 }: ContributionGraphCalendarProps) => {
   const { weeks, width, height, blockSize, blockMargin, labels } =
     useContributionGraph();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const monthLabels = useMemo(
     () => getMonthLabels(weeks, labels.months),
     [weeks, labels.months]
   );
+
+  // Newest days sit on the right; keep them in view when the graph overflows.
+  useLayoutEffect(() => {
+    const node = scrollRef.current;
+    if (!node) {
+      return;
+    }
+
+    node.scrollLeft = node.scrollWidth - node.clientWidth;
+  }, [width, weeks.length]);
 
   return (
     <div
@@ -404,6 +422,7 @@ export const ContributionGraphCalendar = ({
         className
       )}
       {...props}
+      ref={scrollRef}
     >
       <svg
         className="block overflow-visible"
