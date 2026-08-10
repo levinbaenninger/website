@@ -108,10 +108,10 @@ describe("Article Share menu", () => {
     expect(x.getAttribute("href")).toBe(
       `https://x.com/intent/tweet?text=${encodeURIComponent(TITLE)}&url=${encodeURIComponent(CANONICAL_URL)}`
     );
-    // LinkedIn composes its own preview from the page, so it receives the URL
-    // alone; X takes the title as the post's own text.
+    // LinkedIn's feed share intent prefills the composer with title and URL;
+    // share-offsite only accepts a URL and often opens empty.
     expect(linkedIn.getAttribute("href")).toBe(
-      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(CANONICAL_URL)}`
+      `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${TITLE} ${CANONICAL_URL}`)}`
     );
 
     await user.click(screen.getByRole("menuitem", { name: "Copy link" }));

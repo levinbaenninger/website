@@ -100,9 +100,11 @@ const NATIVE_ITEM: Record<
 /**
  * A web intent per network, each carrying its own mark.
  *
- * X takes the title as the post's text and the URL as the attached card;
- * LinkedIn composes its own preview from the page it is given and ignores any
- * text passed alongside it, so it receives the URL alone.
+ * X takes the title as the post's text and the URL as the attached card.
+ * LinkedIn's documented `share-offsite` endpoint only accepts a URL and, in
+ * practice, opens an empty composer — so the feed share intent is used instead,
+ * prefilled with title and URL the same way X is. LinkedIn still attaches the
+ * Open Graph card from the URL in the text.
  */
 const SHARE_TARGETS = [
   {
@@ -112,8 +114,8 @@ const SHARE_TARGETS = [
     label: "Share on X",
   },
   {
-    href: (url: string) =>
-      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+    href: (url: string, title: string) =>
+      `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${title} ${url}`)}`,
     icon: LinkedInIcon,
     label: "Share on LinkedIn",
   },
@@ -252,7 +254,12 @@ export const ArticleShareMenu = ({
   const NativeStateIcon = NATIVE_ITEM[nativeState].icon;
 
   return (
+    // Non-modal: the trigger lives in a sticky toolbar, and Radix's default
+    // modal scroll-lock jumps the page to the top when the menu opens mid-
+    // scroll — leaving the menu stranded and the page unclickable under the
+    // inert overlay. A share menu does not need to freeze the document.
     <DropdownMenu
+      modal={false}
       onOpenChange={(open) => {
         if (!open) {
           if (resetTimeoutRef.current !== null) {

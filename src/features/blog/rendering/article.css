@@ -429,6 +429,12 @@
  * down to where it passes; the fill and the ring keep the accepted accent, so
  * what changes is legibility rather than the language.
  */
+/*
+ * Layout mirrors shadcn's Alert: `auto 1fr` columns, `gap-x-2` / `gap-y-0.5`,
+ * a `size-4` mark that spans both title and description rows and is nudged
+ * `0.125rem` down so it sits on the first line's cap height. The tint and the
+ * semantic `aside` stay ours; the grid is the Alert's.
+ */
 [data-slot="article-body"] [data-slot="article-callout"] {
   --callout-accent: var(--muted-foreground);
   --callout-ink: var(--callout-accent);
@@ -436,8 +442,7 @@
   position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
-  /* shadcn's Alert is `gap-x-2`; at this leading the mark crowds the title. */
-  column-gap: 0.75rem;
+  column-gap: 0.5rem;
   row-gap: 0.125rem;
   margin-block-start: var(--typeset-flow);
   border-radius: calc(var(--radius) * 1.4);
@@ -447,7 +452,10 @@
     var(--surface)
   );
   color: var(--surface-foreground);
-  padding: 0.875rem 1rem;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-align: start;
   box-shadow: inset 0 0 0 1px
     color-mix(in oklab, var(--callout-accent) 28%, transparent);
 }
@@ -481,25 +489,13 @@
   --callout-ink: var(--callout-accent);
 }
 
-/*
- * The mark is sized against the title's cap height rather than set to a round
- * 16 px, and centred on the title's own first line box rather than nudged by a
- * fixed amount — which is what a 1.75 leading needs.
- */
 [data-slot="article-body"] [data-slot="article-callout-mark"] {
   grid-row: span 2;
   align-self: start;
-  width: 1.15em;
-  height: 1.15em;
-  margin-block-start: calc((1lh - 1.15em) / 2);
+  width: 1rem;
+  height: 1rem;
+  translate: 0 0.125rem;
   color: var(--callout-ink);
-}
-
-/* A Callout with no title has one row, so the mark must not span two. */
-[data-slot="article-body"]
-  [data-slot="article-callout"]:not(:has([data-slot="alert-title"]))
-  [data-slot="article-callout-mark"] {
-  grid-row: span 1;
 }
 
 [data-slot="article-body"]
@@ -516,6 +512,17 @@
   grid-column-start: 2;
   color: color-mix(in oklab, var(--surface-foreground) 80%, transparent);
   text-wrap: pretty;
+}
+
+/*
+ * Untitled Callouts still place the mark in column 1 and the body in column 2.
+ * Without an explicit column on the description, auto-placement can park the
+ * body under the mark once the title row is absent.
+ */
+[data-slot="article-body"]
+  [data-slot="article-callout"]:not(:has([data-slot="alert-title"]))
+  [data-slot="alert-description"] {
+  grid-row-start: 1;
 }
 
 /*
@@ -800,6 +807,19 @@
   color: oklch(0.72 0.16 75);
 }
 
+/*
+ * Both folder marks sit in the markup so open/closed can swap without remounting
+ * the trigger. Only the mark that matches `data-state` is shown.
+ */
+[data-slot="article-body"]
+  [data-slot="collapsible-trigger"][data-state="closed"]
+  [data-state-icon="open"],
+[data-slot="article-body"]
+  [data-slot="collapsible-trigger"][data-state="open"]
+  [data-state-icon="closed"] {
+  display: none;
+}
+
 /* ---------------------------------------------------------------- STEPS -- */
 
 /*
@@ -1027,11 +1047,20 @@
 }
 
 /*
+ * Custom elements default to `inline`. Panels must be block so their contents
+ * stack; inactive ones use `hidden="until-found"` (`content-visibility: hidden`),
+ * which keeps the host's own padding — so padding is applied only when open.
+ */
+article-panel {
+  display: block;
+}
+
+/*
  * The gap under the strip is the panel's own padding, not its first child's
  * margin: a Tab holding a single sentence has no element child at all — MDX
  * leaves a bare text node — so a rule on `> :first-child` reaches nothing.
  */
-[data-slot="article-body"] [role="tabpanel"] {
+[data-slot="article-body"] [role="tabpanel"]:not([hidden]) {
   padding-block-start: 0.5rem;
 }
 
@@ -1122,6 +1151,9 @@
  */
 [data-slot="article-body"] [data-article-panel="accordion"] {
   margin-block-start: 0;
+}
+
+[data-slot="article-body"] [data-article-panel="accordion"]:not([hidden]) {
   padding: 0 1rem 0.75rem;
 }
 

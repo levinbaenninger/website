@@ -133,7 +133,6 @@ export const ArticleAccordionItem = ({
           data-article-panel="accordion"
           hidden={open ? undefined : "until-found"}
           ref={panelRef}
-          style={{ display: "block" }}
         >
           {children}
         </ArticlePanel>
@@ -209,7 +208,6 @@ export const ArticleTab = ({
         data-article-panel="tab"
         hidden={context.selectedValue === value ? undefined : "until-found"}
         ref={panelRef}
-        style={{ display: "block" }}
       >
         {children}
       </ArticlePanel>

@@ -173,7 +173,6 @@ const ArticleCodeTabPanel = ({
         data-article-panel="code-tab"
         hidden={active ? undefined : "until-found"}
         ref={panelRef}
-        style={{ display: "block" }}
       >
         {children}
       </ArticlePanel>
