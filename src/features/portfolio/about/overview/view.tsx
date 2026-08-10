@@ -1,5 +1,6 @@
 import { CodeXmlIcon, LinkIcon, MailIcon, MapPinIcon } from "lucide-react";
 
+import { CopyButton } from "@/shared/ui/copy-button";
 import {
   Panel,
   PanelContent,
@@ -62,12 +63,18 @@ export const OverviewView = ({
           </OverviewItemLink>
         </OverviewItemContent>
       </OverviewItem>
-      <OverviewItem>
+      <OverviewItem className="group/overview-email">
         <OverviewItemIcon>
           <MailIcon />
         </OverviewItemIcon>
-        <OverviewItemContent>
+        <OverviewItemContent className="inline-flex items-center">
           <OverviewItemLink href={`mailto:${email}`}>{email}</OverviewItemLink>
+          <CopyButton
+            className="ml-1 size-7 shrink-0 border-none align-middle text-muted-foreground opacity-100 transition-opacity motion-reduce:transition-none sm:opacity-0 sm:group-focus-within/overview-email:opacity-100 sm:group-hover/overview-email:opacity-100 sm:focus-visible:opacity-100"
+            variant="ghost"
+            text={email}
+            aria-label="Copy email"
+          />
         </OverviewItemContent>
       </OverviewItem>
     </PanelContent>
