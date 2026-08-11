@@ -16,20 +16,26 @@ export const Header = () => (
       <div className="flex items-center gap-2">
         <HeaderNavigation />
 
-        <Separator orientation="vertical" className="hidden md:block" />
+        <Separator
+          orientation="vertical"
+          className="hidden md:block data-vertical:h-4 data-vertical:self-center"
+        />
 
-        <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-50 flex w-fit -translate-x-1/2 items-center rounded-xl bg-popover py-1 pr-1 pl-2.5 shadow-md ring-1 ring-border md:static md:translate-x-0 md:bg-transparent md:p-0 md:shadow-none md:ring-0">
+        <div className="fixed top-[calc(100svh-3.5rem-env(safe-area-inset-bottom,0px))] left-1/2 z-50 flex w-fit -translate-x-1/2 items-center rounded-xl bg-popover py-1 pr-1 pl-2.5 shadow-md ring-1 ring-border md:static md:translate-x-0 md:bg-transparent md:p-0 md:shadow-none md:ring-0">
           <CommandMenu />
           <Separator
             orientation="vertical"
-            className="mx-1.5 md:hidden data-vertical:h-6 data-vertical:self-center"
+            className="mx-1.5 md:hidden data-vertical:h-4 data-vertical:self-center"
           />
           <div className="flex md:hidden">
             <MobileNavigation />
           </div>
         </div>
 
-        <Separator orientation="vertical" className="hidden md:block" />
+        <Separator
+          orientation="vertical"
+          className="hidden md:block data-vertical:h-4 data-vertical:self-center"
+        />
 
         <ThemeToggle />
       </div>
