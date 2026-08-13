@@ -36,7 +36,7 @@ export const IntroductionDescription = ({
   return (
     <div
       ref={containerRef}
-      className="flex min-h-12.5 items-center overflow-hidden border-t border-line p-2 ps-4 font-mono text-xs text-muted-foreground sm:block sm:min-h-0 sm:text-sm"
+      className="flex min-h-12.5 items-center overflow-hidden border-t border-line p-2 ps-4 font-mono text-sm text-muted-foreground sm:block sm:min-h-0"
     >
       <AnimatePresence initial={false} mode="wait">
         <motion.p
