@@ -26,9 +26,9 @@ const FooterLink = ({ children, ...props }: React.ComponentProps<"a">) => (
 );
 
 export const Footer = () => (
-  <footer className="max-w-screen overflow-x-clip px-2">
+  <footer>
     <div className="mx-auto w-full border-x border-line md:w-3xl">
-      <div className="screen-line-top screen-line-bottom">
+      <div className="screen-line-bottom">
         <div className="stripe-divider h-12" />
       </div>
 

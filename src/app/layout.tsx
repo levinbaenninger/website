@@ -40,7 +40,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full overflow-x-clip antialiased`}
       suppressHydrationWarning
     >
-      <body className="flex min-h-full flex-col overflow-x-clip">
+      {/* The shell gutter lives here so the header, main and footer rails all
+          inset by the same amount. It drops at `md` because the rails are
+          `w-3xl` (48rem) at exactly the `md` breakpoint: a gutter would
+          overconstrain them in the 768-784px band and push the right border
+          out of the clipped viewport. */}
+      <body className="flex min-h-full flex-col overflow-x-clip px-2 md:px-0">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

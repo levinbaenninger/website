@@ -34,7 +34,7 @@ export const IntroductionView = ({
     </div>
 
     <div className="col-start-2 grid grid-rows-[1fr_auto] border-t border-line sm:flex sm:flex-col sm:justify-center sm:gap-2">
-      <h1 className="flex items-end ps-4 pb-2 text-[1.625rem]/8 font-bold tracking-tight sm:block sm:pt-2 sm:pb-0 sm:text-4xl">
+      <h1 className="flex items-end ps-4 pb-2 text-2xl font-bold tracking-tight sm:block sm:pt-2 sm:pb-0 sm:text-4xl">
         {name}
       </h1>
       <IntroductionDescription introductions={descriptions} />
