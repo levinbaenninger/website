@@ -21,7 +21,11 @@ export const Header = () => (
           className="hidden md:block data-vertical:h-4 data-vertical:self-center"
         />
 
-        <div className="fixed top-[calc(100svh-3.5rem-env(safe-area-inset-bottom,0px))] left-1/2 z-50 flex w-fit -translate-x-1/2 items-center rounded-xl bg-popover py-1 pr-1 pl-2.5 shadow-md ring-1 ring-border md:static md:translate-x-0 md:bg-transparent md:p-0 md:shadow-none md:ring-0">
+        {/* Anchored with `bottom`, not `top: 100svh - x`. `svh` is a static
+            length: it resolves once against the small viewport and never
+            tracks a mobile URL bar, so using it to mean "near the bottom"
+            bakes in an offset as soon as the viewport is not the small one. */}
+        <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-50 flex w-fit -translate-x-1/2 items-center rounded-xl bg-popover py-1 pr-1 pl-2.5 shadow-md ring-1 ring-border md:static md:translate-x-0 md:bg-transparent md:p-0 md:shadow-none md:ring-0">
           <CommandMenu />
           <Separator
             orientation="vertical"
