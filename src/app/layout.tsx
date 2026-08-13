@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { AppShell } from "@/app/_components/app-shell/app-shell";
@@ -18,6 +18,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 export const metadata: Metadata = createRootMetadata();
+
+/* `env(safe-area-inset-*)` resolves to 0 unless the viewport opts into the
+   display cutout area. The bottom-anchored mobile UI in `header.tsx` and
+   `scroll-to-top.tsx` already reads those insets, so without `cover` they
+   were reading zero and never cleared the home indicator. */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export default function RootLayout({
   children,
