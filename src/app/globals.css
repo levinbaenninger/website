@@ -128,32 +128,17 @@
 }
 
 @layer base {
+  /* Stays on `*` because `scrollbar-width` does not inherit: scoping it to the
+     root would leave every nested scroll container at the default width.
+     Deliberately no `::-webkit-scrollbar` counterpart — setting
+     `scrollbar-width` disables those pseudo-elements in Blink, and Gecko never
+     implemented them, so a webkit block renders in Safari alone and is the
+     reason the scrollbar used to look different there. */
   * {
     @apply border-border outline-ring/50;
     scrollbar-color: color-mix(in oklab, var(--foreground) 28%, transparent)
       transparent;
     scrollbar-width: thin;
-  }
-
-  *::-webkit-scrollbar {
-    width: 0.75rem;
-    height: 0.75rem;
-  }
-
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  *::-webkit-scrollbar-thumb {
-    background: color-mix(in oklab, var(--foreground) 28%, transparent);
-    background-clip: content-box;
-    border: 0.25rem solid transparent;
-    border-radius: 9999px;
-  }
-
-  *::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in oklab, var(--foreground) 52%, transparent);
-    background-clip: content-box;
   }
 
   body {
