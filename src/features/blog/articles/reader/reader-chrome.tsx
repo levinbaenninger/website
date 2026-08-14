@@ -20,8 +20,13 @@ import type {
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/ui/cn";
+import { Kbd } from "@/shared/ui/kbd";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 
-import { ARTICLE_TITLE_SLOT } from "./reader-contract";
+import {
+  ARTICLE_NEIGHBOUR_ATTRIBUTE,
+  ARTICLE_TITLE_SLOT,
+} from "./reader-contract";
 import { ArticleShareMenu } from "./share-menu";
 import { StickyArticleTitle } from "./sticky-title";
 
@@ -83,35 +88,57 @@ const BackToBlog = () => (
   </Button>
 );
 
-/** Icon-only Previous/Next, on the same always-visible prefetch policy. */
+/**
+ * Icon-only Previous/Next, on the same always-visible prefetch policy.
+ *
+ * Marked with their direction because these two anchors are also what the `h`
+ * and `l` keys activate: the island that listens for them renders nothing of
+ * its own and clicks the control a visitor could have clicked. The tooltip is
+ * where that key is announced — the same sentence-then-`Kbd` shape the theme
+ * toggle uses — so the shortcut is discoverable from the control it performs.
+ *
+ * The tooltip repeats the accessible name rather than adding to it: the label
+ * is what a screen reader announces, and a key a pointer user hovers to find
+ * is not part of what the control does.
+ */
 const ToolbarNeighbourLink = ({
   direction,
   neighbour,
 }: {
   readonly direction: "previous" | "next";
   readonly neighbour: ArticleNeighbourLink;
-}) => (
-  <Button
-    asChild
-    className="size-7 border-none"
-    size="icon-sm"
-    variant="secondary"
-  >
-    <Link
-      aria-label={
-        direction === "previous" ? "Previous Article" : "Next Article"
-      }
-      href={neighbour.href}
-      prefetch={false}
-    >
-      {direction === "previous" ? (
-        <ArrowLeftIcon aria-hidden />
-      ) : (
-        <ArrowRightIcon aria-hidden />
-      )}
-    </Link>
-  </Button>
-);
+}) => {
+  const label = direction === "previous" ? "Previous Article" : "Next Article";
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          asChild
+          className="size-7 border-none"
+          size="icon-sm"
+          variant="secondary"
+        >
+          <Link
+            aria-label={label}
+            href={neighbour.href}
+            prefetch={false}
+            {...{ [ARTICLE_NEIGHBOUR_ATTRIBUTE]: direction }}
+          >
+            {direction === "previous" ? (
+              <ArrowLeftIcon aria-hidden />
+            ) : (
+              <ArrowRightIcon aria-hidden />
+            )}
+          </Link>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {label} <Kbd>{direction === "previous" ? "H" : "L"}</Kbd>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 /**
  * The toolbar's action cluster: Share, then the neighbour links.

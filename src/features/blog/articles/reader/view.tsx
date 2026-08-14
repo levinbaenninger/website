@@ -1,6 +1,7 @@
 import type { ArticleDetail } from "@/features/blog/articles/types";
 import { ArticleBody } from "@/features/blog/rendering/body";
 
+import { ArticleNeighbourHotkeys } from "./neighbour-hotkeys";
 import { ArticleOutlineCard, ArticleOutlineMinimap } from "./outline";
 import {
   ArticleHeader,
@@ -29,14 +30,15 @@ interface ArticleViewProps {
  * Everything a visitor needs in order to read the Article and leave it is
  * server-rendered: the header, the compiled body, the Blog link, both
  * neighbour links, the end pager, and the outline's own heading links.
- * Hydration adds what the server cannot know — a scroll position, and which
- * heading it puts the visitor in.
+ * Hydration adds what the server cannot know — a scroll position, which heading
+ * it puts the visitor in, and a keyboard.
  *
  * Neighbour links are ordinary route links, which is also what starts the
  * destination Article at the top: from anywhere past the fold the destination's
  * first element is outside the viewport, so Next.js scrolls to it, while
  * browser Back and Forward keep their own restored positions. Nothing here
- * stores navigation history of its own.
+ * stores navigation history of its own. The `h` and `l` keys are a shortcut to
+ * those same two destinations and land on them the same way.
  */
 export const ArticleView = ({
   article,
@@ -60,6 +62,8 @@ export const ArticleView = ({
         navigation={navigation}
         title={article.title}
       />
+
+      <ArticleNeighbourHotkeys />
 
       <ReaderRail>
         <ArticleHeader article={article} />

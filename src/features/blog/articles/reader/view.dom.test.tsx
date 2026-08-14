@@ -1,12 +1,14 @@
 import { act, cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, test } from "vite-plus/test";
+import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
 import type {
   ArticleDetail,
   ArticleOutlineHeading,
   ArticleReaderNavigation,
 } from "@/features/blog/articles/types";
+import { TooltipProvider } from "@/shared/ui/tooltip";
 
 import { ArticleView } from "./view";
 
@@ -83,7 +85,9 @@ const renderServer = (
   const container = document.createElement("div");
 
   container.innerHTML = renderToStaticMarkup(
-    <ArticleView article={detail} canonicalUrl={canonicalUrl} />
+    <TooltipProvider>
+      <ArticleView article={detail} canonicalUrl={canonicalUrl} />
+    </TooltipProvider>
   );
   document.body.append(container);
 
@@ -151,6 +155,22 @@ const stubIntersectionObserver = () => {
   };
 };
 
+/**
+ * A neighbour control, stopped short of navigating: an activated `Link` would
+ * take the test document with it.
+ */
+const interceptActivation = (name: string) => {
+  const activated = vi.fn();
+
+  screen.getByRole("link", { name }).addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    activated();
+  });
+
+  return activated;
+};
+
 afterEach(() => {
   cleanup();
   document.body.replaceChildren();
@@ -158,7 +178,11 @@ afterEach(() => {
 
 describe("Article header", () => {
   test("leaves the page main to the app shell", () => {
-    render(<ArticleView article={article()} />);
+    render(
+      <TooltipProvider>
+        <ArticleView article={article()} />
+      </TooltipProvider>
+    );
 
     expect(screen.queryByRole("main")).toBeNull();
     expect(screen.getByRole("article")).toBeTruthy();
@@ -168,7 +192,11 @@ describe("Article header", () => {
     const longTitle =
       "Understanding cache components, and every reason a rendered page might disagree with the data behind it";
 
-    render(<ArticleView article={article({ title: longTitle })} />);
+    render(
+      <TooltipProvider>
+        <ArticleView article={article({ title: longTitle })} />
+      </TooltipProvider>
+    );
 
     const headings = screen.getAllByRole("heading", { level: 1 });
 
@@ -300,6 +328,120 @@ describe("Article reader navigation", () => {
     ).toBeNull();
     expect(queries.getAllByRole("link")).toHaveLength(1);
   });
+
+  test("activates either neighbour control with the Vim keys", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <TooltipProvider>
+        <ArticleView article={article({ navigation: neighbours })} />
+      </TooltipProvider>
+    );
+
+    const previous = interceptActivation("Previous Article");
+    const next = interceptActivation("Next Article");
+
+    await user.keyboard("h");
+
+    expect(previous).toHaveBeenCalledTimes(1);
+    expect(next).not.toHaveBeenCalled();
+
+    await user.keyboard("l");
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(previous).toHaveBeenCalledTimes(1);
+  });
+
+  test("holds the Vim keys at a collection boundary", async () => {
+    const user = userEvent.setup();
+    const activated = vi.fn();
+    const intercept = () => {
+      activated();
+    };
+
+    render(
+      <TooltipProvider>
+        <ArticleView article={article()} />
+      </TooltipProvider>
+    );
+    document.addEventListener("click", intercept, true);
+
+    try {
+      await user.keyboard("hl");
+
+      expect(activated).not.toHaveBeenCalled();
+    } finally {
+      document.removeEventListener("click", intercept, true);
+    }
+  });
+
+  test("leaves the Vim keys to a menu layered over the Article", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <TooltipProvider>
+        <ArticleView article={article({ navigation: neighbours })} />
+      </TooltipProvider>
+    );
+
+    const previous = interceptActivation("Previous Article");
+    const next = interceptActivation("Next Article");
+
+    // The Share menu, reduced to what makes it a layer: a portalled role that
+    // is not a field, so the library's own input guard does not cover it.
+    const menu = document.createElement("div");
+    menu.setAttribute("role", "menu");
+    document.body.append(menu);
+
+    await user.keyboard("hl");
+
+    expect(previous).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+
+    menu.remove();
+
+    await user.keyboard("l");
+
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  test("names the key on the control it belongs to", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <TooltipProvider>
+        <ArticleView article={article({ navigation: neighbours })} />
+      </TooltipProvider>
+    );
+
+    await user.hover(screen.getByRole("link", { name: "Previous Article" }));
+
+    const tip = await screen.findByRole("tooltip");
+
+    expect(tip.textContent).toBe("Previous Article H");
+  });
+
+  test("leaves the Vim keys to a field that is being typed in", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <TooltipProvider>
+        <input aria-label="Search Articles" />
+        <ArticleView article={article({ navigation: neighbours })} />
+      </TooltipProvider>
+    );
+
+    const previous = interceptActivation("Previous Article");
+    const next = interceptActivation("Next Article");
+    const field = screen.getByRole("textbox", { name: "Search Articles" });
+
+    await user.click(field);
+    await user.keyboard("hl");
+
+    expect(field).toHaveProperty("value", "hl");
+    expect(previous).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
 });
 
 describe("Article sharing", () => {
@@ -344,7 +486,11 @@ describe("sticky Article title", () => {
     const observer = stubIntersectionObserver();
 
     try {
-      render(<ArticleView article={article({ title: "Sticky title" })} />);
+      render(
+        <TooltipProvider>
+          <ArticleView article={article({ title: "Sticky title" })} />
+        </TooltipProvider>
+      );
 
       const copy = screen
         .getAllByText("Sticky title")
@@ -370,7 +516,11 @@ describe("sticky Article title", () => {
     const observer = stubIntersectionObserver();
 
     try {
-      render(<ArticleView article={article({ title: "Sticky title" })} />);
+      render(
+        <TooltipProvider>
+          <ArticleView article={article({ title: "Sticky title" })} />
+        </TooltipProvider>
+      );
 
       expect(
         screen.getAllByRole("heading", { name: "Sticky title" })
@@ -393,7 +543,11 @@ describe("sticky Article title", () => {
     const observer = stubIntersectionObserver();
 
     try {
-      render(<ArticleView article={article({ title: "Sticky title" })} />);
+      render(
+        <TooltipProvider>
+          <ArticleView article={article({ title: "Sticky title" })} />
+        </TooltipProvider>
+      );
 
       const copy = screen
         .getAllByText("Sticky title")
