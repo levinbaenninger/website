@@ -100,6 +100,7 @@ const AzureDevOpsIcon = () => (
     width="360.0"
     height="360.0"
     viewBox="0 0 18 18"
+    aria-hidden
   >
     <defs>
       <linearGradient
@@ -117,7 +118,6 @@ const AzureDevOpsIcon = () => (
         <stop offset="1" stopColor="#5ea0ef" />
       </linearGradient>
     </defs>
-    <title>Icon-devops-261</title>
     <path
       id="a91f0ca4-8fb7-4019-9c09-0a52e2c05754"
       d="M17,4v9.74l-4,3.28-6.2-2.26V17L3.29,12.41l10.23.8V4.44Zm-3.41.49L7.85,1V3.29L2.58,4.84,1,6.87v4.61l2.26,1V6.57Z"
