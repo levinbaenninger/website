@@ -101,6 +101,11 @@ export const STACK_CATALOG = [
     items: [
       { href: "https://git-scm.com", icon: "git", title: "Git" },
       { href: "https://github.com", icon: "github", title: "GitHub" },
+      {
+        href: "https://dev.azure.com",
+        icon: "azureDevops",
+        title: "Azure DevOps",
+      },
       { href: "https://vite.dev", icon: "vite", title: "Vite" },
       { href: "https://turborepo.dev", icon: "turborepo", title: "Turborepo" },
       { href: "https://nx.dev", icon: "nx", title: "Nx" },
