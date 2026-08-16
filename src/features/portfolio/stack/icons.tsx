@@ -1,5 +1,6 @@
 import {
   Angular,
+  Bun,
   ClaudeAI,
   Cloudflare,
   CodexDark,
@@ -23,11 +24,12 @@ import {
   Nodejs,
   NxDark,
   NxLight,
+  Paper,
   Playwright,
   PostgreSQL,
   ReactDark,
   ReactLight,
-  RxJS,
+  Redis,
   ShadcnUiDark,
   ShadcnUiLight,
   TailwindCSS,
@@ -111,6 +113,7 @@ export const STACK_ICONS = {
   alchemy: <AlchemyIcon />,
   angular: <Angular aria-hidden />,
   azure: <MicrosoftAzure aria-hidden />,
+  bun: <Bun aria-hidden />,
   claude: <ClaudeAI aria-hidden />,
   cloudflare: <Cloudflare aria-hidden />,
   codex: themedIcon(
@@ -146,13 +149,14 @@ export const STACK_ICONS = {
     <NxLight className="dark:hidden" aria-hidden />,
     <NxDark className="hidden dark:block" aria-hidden />
   ),
+  paper: <Paper aria-hidden />,
   playwright: <Playwright aria-hidden />,
   postgresql: <PostgreSQL aria-hidden />,
   react: themedIcon(
     <ReactLight className="dark:hidden" aria-hidden />,
     <ReactDark className="hidden dark:block" aria-hidden />
   ),
-  rxjs: <RxJS aria-hidden />,
+  redis: <Redis aria-hidden />,
   shadcn: themedIcon(
     <ShadcnUiLight className="dark:hidden" aria-hidden />,
     <ShadcnUiDark className="hidden dark:block" aria-hidden />

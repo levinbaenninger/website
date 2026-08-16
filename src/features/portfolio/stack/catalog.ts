@@ -29,11 +29,10 @@ export const STACK_CATALOG = [
     category: "Frontend",
     items: [
       { href: "https://react.dev", icon: "react", title: "React" },
-      { href: "https://angular.dev", icon: "angular", title: "Angular" },
       { href: "https://nextjs.org", icon: "nextjs", title: "Next.js" },
       { href: "https://tanstack.com", icon: "tanstack", title: "TanStack" },
+      { href: "https://angular.dev", icon: "angular", title: "Angular" },
       { href: "https://ngrx.io", icon: "ngrx", title: "NgRx" },
-      { href: "https://rxjs.dev", icon: "rxjs", title: "RxJS" },
       {
         href: "https://tailwindcss.com",
         icon: "tailwind",
@@ -46,9 +45,10 @@ export const STACK_CATALOG = [
     category: "Backend",
     items: [
       { href: "https://nodejs.org", icon: "nodejs", title: "Node.js" },
+      { href: "https://bun.sh", icon: "bun", title: "Bun" },
       { href: "https://effect.website", icon: "effect", title: "Effect" },
-      { href: "https://dotnet.microsoft.com", icon: "dotnet", title: ".NET" },
       { href: "https://trpc.io", icon: "trpc", title: "tRPC" },
+      { href: "https://dotnet.microsoft.com", icon: "dotnet", title: ".NET" },
     ],
   },
   {
@@ -60,6 +60,11 @@ export const STACK_CATALOG = [
         title: "PostgreSQL",
       },
       {
+        href: "https://www.redis.io",
+        icon: "redis",
+        title: "Redis",
+      },
+      {
         href: "https://orm.drizzle.team",
         icon: "drizzle",
         title: "Drizzle ORM",
@@ -67,15 +72,16 @@ export const STACK_CATALOG = [
     ],
   },
   {
-    category: "Workflow",
+    category: "Infrastructure",
     items: [
-      { href: "https://git-scm.com", icon: "git", title: "Git" },
-      { href: "https://github.com", icon: "github", title: "GitHub" },
-      { href: "https://nx.dev", icon: "nx", title: "Nx" },
-      { href: "https://turborepo.dev", icon: "turborepo", title: "Turborepo" },
+      { href: "https://azure.microsoft.com", icon: "azure", title: "Azure" },
+      {
+        href: "https://www.cloudflare.com",
+        icon: "cloudflare",
+        title: "Cloudflare",
+      },
+      { href: "https://vercel.com", icon: "vercel", title: "Vercel" },
       { href: "https://www.docker.com", icon: "docker", title: "Docker" },
-      { href: "https://alchemy.run", icon: "alchemy", title: "Alchemy" },
-      { href: "https://vite.dev", icon: "vite", title: "Vite" },
     ],
   },
   {
@@ -91,15 +97,14 @@ export const STACK_CATALOG = [
     ],
   },
   {
-    category: "Cloud",
+    category: "Workflow",
     items: [
-      { href: "https://vercel.com", icon: "vercel", title: "Vercel" },
-      { href: "https://azure.microsoft.com", icon: "azure", title: "Azure" },
-      {
-        href: "https://www.cloudflare.com",
-        icon: "cloudflare",
-        title: "Cloudflare",
-      },
+      { href: "https://git-scm.com", icon: "git", title: "Git" },
+      { href: "https://github.com", icon: "github", title: "GitHub" },
+      { href: "https://vite.dev", icon: "vite", title: "Vite" },
+      { href: "https://turborepo.dev", icon: "turborepo", title: "Turborepo" },
+      { href: "https://nx.dev", icon: "nx", title: "Nx" },
+      { href: "https://alchemy.run", icon: "alchemy", title: "Alchemy" },
     ],
   },
   {
@@ -112,7 +117,10 @@ export const STACK_CATALOG = [
   },
   {
     category: "Design",
-    items: [{ href: "https://www.figma.com", icon: "figma", title: "Figma" }],
+    items: [
+      { href: "https://www.figma.com", icon: "figma", title: "Figma" },
+      { href: "https://paper.design", icon: "paper", title: "Paper" },
+    ],
   },
 ] as const satisfies readonly StackCatalogCategory[];
 
