@@ -10,8 +10,8 @@ export const ABOUT_CONTENT = {
     },
     descriptions: [
       "Building useful things for the web.",
-      "Writing down what I learn.",
-      "Collecting ideas worth keeping.",
+      "Keeping track of my learnings.",
+      "Exploring new technologies and ideas.",
     ],
   },
   biography: {

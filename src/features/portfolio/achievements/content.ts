@@ -13,42 +13,34 @@ export interface Achievement {
 
 export const ACHIEVEMENTS: readonly Achievement[] = [
   {
-    id: "example-competition",
-    date: "2026",
-    description: `- Recognized for building a thoughtful solution to a challenging technical problem.
-- Collaborated with a small team to take the idea from concept to working prototype.`,
-    issuer: "Example competition organizer",
-    resource: {
-      href: "https://example.com",
-      label: "View competition result",
-    },
-    tags: ["Problem solving", "Prototyping", "Teamwork"],
-    title: "First place at an example software competition",
-  },
-  {
-    id: "example-certification",
+    id: "swissskills-2025",
     date: "2025",
-    description: `- Demonstrated practical knowledge across the certification’s core subject areas.
-- Applied the material through hands-on exercises and a final assessment.`,
-    issuer: "Example certification provider",
+    description: `Qualified as one of 25 competitors for the national Web Technologies championship at SwissSkills 2025 in Bern.
+
+* Developed a Wordle-style game with custom word lengths, attempt limits, and imported word sets.
+* Transformed raw wind-turbine logs into structured data served through an authenticated API.
+* Completed both full-stack challenges under strict competition conditions.`,
+    issuer: "SwissSkills",
     resource: {
-      href: "https://example.com",
-      label: "View certification",
+      href: "https://swiss-skills2025.ch/de/mitglied/ssk/39503/16891/levin-banninger?events=16891",
+      label: "View SwissSkills profile",
     },
-    tags: ["Technical certification", "Practical assessment"],
-    title: "Example professional certification",
+    tags: ["Competition", "Web Technologies", "Full-Stack"],
+    title: "SwissSkills 2025 – National Web Technologies Competitor",
   },
   {
-    id: "example-community-award",
-    date: "2024",
-    description: `- Acknowledged for consistently contributing time, ideas, and technical support.
-- Helped make shared tools and learning resources more useful for the wider community.`,
-    issuer: "Example community organization",
+    id: "regional-ict-championships-2025",
+    date: "2025",
+    description: `Won 1st place in Eastern Switzerland and ranked 4th nationally, securing qualification for SwissSkills 2025.
+
+* Built an interactive 3D spaceflight simulator that allowed users to select missions, control a spacecraft, and adjust its trajectory in real time.
+* Delivered the full-stack solution under competition time constraints using HTML, CSS, JavaScript, and Express.js.`,
+    issuer: "ICT-Berufsbildung Schweiz",
     resource: {
-      href: "https://example.com",
-      label: "View award",
+      href: "https://www.ict-berufsbildung.ch/resources/RM_Year2025_Ranking-ALL_ICT-BBCH5.pdf#page=5",
+      label: "View official ranking",
     },
-    tags: ["Community", "Mentoring", "Open source"],
-    title: "Example community contribution award",
+    tags: ["Competition", "Web Technologies", "Full-Stack", "3D Simulation"],
+    title: "Regional ICT Championships 2025 – 1st Regionally, 4th Nationally",
   },
 ];

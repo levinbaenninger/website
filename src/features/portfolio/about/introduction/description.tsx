@@ -40,6 +40,7 @@ export const IntroductionDescription = ({
     >
       <AnimatePresence initial={false} mode="wait">
         <motion.p
+          className="shimmer shimmer-once not-dark:shimmer-color-foreground"
           key={currentIndex}
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}

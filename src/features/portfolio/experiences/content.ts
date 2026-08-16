@@ -18,7 +18,7 @@ export const EXPERIENCES = [
 - Developed our internal component library used across products – consistent UI, reusable components, faster shipping.`,
         employmentType: "Full-time",
         endDate: null as string | null,
-        skills: ["Angular", "TypeScript", "Azure", "DevOps"],
+        skills: ["Angular", "TypeScript", ".NET", "AI", "Azure", "DevOps"],
         startDate: "08.2023",
         title: "Software Engineer Apprentice",
       },
