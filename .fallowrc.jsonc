@@ -52,7 +52,6 @@
           "src/app/**",
           "src/mdx-components.tsx",
           "src/mdx.d.ts",
-          "tests/setup/**",
           "e2e/**",
           "next.config.ts",
           "playwright.config.ts",
