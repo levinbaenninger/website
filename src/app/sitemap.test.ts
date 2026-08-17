@@ -7,7 +7,7 @@ const { listPublishedArticleDiscoveryEntries } = vi.hoisted(() => ({
     vi.fn<() => Promise<readonly ArticleDiscoveryEntry[]>>(),
 }));
 
-vi.mock(import("@/app/_blog/articles/server"), () => ({
+vi.mock(import("@/app/blog/_articles/server"), () => ({
   listPublishedArticleDiscoveryEntries,
 }));
 

@@ -4,7 +4,7 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   ArticleStructuredData,
   serializeJsonLd,
-} from "@/app/_blog/articles/structured-data";
+} from "@/app/blog/_articles/structured-data";
 import type { ArticleDetail } from "@/features/blog/articles/types";
 
 const Content = () => null;

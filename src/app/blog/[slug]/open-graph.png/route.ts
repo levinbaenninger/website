@@ -1,7 +1,7 @@
 import {
   generateArticleSocialImageStaticParams,
   renderArticleSocialImage,
-} from "@/app/_blog/articles/social-image-server";
+} from "@/app/blog/_articles/social-image-server";
 
 interface ArticleSocialImageRouteContext {
   readonly params: Promise<{ readonly slug: string }>;

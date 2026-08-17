@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import {
   findArticleSocialImageInput,
   listArticleSocialImageRouteParams,
-} from "@/app/_blog/articles/server";
+} from "@/app/blog/_articles/server";
 import { renderSocialImage } from "@/shared/social-image";
 
 import { createArticleSocialImageAdapter } from "./social-image";

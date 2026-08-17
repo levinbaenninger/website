@@ -1,9 +1,9 @@
-import { listPublishedArticleDiscoveryEntries } from "@/app/_blog/articles/server";
 import {
   AUTHOR_IDENTITY,
   SITE_IDENTITY,
   toCanonicalUrl,
 } from "@/app/_config/site-identity";
+import { listPublishedArticleDiscoveryEntries } from "@/app/blog/_articles/server";
 import { serializeRss } from "@/features/blog/discovery/rss";
 import { createBlogIdentity } from "@/features/blog/identity";
 

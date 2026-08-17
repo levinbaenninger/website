@@ -1,4 +1,4 @@
-import { listArticleSearchDocuments } from "@/app/_blog/articles/server";
+import { listArticleSearchDocuments } from "@/app/blog/_articles/server";
 import { serializeArticleSearchArtifact } from "@/features/blog/search/contract";
 
 export const dynamic = "force-static";

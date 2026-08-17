@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { twitterIdentity } from "@/app/_blog/shared/metadata";
 import { SITE_IDENTITY, toCanonicalUrl } from "@/app/_config/site-identity";
+import { twitterIdentity } from "@/app/blog/_shared/metadata";
 import { createBlogCatalogMetadata } from "@/features/blog/catalog/metadata";
 
 export const createBlogMetadata = (): Metadata => {

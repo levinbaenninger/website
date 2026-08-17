@@ -1,4 +1,4 @@
-import { ARTICLE_DELIVERY_IDENTITY } from "@/app/_blog/articles/metadata";
+import { ARTICLE_DELIVERY_IDENTITY } from "@/app/blog/_articles/metadata";
 import { createArticleStructuredData } from "@/features/blog/articles/delivery-metadata";
 import type { ArticleDetail } from "@/features/blog/articles/types";
 

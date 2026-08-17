@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
-import { listPublishedArticleDiscoveryEntries } from "@/app/_blog/articles/server";
 import { toCanonicalUrl } from "@/app/_config/site-identity";
+import { listPublishedArticleDiscoveryEntries } from "@/app/blog/_articles/server";
 import { createBlogSitemapEntries } from "@/features/blog/discovery/sitemap";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

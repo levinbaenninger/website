@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vite-plus/test";
 
-import { createArticleSocialImageAdapter } from "@/app/_blog/articles/social-image";
+import { createArticleSocialImageAdapter } from "@/app/blog/_articles/social-image";
 import type { ArticleSocialImage } from "@/features/blog/articles/types";
 
 const INPUT = {

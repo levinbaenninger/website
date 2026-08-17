@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { createArticleMetadata } from "@/app/_blog/articles/metadata";
+import { toCanonicalUrl } from "@/app/_config/site-identity";
+import { requireCurrentArticle } from "@/app/blog/[slug]/article-navigation";
+import { createArticleMetadata } from "@/app/blog/_articles/metadata";
 import {
   generateArticleStaticParams,
   resolveArticleDelivery,
-} from "@/app/_blog/articles/server";
-import { ArticleStructuredData } from "@/app/_blog/articles/structured-data";
-import { toCanonicalUrl } from "@/app/_config/site-identity";
-import { requireCurrentArticle } from "@/app/blog/[slug]/article-navigation";
+} from "@/app/blog/_articles/server";
+import { ArticleStructuredData } from "@/app/blog/_articles/structured-data";
 import { ArticleView } from "@/features/blog/articles/reader/view";
 
 interface ArticlePageProps {

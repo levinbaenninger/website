@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import { createBlogMetadata } from "@/app/_blog/catalog/metadata";
+import { createBlogMetadata } from "@/app/blog/_catalog/metadata";
 
 describe("Blog catalog metadata adapter", () => {
   test("maps the production site identity into exact Blog metadata", () => {
