@@ -7,7 +7,7 @@ import react from "ultracite/oxlint/react";
 import { defineConfig } from "vite-plus";
 
 const blogTool = (subcommand: string): string =>
-  `node --experimental-strip-types src/features/blog/tooling/cli.ts ${subcommand}`;
+  `node src/features/blog/tooling/cli.ts ${subcommand}`;
 
 export default defineConfig({
   resolve: {
@@ -123,6 +123,7 @@ export default defineConfig({
     ],
     rules: {
       "import/no-relative-parent-imports": "error",
+      "react/function-component-definition": "off",
       "typescript/no-require-imports": "error",
       "vite-plus/prefer-vite-plus-imports": "error",
       "no-negated-condition": "off",

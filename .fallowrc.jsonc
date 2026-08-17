@@ -19,6 +19,7 @@
     "react-dom",
     "shadcn",
     "tailwindcss",
+    "typescript",
   ],
   "ignoreDependencyOverrides": [
     {
