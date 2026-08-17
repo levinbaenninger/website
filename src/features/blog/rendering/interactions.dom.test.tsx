@@ -86,11 +86,8 @@ describe("Article interactions", () => {
     );
 
     /*
-     * Radix's `Accordion.Header` renders an `h3` of its own unless it is told
-     * otherwise, which would put a component label into the Article outline.
-     * The authored heading inside the closed panel is the only heading here —
-     * and it stays in the tree while the panel is closed, which is what keeps
-     * the outline stable across panel state.
+     * Accordion.Header would emit h3 into the outline. The authored heading
+     * inside the closed panel stays in the tree so the outline is stable.
      */
     const headings = container.querySelectorAll("h1, h2, h3, h4, h5, h6");
     expect(headings).toHaveLength(1);
@@ -98,7 +95,6 @@ describe("Article interactions", () => {
 
     const trigger = screen.getByRole("button", { name: "Only" });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    // The disclosure mark carries no name of its own.
     expect(trigger.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
       "true"
     );
@@ -125,7 +121,6 @@ describe("Article interactions", () => {
 
     expect(nested.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByText("page.tsx")).toBeTruthy();
-    // A File row is static: it is neither a control nor a stop on the way to one.
     expect(screen.getAllByRole("button")).toHaveLength(2);
   });
 

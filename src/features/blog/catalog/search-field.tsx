@@ -11,15 +11,9 @@ import {
 } from "@/shared/ui/input-group";
 
 /**
- * The Article search field.
- *
- * It is never autofocused and carries no `/` shortcut: the Blog is a page a
- * visitor arrives at to read, not a search tool, and stealing focus on load
- * moves the viewport away from the first Articles.
- *
- * Escape and the Clear control do exactly one thing — remove the query — and
- * both leave the visitor in the field. Escape on an already-empty query is
- * inert so it can still reach whatever else is listening for it.
+ * Never autofocused and no `/` shortcut: stealing focus on load moves the
+ * viewport off the first Articles. Escape on an empty query is inert so it
+ * can still reach other listeners.
  */
 export const SearchField = ({
   enabled,

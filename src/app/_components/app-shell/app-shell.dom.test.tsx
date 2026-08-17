@@ -9,26 +9,15 @@ import { TooltipProvider } from "@/shared/ui/tooltip";
 vi.mock(import("next/navigation"), async (importOriginal) => ({
   ...(await importOriginal()),
   usePathname: () => "/blog",
+  // Navigation is outside this shell-rendering seam.
   useRouter: () => ({
-    back: () => {
-      // Navigation is outside this shell-rendering seam.
-    },
+    back: () => {},
     bfcacheId: "test",
-    forward: () => {
-      // Navigation is outside this shell-rendering seam.
-    },
-    prefetch: () => {
-      // Navigation is outside this shell-rendering seam.
-    },
-    push: () => {
-      // Navigation is outside this shell-rendering seam.
-    },
-    refresh: () => {
-      // Navigation is outside this shell-rendering seam.
-    },
-    replace: () => {
-      // Navigation is outside this shell-rendering seam.
-    },
+    forward: () => {},
+    prefetch: () => {},
+    push: () => {},
+    refresh: () => {},
+    replace: () => {},
   }),
 }));
 

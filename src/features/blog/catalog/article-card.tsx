@@ -9,14 +9,9 @@ import type {
 import { ArticleCover, CoverDraftBadge, PublicationState } from "./chrome";
 import { HighlightedText } from "./highlighted-text";
 
-/**
- * Why this card is in the results, in the card's own words.
- *
- * A description that did not match is left unmarked prose — marking it would
- * claim a match the query never made. The two cropped sources say what they
- * are for a screen reader, because "…enforces: a validation step…" out of
- * context is not obviously an excerpt from the Article body.
- */
+// Unmatched descriptions stay unmarked — a mark would claim a match the query
+// never made. Heading and body prefixes exist because a cropped excerpt is
+// otherwise unidentifiable to a screen reader.
 const SNIPPET_PREFIX: Readonly<Record<ArticleSearchSnippet["source"], string>> =
   {
     body: "Matching excerpt:",
@@ -48,20 +43,10 @@ const CardProse = ({
 };
 
 /**
- * One catalog card: Cover, the complete title, a fixed two-line description
- * slot, and the publication state.
- *
- * The card carries exactly one control — the Article link, stretched across
- * the whole card by an overlay so that a click anywhere lands on it. Keyboard
- * focus therefore stops once per card; the ring is drawn on the card instead
- * of around the title so the focused target matches the clickable one.
- *
- * Tags and updated dates are deliberately absent: Tags are a filter in the
- * strip above, not card decoration. A Tag-only match is explained there too.
- *
- * `title` and `snippet` are what an active query adds, and they are the only
- * things it adds: the same Cover, the same two-line prose slot and the same
- * pinned meta row, so a card never changes shape mid-keystroke.
+ * One control per card (the overlay link); the focus ring is on the card so it
+ * matches the clickable target. Tags stay off the card: they are a filter, and
+ * Tag-only matches are explained in the strip. Query highlighting never changes
+ * the card's shape.
  */
 export const ArticleCard = ({
   article,
@@ -81,13 +66,12 @@ export const ArticleCard = ({
     </div>
 
     <div className="flex flex-1 flex-col gap-1 p-2">
-      {/* The title is never clamped: it is the catalog's primary information.
-          The meta row below is pinned to the bottom instead, so publication
-          dates stay in line across a row however long the titles run. */}
+      {/* Title is never clamped; the meta row is pinned so dates stay in line
+          across a row however long the titles run. */}
       <h2 className="text-lg leading-snug font-medium text-balance">
-        {/* Named explicitly while highlighting: a `<mark>` that lands inside a
-            word splits the link's accessible name across elements, and the
-            link must stay named by the complete title however a query fell. */}
+        {/* Named explicitly while highlighting: a `<mark>` inside a word splits
+            the link's accessible name, and the link must stay named by the
+            complete title. */}
         <Link
           aria-label={title === null ? undefined : article.title}
           className="focus-visible:outline-none"

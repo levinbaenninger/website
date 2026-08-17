@@ -90,7 +90,6 @@ const article = (
   updatedAt: null,
 });
 
-/** The three headings the default outline describes, as plain prose. */
 const FlatBody = () => (
   <>
     <h2 id="intro">Introduction</h2>
@@ -101,7 +100,6 @@ const FlatBody = () => (
   </>
 );
 
-/** The last heading lives inside a closed Accordion. */
 const PanelledBody = () => (
   <>
     <h2 id="intro">Introduction</h2>
@@ -143,7 +141,7 @@ const minimapTrigger = () => {
   return within(minimap).getByRole("button", { name: "On this page" });
 };
 
-/** Opens the mobile card, which is the surface that needs no portal. */
+// Mobile card: no portal.
 const openCard = async (user: ReturnType<typeof userEvent.setup>) => {
   const card = outlineCard();
 
@@ -152,7 +150,6 @@ const openCard = async (user: ReturnType<typeof userEvent.setup>) => {
   return within(card);
 };
 
-/** Puts a heading at a chosen distance from the top of the viewport. */
 const placeHeading = (id: string, top: number) => {
   // eslint-disable-next-line unicorn/prefer-query-selector
   const heading = document.getElementById(id);
@@ -166,15 +163,7 @@ const placeHeading = (id: string, top: number) => {
   } as DOMRect);
 };
 
-/**
- * Lets every scheduled frame and microtask from the previous step run out.
- *
- * Turns of the macrotask queue rather than a fixed wait: the reveal path is a
- * nested pair of frames, `requestAnimationFrame` is stubbed onto zero-delay
- * timers below, and a zero-delay timer queued here is always served after the
- * ones already waiting. A wall-clock sleep only looks equivalent on a machine
- * with a spare core.
- */
+// Drain the macrotask queue rather than a wall-clock sleep: rAF is stubbed onto zero-delay timers, and a timer queued here is always served after the ones already waiting.
 const nextTurn = async () =>
   await new Promise((resolve) => {
     window.setTimeout(resolve, 0);
@@ -532,8 +521,7 @@ describe("Article fragment navigation", () => {
       expect(panel()?.hidden).toBe(false);
     });
 
-    // Back to the Article top, then Forward into the panel again: a restored
-    // fragment gets the same reveal as a fresh one.
+    // Restored fragment should get the same reveal as a fresh one.
     scrollIntoViewMock.mockClear();
     await act(async () => {
       window.history.replaceState(null, "", "/blog/representative-article");

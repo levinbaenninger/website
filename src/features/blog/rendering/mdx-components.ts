@@ -70,11 +70,8 @@ const articleMdxComponents: MDXComponents = Object.freeze({
   thead: ArticleTableHead,
   tr: ArticleTableRow,
   /*
-   * Twoslash's own hover markup, lifted by `code.ts` into three named elements
-   * the registry can reach. A hyphenated tag name is a component key like any
-   * other, and using one keeps these three unreachable from authored MDX: the
-   * closed language rejects raw HTML and every unknown component name, so an
-   * author can no more write `<twoslash-hover>` than they can write a `div`.
+   * Hyphenated twoslash tags are unreachable from authored MDX: the closed
+   * language rejects raw HTML and unknown component names.
    */
   "twoslash-hover": ArticleTwoslashHover,
   "twoslash-popup": ArticleTwoslashPopup,

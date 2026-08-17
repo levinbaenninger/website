@@ -54,32 +54,23 @@ export interface ArticleDiscoveryEntry {
 }
 
 /**
- * One neighbouring Article, reduced to what the reader is allowed to render.
- *
- * Deliberately not an `ArticleSummary`: the reader shows a destination and a
- * title, and a wider projection would invite the Cover, dates, and Draft state
- * of an Article the visitor is not reading.
+ * Not an `ArticleSummary`: a wider projection would invite Cover, dates, and
+ * Draft state of an Article the visitor is not reading.
  */
 export interface ArticleNeighbourLink {
   readonly href: `/blog/${string}`;
   readonly title: string;
 }
 
-/**
- * The neighbours of an Article in the exact order visitors see in the catalog.
- * Either side is `null` at a boundary: the collection does not wrap.
- */
+// Null at a boundary: the collection does not wrap.
 export interface ArticleReaderNavigation {
   readonly previous: ArticleNeighbourLink | null;
   readonly next: ArticleNeighbourLink | null;
 }
 
 /**
- * One heading of the Article outline.
- *
- * The compiler is the only source of both fields: `id` is the ID it wrote onto
- * the rendered heading, and `text` is the plain text it extracted before the
- * heading became markup. The reader never scrapes the DOM to rebuild either.
+ * Compiler-authored `id` and `text`: the reader never scrapes the DOM to
+ * rebuild either.
  */
 export interface ArticleOutlineHeading {
   readonly depth: 2 | 3 | 4;
@@ -91,12 +82,8 @@ interface ArticleDetailBase {
   readonly Content: MDXContent;
   readonly navigation: ArticleReaderNavigation;
   /**
-   * The complete ordered structure of authored Article headings.
-   *
-   * Document order, and the same shape whatever a Tab or an Accordion is doing:
-   * a heading inside a closed panel is part of the Article whether or not it is
-   * on screen. It is a projection of compilation facts rather than the facts
-   * themselves — links, search text and the rest stay private to the module.
+   * A heading inside a closed panel is still part of the Article. Copied
+   * field-by-field so links and search text stay private to the module.
    */
   readonly outline: readonly ArticleOutlineHeading[];
 }

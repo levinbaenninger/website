@@ -1,31 +1,5 @@
 "use client";
 
-// Tabbed code examples.
-//
-// `CodeTabs` is compiler output, never an authored component: `contract.ts`
-// groups a consecutive run of `tab="…"` fences — at the root and, since #53, at
-// any depth inside a Step, a Tab or an AccordionItem — into one element whose
-// labels arrive already validated, unique and in order. Nothing here decides
-// what a tab is; it decides how the reader operates one.
-//
-// Synchronization is by *label*, not by index. Two groups that both offer
-// "npm" and "pnpm" agree even when one lists them in the other order and one
-// carries a third; a positional model would have quietly desynchronized them.
-// Only an authored `tab-group` participates. An ungrouped run has no shared
-// identity to synchronize on and stays independent, which is what lets one
-// Article show a `.ts`/`.js` pair and an unrelated pair without linking them.
-//
-// Storage is an enhancement and never a requirement. A private mode, a denied
-// origin or a full quota throws on both read and write, and every one of those
-// leaves working tabs that simply do not remember — so the reads and writes are
-// wrapped rather than feature-detected, which is the only form that also covers
-// a quota failure at write time.
-//
-// A synchronized change must not move focus. The selected value is controlled,
-// and Radix moves focus only for a keyboard interaction with its own strip, so a
-// group updating because a *different* group was clicked re-renders in place and
-// leaves the reader where they were.
-
 import { Tabs as TabsPrimitive } from "radix-ui";
 import {
   createContext,
@@ -72,7 +46,7 @@ export const writeCodeTabPreference = (
   try {
     storage.setItem(`${CODE_TAB_STORAGE_PREFIX}${groupId}`, label);
   } catch {
-    // Storage is an enhancement; privacy modes and quotas must not break tabs.
+    // Storage throws in private mode/quota; wrap, don't feature-detect.
   }
 };
 
@@ -81,6 +55,7 @@ interface CodeTabChangeDetail {
   readonly label: string;
 }
 
+// Sync by label, not index: groups that share "npm"/"pnpm" agree even when order differs.
 export const matchSynchronizedCodeTab = (
   groupId: string | undefined,
   labels: readonly string[],
@@ -120,17 +95,9 @@ interface ArticleCodeTabsProps {
   readonly labels: string;
 }
 
-/*
- * Every panel stays mounted and the inactive ones are `hidden="until-found"`, so
- * a browser find-in-page can reveal a match inside a tab the reader has not
- * opened — and `beforematch` is how the panel hears about it and selects itself.
- * That is `useArticleFoundPanel`, shared with the Accordion and the general Tabs
- * because it is the same browser limitation each time.
- *
- * `article-panel` is the custom element the Accordion and Tabs already use, so
- * the fragment reveal walk in `interactions.tsx` recognises a code tab by
- * `data-article-panel` exactly as it recognises the other two.
- */
+// Inactive panels stay mounted with hidden="until-found" so find-in-page can
+// reveal them; beforematch selects the matching tab. article-panel is the same
+// custom element Accordion/Tabs use so the fragment walk recognises it.
 const ArticleCodeTabPanel = ({
   children,
   label,
@@ -166,25 +133,14 @@ export const ArticleCodeTabs = ({
     () => parseCodeTabLabels(serializedLabels),
     [serializedLabels]
   );
-  /*
-   * The panels are the compiled fences in their authored order, and the labels
-   * are the compiled labels in theirs — one list, one index. Nothing inspects a
-   * child: across the server/client boundary a child is an unresolved lazy
-   * reference during SSR and an element after hydration, so reading
-   * `props.children` renders one tree on the server and a different one on the
-   * client. Position is the only fact about a child this module uses, and the
-   * compiler guarantees it.
-   */
+  // Don't inspect props.children across the RSC boundary: a child is a lazy
+  // ref during SSR and an element after hydration.
   const panels = useMemo(() => flattenChildren(children), [children]);
   const defaultLabel = labels[0] ?? "";
   const [selected, setSelected] = useState(defaultLabel);
 
-  /*
-   * The saved preference is applied after the first paint rather than during
-   * render. The server has no storage, so reading it while rendering would emit
-   * one tab on the server and another on the client; the first frame is always
-   * the authored default, and a remembered choice replaces it a tick later.
-   */
+  // Apply storage after first paint: the server has no storage, so reading
+  // during render would mismatch SSR vs client.
   useEffect(() => {
     const saved =
       groupId === undefined
@@ -242,6 +198,7 @@ export const ArticleCodeTabs = ({
       activationMode="automatic"
       asChild
       onValueChange={select}
+      // Controlled: a group updating because a different group was clicked must not move focus.
       value={selected}
     >
       <section data-code-tabs="" data-tab-group={groupId}>

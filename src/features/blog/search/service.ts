@@ -15,30 +15,16 @@ import type { ArticleSearchArtifact } from "./contract";
 
 export const ARTICLE_SEARCH_ARTIFACT_URL = "/blog/search.json";
 
-// Two gates, tuned together against the behavioral fixtures in the tests
-// beside this file rather than carried over from the prototype's numbers.
-//
-// `threshold` is the candidate gate: how far a single token may be from the
-// text it matched. At 0.35 a four-letter query reached words it shares almost
-// nothing with (`rust` matched an Article about caching); 0.2 still absorbs a
-// dropped or transposed letter and stops inventing matches.
-//
-// `FINAL_SCORE_CUTOFF` is the relevance gate on Fuse's weighted composite. It
-// exists because the composite is the only place field weighting shows up, and
-// weighting alone cannot tell a body match apart from noise. `ignoreFieldNorm`
-// is what makes the pair work: field-length normalization used to push every
-// body-only match to ~0.96 — indistinguishable from junk — which is why an
-// Article whose *body* said `spreadsheet` answered `No articles found`.
-// Without it, an exact body-only match lands near 0.70 and near-threshold
-// noise near 0.92, so 0.8 separates them with room on both sides.
+// Two gates, tuned against the fixtures beside this file. `threshold` 0.2 still
+// absorbs a typo; 0.35 let `rust` match an Article about caching.
+// `FINAL_SCORE_CUTOFF` 0.8 and `ignoreFieldNorm` keep an exact body-only match
+// (`spreadsheet`) distinct from near-threshold noise.
 const FINAL_SCORE_CUTOFF = 0.8;
 
 const MAX_BODY_SNIPPET_GRAPHEMES = 160;
 
-// Kept short on purpose: the card gives the excerpt a fixed two-line slot, and
-// at the 390 px acceptance width two lines hold roughly 110 characters. More
-// lead-in than this pushes the first highlight out of the visible slot, which
-// is the one thing the excerpt exists to show.
+// The card's two-line excerpt slot is ~110 characters at 390 px; more lead-in
+// pushes the first highlight out of view.
 const BODY_SNIPPET_LEADING_GRAPHEMES = 40;
 
 const FUSE_OPTIONS = {

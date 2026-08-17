@@ -1,6 +1,4 @@
-// The catalog is the one place a Draft is meant to be visible, and only
-// locally. This walks the real projection into the real view so a production
-// build cannot start advertising unfinished writing.
+// Walks the real catalog projection so a production build cannot advertise Drafts.
 
 import { Temporal } from "@js-temporal/polyfill";
 import type { MDXContent } from "mdx/types";

@@ -1,14 +1,6 @@
-/**
- * Stencil `404` as monoline pen strokes. Every stroke is one pen-down pass, in
- * the order a plotter would run them, so the figure can draw itself.
- */
-
 export interface PlotterStroke {
-  /** Path data in glyph-local coordinates. */
   d: string;
-  /** Horizontal offset of the owning glyph, in viewBox units. */
   offsetX: number;
-  /** Vertical offset of the owning glyph, in viewBox units. */
   offsetY: number;
   /** Approximate pen-down length, so plot time is spent at a constant speed. */
   length: number;
@@ -31,9 +23,8 @@ const ZERO_STROKES = [
 ] as const;
 
 /**
- * Distance to the next glyph's origin. `0` sits tighter against the trailing
- * `4` than `4` does against `0`: that glyph's diagonal recedes up and to the
- * right, opening a wedge of white on its left, so an even metric gap reads as
+ * `0` sits tighter against the trailing `4` than `4` does against `0`: that
+ * glyph's diagonal recedes up and to the right, so an even metric gap reads as
  * an uneven optical one. The last advance is unused.
  */
 const PLOT_GLYPHS = [
@@ -70,7 +61,6 @@ const LAST_GLYPH_ORIGIN_X = PLOT_GLYPHS.slice(0, -1).reduce(
   FIRST_GLYPH_ORIGIN_X
 );
 
-/** Where the carriage rests once the plot finishes: the last stroke's end. */
 export const PEN_PARK_POINT = {
   x: LAST_GLYPH_ORIGIN_X + 70,
   y: GLYPH_ORIGIN_Y + BASELINE_Y,

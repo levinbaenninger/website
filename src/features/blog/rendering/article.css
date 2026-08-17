@@ -1,55 +1,20 @@
 /*
- * The core Article presentation language.
+ * Unlayered on purpose: Tailwind v4 puts utilities in `@layer utilities` and
+ * `.typeset` in `@layer components`, and an unlayered rule beats every layered
+ * rule. That is what lets this stylesheet override `.typeset` without
+ * `!important`.
  *
- * Everything here is scoped to `[data-slot="article-body"]`, which
- * `rendering/body.tsx` puts on the Article body wrapper. Nothing is promoted to
- * `globals.css` and nothing is reachable from authored Markdown: the closed
- * language in `contract.ts` accepts no class, style, or id from an author, so a
- * rule can only ever be selected by markup the Blog itself emits.
- *
- * The presentation is a stylesheet rather than a component tree because the
- * Article components already emit a complete styling surface — `data-slot`,
- * `data-code-block`, `data-article-panel`, `data-kind`, `data-file-kind`.
- * Where a rule alone cannot carry the meaning it is a component change in
- * `components.tsx` or `interactions.tsx` instead: headings, links and tables
- * need markup CSS cannot add, and a Callout's kind, a Card's list semantics and
- * a disclosure's mark all carry meaning that a fill or a mask cannot.
- *
- * The file is unlayered on purpose. Tailwind v4 puts its utilities in
- * `@layer utilities` and `.typeset` in `@layer components`, and an unlayered
- * rule beats every layered rule regardless of specificity. That is what lets
- * this stylesheet override `.typeset` without a single `!important`.
- *
- * Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại):
- * `src/styles/globals.css` (`prose-ncdai`, `code-inline`, `link-underline`) and
- * `src/components/ui/table.tsx`.
- *
- * This slice covers prose, headings, links, tables and the rich compositions —
- * Callouts, Cards, file trees, Steps, Kbd, Figures, tab strips and Accordions.
- * The code-reading surface is layered on top of the same scope and the same
- * tokens.
+ * Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
  */
 
 /* fallow-ignore-file css-selector-complexity */
 
-/* ---------------------------------------------------------------- TOKENS -- */
-
 /*
- * Blog-owned presentation tokens. They are not in `globals.css` because nothing
- * outside an Article body has a use for them, and promoting them would make
- * them part of the shell's contract. Both themes are stated explicitly: a token
- * that only resolves in light mode is the defect that made every code block on
- * the site render the light Shiki theme.
- *
- * `--surface` is the one fill the reference uses for every raised object —
- * Callouts, code frames, tab strips, file trees. `--code-*` belong to the
- * code-reading surface and are defined here so there is exactly one definition
- * of each in the tree.
- *
- * `--surface` sits on the reader rather than on the body because the Article
- * outline card is a raised object too and it is reader chrome, outside the body
- * scope on purpose: inside it, every prose rule below would style it. The body
- * inherits it, which is what keeps one definition serving both.
+ * Blog-owned tokens stay off `globals.css`: nothing outside an Article body
+ * uses them. Both themes are stated explicitly — a light-only token made every
+ * code block render the light Shiki theme. `--surface` sits on the reader, not
+ * the body: the outline card is reader chrome and would inherit every prose
+ * rule below.
  */
 [data-slot="article-reader"] {
   --surface: oklch(0.985 0 0);
@@ -79,18 +44,11 @@
   --code-highlight: oklch(0.62 0.18 257.61 / 0.12);
 }
 
-/* ------------------------------------------------------------------ TYPE -- */
-
 /*
- * The measure: 16/28, which is the reference's own. `--typeset-flow` is the one
- * number that moves every block in the language at once — prose, lists, quotes,
- * code, tables, and every composition takes its leading margin from it — and it
- * sits at 1em against the stock 1.25em, which is the single deliberate
- * departure from the reference in the body rhythm.
- *
- * `.typeset` scales its own font size up by 1.125 below 48rem, so the size has
- * to be restated rather than only set as a variable: an Article reads at 16 px
- * at every width.
+ * `.typeset` scales font size up by 1.125 below 48rem, so size is restated
+ * rather than only a variable: an Article reads at 16 px at every width.
+ * `--typeset-flow` is 1em against the stock 1.25em — the one deliberate
+ * departure from the reference in body rhythm.
  */
 [data-slot="article-body"] {
   --typeset-size: 16px;
@@ -101,12 +59,7 @@
   line-height: var(--typeset-leading);
 }
 
-/* --------------------------------------------------------------- PROSE --- */
-
-/*
- * `.typeset` sets links to weight 500 with a 30 % decoration on the baseline;
- * the reference keeps body weight and moves a 1 px underline 3 px off it.
- */
+/* `.typeset` sets links to weight 500 with a 30% decoration on the baseline. */
 [data-slot="article-body"] a {
   font-weight: 400;
   text-decoration-line: underline;
@@ -122,11 +75,9 @@
 }
 
 /*
- * The external-destination mark. `ArticleLink` renders it as a real icon with an
- * accompanying accessible name rather than as a CSS mask, because a mask is
- * invisible to assistive technology — the mark carries meaning, so it cannot be
- * decoration. The opacity change is a second channel on top of the icon and the
- * name, never the only one.
+ * `ArticleLink` renders a real icon with an accessible name rather than a CSS
+ * mask: a mask is invisible to assistive technology. Opacity is a second
+ * channel on top of the icon and the name, never the only one.
  */
 [data-slot="article-body"] [data-article-external-mark] {
   display: inline-block;
@@ -144,13 +95,10 @@
 }
 
 /*
- * `code-inline`: bordered rather than filled, and it wraps rather than clips, so
- * an unbreakable identifier can never push the rail sideways.
- *
- * The `:not()` list is load-bearing. Twoslash's rich renderer prints a hover
- * signature as a bare `<code>` outside any `<pre>`, and an unqualified inline
- * rule dresses that signature up as a chip sitting on top of the popup's own
- * frame.
+ * Bordered rather than filled, and wraps rather than clips, so an unbreakable
+ * identifier cannot push the rail sideways. The `:not()` list is load-bearing:
+ * Twoslash prints a hover signature as a bare `<code>` outside any `<pre>`, and
+ * an unqualified inline rule dresses that signature up as a chip on the popup.
  */
 [data-slot="article-body"]
   :not(pre)
@@ -164,7 +112,6 @@
   white-space: pre-wrap;
 }
 
-/* One rule, muted, upright, no quote marks. */
 [data-slot="article-body"] blockquote {
   border-inline-start-width: 1px;
   border-inline-start-color: var(--line);
@@ -183,19 +130,10 @@
 }
 
 /*
- * Unordered markers are drawn rather than set. `::marker` accepts a font size
- * and nothing else — no `vertical-align`, no offset — so a small bullet is stuck
- * wherever its glyph's baseline lands, which on a 28 px line box is visibly low.
- * Size was never the axis the problem lived on.
- *
- * Each item paints its own dot centred on the first line box with
- * `top: calc(1lh / 2)`, which is exact at any size or leading, and `.typeset`'s
- * depth vocabulary is kept: disc, then circle, then square.
- *
- * `:not([data-slot])` is what keeps the dot out of the compositions. Cards, file
- * trees and folder contents are all real lists, and a marker rule written for
- * prose would otherwise paint a bullet beside every Card and every file name.
- * Every composition list carries a slot, so one exclusion covers all of them.
+ * Unordered markers are drawn rather than set: `::marker` accepts a font size
+ * and nothing else, so a small bullet lands on the glyph baseline — visibly low
+ * on a 28px line box. `:not([data-slot])` keeps the dot out of composition
+ * lists (Cards, file trees), which all carry a slot.
  */
 [data-slot="article-body"] ul:not(.contains-task-list, [data-slot]) {
   list-style: none;
@@ -250,12 +188,9 @@
 }
 
 /*
- * `vertical-align: middle` aligns the box's centre to the baseline plus half the
- * *x-height*, but the eye centres on the cap height — so a full-size box lines
- * up along its top and hangs below the text. The remaining half-difference is
- * added back as `margin-block-end`, which on an inline-level box lifts it off
- * its alignment point. Both dimensions are `em`, so it tracks the text at any
- * size, and neither depends on the leading.
+ * `vertical-align: middle` aligns to the baseline plus half the x-height, but
+ * the eye centres on the cap height. `margin-block-end` lifts the box off that
+ * alignment point; both dimensions are `em` so they track the text.
  */
 /* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] li.task-list-item > input[type="checkbox"] {
@@ -268,27 +203,19 @@
   vertical-align: middle;
 }
 
-/* ------------------------------------------------------------- HEADINGS -- */
-
 /*
- * The body scale: 20 / 18 / 16 at weight 500. `.typeset`'s own scale is built
- * for a document with an h1 in it, and an Article's h1 is the title in the
- * reader chrome rather than anything the body owns.
- *
- * `scroll-margin-block-start` states the whole landing line: 92 px of sticky
- * chrome plus 20 px of clearance. It is stated rather than made up out of the
- * chrome height and whatever margin the heading happens to carry, because that
- * margin is a typographic decision and the landing line is not — an h4 with a
- * smaller margin would otherwise land tighter under the toolbar than an h2.
+ * An Article's h1 is the title in the reader chrome, not in the body.
+ * `scroll-margin-block-start` states the whole landing line rather than
+ * relying on heading margin: that margin is typographic, and an h4 would
+ * otherwise land tighter under the toolbar than an h2.
  */
 [data-slot="article-body"] :is(h2, h3, h4) {
   font-weight: 500;
   scroll-margin-block-start: 7rem;
   /*
    * `pretty`, not `balance`. Balancing a two-line heading splits it down the
-   * middle and leaves half the rail empty with the copy control marooned a line
-   * and a half from the last word. `pretty` fills the line and only guards the
-   * orphan. The Article title in the chrome keeps `balance`, where it is right.
+   * middle and leaves the copy control marooned. `pretty` fills the line and
+   * only guards the orphan. The Article title in the chrome keeps `balance`.
    */
   text-wrap: pretty;
 }
@@ -310,10 +237,7 @@
   line-height: 1.5rem;
 }
 
-/*
- * The heading text *is* the fragment link, and it must not look like body prose
- * that happens to be linked.
- */
+/* The heading text is the fragment link; it must not look like body prose that happens to be linked. */
 [data-slot="article-body"] [data-article-heading-anchor] {
   font-weight: inherit;
   color: inherit;
@@ -321,17 +245,12 @@
 }
 
 /*
- * The copy control stays inline in the text flow rather than becoming a flex
- * row: a flex item's base size is its max-content width clamped to what is
- * available, so the control claims the full column and lands at the far edge
- * instead of after the final word.
- *
- * A 28 px control against a 20–26 px heading line box cannot be aligned by a
- * fixed offset. `middle` centres it on the text's optical middle at every
- * heading size, and the `em` nudge adds back the difference between x-height —
- * which is what `middle` measures against — and cap height, which is what the
- * eye uses. The gap is stated in pixels so it does not scale with the control's
- * own font size.
+ * The copy control stays inline rather than a flex row: a flex item's base
+ * size is max-content clamped to available width, so the control claims the
+ * full column and lands at the far edge. `middle` centres it on the text's
+ * optical middle; the `em` nudge adds back the x-height vs cap-height
+ * difference. The gap is pixels so it does not scale with the control's font
+ * size.
  */
 [data-slot="article-body"] [data-article-heading-copy] {
   display: inline-flex;
@@ -344,10 +263,9 @@
 }
 
 /*
- * Hover is the reference's own answer, and on its own it fails two ways: a
- * keyboard has no hover, and a control that hides itself the moment it is used
- * tells the reader nothing happened. So the control is also revealed by focus
- * and stays up while `CopyButton` reports a non-idle result.
+ * Hover alone fails two ways: a keyboard has no hover, and a control that
+ * hides itself the moment it is used tells the reader nothing happened.
+ * Reveal on focus and while `CopyButton` reports a non-idle result.
  */
 [data-slot="article-body"] :is(h2, h3, h4):hover [data-article-heading-copy],
 [data-slot="article-body"] [data-article-heading-copy]:focus-visible,
@@ -356,27 +274,17 @@
   opacity: 1;
 }
 
-/*
- * A coarse pointer has no hover either, so on touch the control is simply
- * always there. That is the equivalent the reference never needed to state.
- */
+/* A coarse pointer has no hover, so on touch the control is always there. */
 @media (pointer: coarse) {
   [data-slot="article-body"] [data-article-heading-copy] {
     opacity: 1;
   }
 }
 
-/* --------------------------------------------------------------- TABLES -- */
-
 /*
- * `ArticleTable` wraps every table in a keyboard-reachable scroll region.
  * `.typeset-scroll` supplies `width: max-content` so a wide table overflows
- * instead of compressing its columns; `min-width: 100%` — the reference's
- * `min-w-full` — is the other half of that pair and is what stops a narrow
- * table sitting at half the rail.
- *
- * The region is the only thing in this slice that can scroll, and it scrolls
- * inside the rail rather than pushing the page sideways.
+ * instead of compressing; `min-width: 100%` stops a narrow table sitting at
+ * half the rail.
  */
 [data-slot="article-body"] [data-article-table] {
   overscroll-behavior-x: contain;
@@ -392,11 +300,7 @@
   border-block-end: 0;
 }
 
-/*
- * A rule under every row, which is the reference's treatment. `.typeset` sets
- * `border-collapse: separate`, and in separate mode a border on a row is never
- * painted — only cells can carry it.
- */
+/* `.typeset` sets `border-collapse: separate`, and in separate mode a border on a row is never painted — only cells can carry it. */
 [data-slot="article-body"] :is(th, td) {
   border-block-start: 0;
   border-block-end: 1px solid var(--line);
@@ -424,27 +328,11 @@
   text-align: start;
 }
 
-/* -------------------------------------------------------------- CALLOUT -- */
-
 /*
- * The accepted language is semantic tint: a Callout's kind carries its
- * conventional colour. That is the one deliberate deviation from the reference,
- * whose Callout is a single neutral surface — and it is why the colour is never
- * the only channel. `ArticleCallout` renders a real icon and the kind's own word
- * beside it; `--callout-accent` is the third channel on top of those two.
- *
- * Two tokens rather than one, because a hue that reads well as a 6 % fill does
- * not read at all as 15 px text on top of it. The prototype used a single
- * accent and the title came out at 2.0–2.7:1 in light mode — measured, against
- * the 4.5:1 the quality bar requires. `--callout-ink` is that same hue taken
- * down to where it passes; the fill and the ring keep the accepted accent, so
- * what changes is legibility rather than the language.
- */
-/*
- * Layout mirrors shadcn's Alert: `auto 1fr` columns, `gap-x-2` / `gap-y-0.5`,
- * a `size-4` mark that spans both title and description rows and is nudged
- * `0.125rem` down so it sits on the first line's cap height. The tint and the
- * semantic `aside` stay ours; the grid is the Alert's.
+ * Kind colour is never the only channel: `ArticleCallout` renders a real icon
+ * and the kind's own word; `--callout-accent` is the third. Two tokens rather
+ * than one: a hue that reads as a 6% fill failed 4.5:1 as 15px text (measured
+ * 2.0–2.7:1). `--callout-ink` is that hue taken down to where it passes.
  */
 [data-slot="article-body"] [data-slot="article-callout"] {
   --callout-accent: var(--muted-foreground);
@@ -491,11 +379,7 @@
   --callout-ink: oklch(0.47 0.19 27.325);
 }
 
-/*
- * A dark Callout sits on an L≈0.21 surface, where the accent is already the
- * legible end of its own hue and the darkened ink would disappear. The accent
- * is the ink there.
- */
+/* On a dark L≈0.21 surface the accent is already the legible end of its hue; darkened ink would disappear. */
 .dark [data-slot="article-body"] [data-slot="article-callout"] {
   --callout-ink: var(--callout-accent);
 }
@@ -525,23 +409,14 @@
   text-wrap: pretty;
 }
 
-/*
- * Untitled Callouts still place the mark in column 1 and the body in column 2.
- * Without an explicit column on the description, auto-placement can park the
- * body under the mark once the title row is absent.
- */
+/* Untitled Callouts still place the mark in column 1 and the body in column 2. Without an explicit column, auto-placement can park the body under the mark. */
 [data-slot="article-body"]
   [data-slot="article-callout"]:not(:has([data-slot="alert-title"]))
   [data-slot="alert-description"] {
   grid-row-start: 1;
 }
 
-/*
- * `AlertDescription` ships `[&_p:not(:last-child)]:mb-4`, and the flow rhythm
- * here is a leading margin — so left alone a two-paragraph Callout gets both and
- * opens a 28 px hole. The trailing margin is dropped and the language's own
- * measure is stated once.
- */
+/* `AlertDescription` ships `[&_p:not(:last-child)]:mb-4`, and the flow rhythm here is a leading margin — a two-paragraph Callout would get both. */
 [data-slot="article-body"]
   [data-slot="article-callout"]
   [data-slot="alert-description"]
@@ -564,17 +439,11 @@
   margin-block-start: 0.75em;
 }
 
-/* ---------------------------------------------------------------- CARDS -- */
-
 /*
- * Fumadocs' shape rather than the reference's: the reference's own Card is a
- * docs-navigation tile it never uses in prose, and shadcn's Card with the icon
- * floated top-right read badly at Article width. So the mark is a small boxed
- * glyph *above* a 14 px medium title, with a muted 14 px body under it.
- *
+ * Fumadocs' shape rather than the reference's docs-navigation tile.
  * `ArticleCard` puts the mark in shadcn's `CardAction` slot, which is
- * grid-positioned to the top-right — the header becomes a column here and the
- * action is ordered first.
+ * grid-positioned top-right — the header becomes a column and the action is
+ * ordered first.
  */
 [data-slot="article-body"] [data-slot="article-cards"] {
   display: grid;
@@ -624,7 +493,6 @@
   padding: 0;
 }
 
-/* The mark leads, boxed, at 24 px square with a 16 px glyph inside it. */
 [data-slot="article-body"]
   [data-slot="article-card"]
   [data-slot="card-action"] {
@@ -678,11 +546,7 @@
   margin-block-start: 0;
 }
 
-/*
- * Only a linked Card reacts, and it reacts to focus as well as to hover — a
- * keyboard has no pointer, and the outline alone does not say which tile the
- * link belongs to. An unlinked Card is not a target and stays static.
- */
+/* Only a linked Card reacts, and it reacts to focus as well as hover — a keyboard has no pointer, and the outline alone does not say which tile the link belongs to. */
 [data-slot="article-body"]
   [data-slot="article-card"]
   > a:hover
@@ -694,10 +558,7 @@
   background-color: var(--accent);
 }
 
-/*
- * A Card is a block, not a run of text, so the external mark goes to its
- * top-right corner rather than trailing the title.
- */
+/* A Card is a block, not a run of text, so the external mark goes to its top-right rather than trailing the title. */
 [data-slot="article-body"] [data-slot="article-card"] > a[target="_blank"] {
   position: relative;
 }
@@ -714,14 +575,7 @@
   margin-inline-start: 0;
 }
 
-/* ---------------------------------------------------------------- FILES -- */
-
-/*
- * A file tree nests to whatever depth the author writes, and a name that does
- * not fit must not fold: a path fragment reads as a path only on one line. So
- * rows keep `nowrap` and the frame scrolls, which is bounded overflow inside an
- * approved surface rather than a page that slides sideways.
- */
+/* A path fragment reads as a path only on one line, so rows keep `nowrap` and the frame scrolls — bounded overflow rather than a page that slides sideways. */
 [data-slot="article-body"] [data-slot="article-files"] {
   margin-block-start: var(--typeset-flow);
   border-radius: calc(var(--radius) * 1.4);
@@ -747,11 +601,7 @@
   font-size: 0.875rem;
 }
 
-/*
- * A File row is static content, so it gets no hover fill: a row that lights up
- * under the pointer claims to be a control, and this one does nothing. Only the
- * Folder trigger — which really is a button — reacts.
- */
+/* A File row is static content, so it gets no hover fill: a row that lights up claims to be a control. Only the Folder trigger reacts. */
 [data-slot="article-body"] [data-slot="article-file"] {
   display: flex;
   align-items: center;
@@ -791,11 +641,7 @@
   color: var(--muted-foreground);
 }
 
-/*
- * The file mark is inferred from the name's extension and is decoration: the
- * name is already the information, and the colour only helps a tree be scanned.
- * `ArticleFileIcon` renders it `aria-hidden` for exactly that reason.
- */
+/* The file mark is decoration: the name is already the information. `ArticleFileIcon` renders it `aria-hidden` for that reason. */
 [data-slot="article-body"] [data-file-kind="json"] svg {
   color: oklch(0.72 0.16 75);
 }
@@ -818,10 +664,7 @@
   color: oklch(0.72 0.16 75);
 }
 
-/*
- * Both folder marks sit in the markup so open/closed can swap without remounting
- * the trigger. Only the mark that matches `data-state` is shown.
- */
+/* Both folder marks sit in the markup so open/closed can swap without remounting the trigger. Only the mark that matches `data-state` is shown. */
 [data-slot="article-body"]
   [data-slot="collapsible-trigger"][data-state="closed"]
   [data-state-icon="open"],
@@ -831,13 +674,7 @@
   display: none;
 }
 
-/* ---------------------------------------------------------------- STEPS -- */
-
-/*
- * The reference's `step`: a counter in the margin against a rule that runs the
- * length of the list. Below `md` the rule goes and the indent widens, because a
- * 329 px rail has no margin to give away.
- */
+/* Below `md` the rule goes and the indent widens: a 329px rail has no margin to give away. */
 [data-slot="article-body"] [data-slot="article-steps"] {
   counter-reset: step;
   position: relative;
@@ -875,11 +712,7 @@
   margin-block-start: 0;
 }
 
-/*
- * A Step label is a component label, not an authored heading, so it is a `div`
- * that merely reads like one. The Article outline is the set of authored
- * headings and this must never enter it.
- */
+/* A Step label is a component label, not an authored heading, so it is a `div` that merely reads like one — it must never enter the Article outline. */
 [data-slot="article-body"] [data-slot="article-step-title"] {
   font-weight: 500;
   font-size: 1rem;
@@ -915,13 +748,7 @@
   margin-block-start: 0.5em;
 }
 
-/* ------------------------------------------------------------------ KBD -- */
-
-/*
- * The shared `Kbd`, corrected for prose: `.typeset` puts a border and a 2 px
- * bottom border on every `kbd`, and the shared component is built for the
- * command menu rather than for a line of body copy.
- */
+/* The shared `Kbd` is built for the command menu; `.typeset` also puts a border and a 2px bottom border on every `kbd`. */
 [data-slot="article-body"] [data-slot="kbd"] {
   border: 1px solid var(--border);
   background-color: color-mix(in oklab, var(--muted) 50%, transparent);
@@ -930,14 +757,7 @@
   vertical-align: baseline;
 }
 
-/* --------------------------------------------------------------- FIGURE -- */
-
-/*
- * The image fills the rail and keeps its own ratio. `next/image` writes the
- * intrinsic width and height from the static import, so the box is reserved
- * before the bytes land and `height: auto` keeps the ratio while the width
- * responds — the pair is what stops the Article shifting as a Figure loads.
- */
+/* `next/image` writes intrinsic width and height from the static import; `width: 100%` + `height: auto` keeps the ratio so the Article does not shift as a Figure loads. */
 [data-slot="article-body"] [data-slot="article-figure"] {
   margin-block-start: var(--typeset-flow);
 }
@@ -957,17 +777,11 @@
   margin-block-start: 0.75em;
 }
 
-/* ------------------------------------------------- TAB STRIPS AND PANELS -- */
-
 /*
- * One strip vocabulary for the general `Tabs` and for `CodeTabs`, because both
- * emit `role="tablist"` and a reader should not have to learn two. Transposed
- * from the reference's `TabsList` / `TabsTrigger`, minus its animated indicator:
- * the reference's is a Base UI `Tabs.Indicator` element and neither tab
- * implementation here renders one, so the active state is a fill.
- *
- * The strip is `fit-content` up to the full rail and scrolls beyond it, so a
- * long run of tabs stays inside the rail rather than pushing the page sideways.
+ * One strip vocabulary for `Tabs` and `CodeTabs` — both emit `role="tablist"`.
+ * The reference's animated indicator is a Base UI `Tabs.Indicator` neither
+ * implementation renders, so the active state is a fill. The strip is
+ * `fit-content` up to the rail and scrolls beyond it.
  */
 [data-slot="article-body"] [role="tablist"] {
   position: relative;
@@ -992,11 +806,7 @@
   display: none;
 }
 
-/*
- * The trigger states its own height — the strip's, minus its 2 px padding.
- * Left to `padding` plus the body's 1.75 leading it came out 32.5 px tall in a
- * 28 px slot and the active fill spilled out of the strip.
- */
+/* The trigger states its own height. Left to padding plus the body's 1.75 leading it came out 32.5px tall in a 28px slot. */
 [data-slot="article-body"] [role="tab"] {
   display: flex;
   flex: 1 0 auto;
@@ -1022,20 +832,12 @@
   color: var(--foreground);
 }
 
-/*
- * The focus ring is the shell's, pulled inside the trigger: the strip clips its
- * own overflow, and a ring drawn outside the first or last trigger would be cut
- * in half by exactly the scroll container that keeps the strip in the rail.
- */
+/* The strip clips overflow; a ring drawn outside the first or last trigger would be cut in half. */
 [data-slot="article-body"] [role="tab"]:focus-visible {
   outline-offset: -2px;
 }
 
-/*
- * The reference's indicator is `bg-white dark:bg-muted`, not `bg-background`.
- * In dark mode `background` and the strip's own `surface` are close enough that
- * a `background`-filled indicator disappears into the strip.
- */
+/* In dark mode `background` and the strip's `surface` are close enough that a `background`-filled indicator disappears. */
 [data-slot="article-body"] [role="tab"][data-state="active"],
 [data-slot="article-body"] [role="tab"][aria-selected="true"] {
   background-color: oklch(1 0 0);
@@ -1058,19 +860,15 @@
 }
 
 /*
- * Custom elements default to `inline`. Panels must be block so their contents
- * stack; inactive ones use `hidden="until-found"` (`content-visibility: hidden`),
+ * Custom elements default to `inline`. Panels must be block so contents stack;
+ * inactive ones use `hidden="until-found"` (`content-visibility: hidden`),
  * which keeps the host's own padding — so padding is applied only when open.
  */
 article-panel {
   display: block;
 }
 
-/*
- * The gap under the strip is the panel's own padding, not its first child's
- * margin: a Tab holding a single sentence has no element child at all — MDX
- * leaves a bare text node — so a rule on `> :first-child` reaches nothing.
- */
+/* The gap under the strip is the panel's padding, not its first child's margin: a Tab holding a single sentence has no element child — MDX leaves a bare text node. */
 [data-slot="article-body"] [role="tabpanel"]:not([hidden]) {
   padding-block-start: 0.5rem;
 }
@@ -1085,8 +883,6 @@ article-panel {
   flex-direction: column;
   margin-block-start: var(--typeset-flow);
 }
-
-/* ------------------------------------------------------------ ACCORDION -- */
 
 [data-slot="article-body"] [data-slot="article-accordion"] {
   display: flex;
@@ -1114,11 +910,7 @@ article-panel {
   line-height: inherit;
 }
 
-/*
- * The trigger states its own line height. Left to inherit it takes the body's
- * 1.75, so 15 px text floats in a 26 px line box inside a 46 px control and the
- * space under the label is half a line box rather than padding.
- */
+/* The trigger states its own line height. Left to inherit it takes the body's 1.75, so 15px text floats in a 26px line box. */
 [data-slot="article-body"] [data-slot="article-accordion-trigger"] {
   display: flex;
   width: 100%;
@@ -1154,12 +946,7 @@ article-panel {
   rotate: 180deg;
 }
 
-/*
- * The panel's leading margin is the trigger's business, not its own. `.typeset`
- * gives every element following a heading a paragraph's worth of space, and
- * Radix renders the header as a heading unless it is told otherwise — the
- * explicit header slot is what makes this a stable non-heading sibling.
- */
+/* `.typeset` gives every element following a heading a paragraph's worth of space, and Radix renders the header as a heading unless told otherwise. */
 [data-slot="article-body"] [data-article-panel="accordion"] {
   margin-block-start: 0;
 }
@@ -1172,15 +959,7 @@ article-panel {
   margin-block-start: 0;
 }
 
-/* ---------------------------------------------------------------- MOTION -- */
-
-/*
- * Reduced motion drops the transitions and nothing else: a revealed control is
- * still revealed, an underline still darkens, a copied state still reports
- * itself, a disclosure still opens — the change simply arrives at once. Only the
- * transitions this stylesheet declares are named, so no other animation is
- * silently disabled.
- */
+/* Reduced motion drops the transitions and nothing else. Only the transitions this stylesheet declares are named. */
 @media (prefers-reduced-motion: reduce) {
   [data-slot="article-body"] a,
   [data-slot="article-body"] [data-article-external-mark],

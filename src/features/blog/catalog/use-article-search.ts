@@ -13,7 +13,7 @@ export type ArticleSearchStatus = "idle" | "loading" | "ready" | "error";
 const NO_RESULTS: readonly ArticleSearchResult[] = [];
 
 const noCleanup = () => {
-  // Nothing was scheduled, so there is nothing to undo.
+  // Nothing was scheduled.
 };
 
 export interface ArticleSearchState {
@@ -23,18 +23,9 @@ export interface ArticleSearchState {
 }
 
 /**
- * Article search, loaded the first time a visitor actually asks for it.
- *
- * Fuse and `/blog/search.json` are together the most expensive thing the Blog
- * can send, and most visitors never search. Neither is fetched on focus, on
- * hydration, or for a query of only whitespace — only when there is something
- * to look for. Once loaded they are reused for the rest of the page's life,
- * so every later keystroke searches synchronously with no debounce.
- *
- * A failure latches. The effect deliberately does not depend on the query, so
- * a visitor whose network dropped types out their word against a stable error
- * instead of firing a request per keystroke; `retry` and clearing the query
- * are the only two ways back.
+ * Fuse and `/blog/search.json` load only when there is a real query. A failure
+ * latches so typing does not retry per keystroke; `retry` and clearing are the
+ * only ways back.
  */
 export const useArticleSearch = (query: string): ArticleSearchState => {
   const [search, setSearch] = useState<ArticleSearch | null>(null);
@@ -42,9 +33,8 @@ export const useArticleSearch = (query: string): ArticleSearchState => {
   const active = query.length > 0;
   const [searchedFor, setSearchedFor] = useState(active);
 
-  // Clearing the query is one of the two accepted ways out of a failure. The
-  // reset happens here rather than in an effect so the very next render is
-  // already out of the error state, with no failing catalog in between.
+  // Failure reset in render, not an effect, so the next paint is already out
+  // of the error state.
   if (searchedFor !== active) {
     setSearchedFor(active);
     if (!active) {

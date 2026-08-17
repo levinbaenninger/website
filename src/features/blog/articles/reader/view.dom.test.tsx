@@ -76,8 +76,7 @@ const article = ({
   };
 };
 
-/** The prerender: `renderToStaticMarkup` runs no effects, so this is the
- *  reader a visitor receives before — or without — any JavaScript. */
+// `renderToStaticMarkup` runs no effects: the reader a visitor receives before any JavaScript.
 const renderServer = (
   detail: ArticleDetail,
   canonicalUrl: string | null = null
@@ -94,10 +93,7 @@ const renderServer = (
   return container;
 };
 
-/**
- * A driveable `IntersectionObserver`. Happy DOM supplies one that never
- * reports, and the sticky title is precisely a report about a scroll position.
- */
+// Happy DOM's IntersectionObserver never reports; the sticky title is a report about scroll position.
 const stubIntersectionObserver = () => {
   const original = globalThis.IntersectionObserver;
   let report: ((intersecting: boolean) => void) | null = null;
@@ -155,10 +151,7 @@ const stubIntersectionObserver = () => {
   };
 };
 
-/**
- * A neighbour control, stopped short of navigating: an activated `Link` would
- * take the test document with it.
- */
+// Stop the `Link` short of navigating: an activated Link would take the test document with it.
 const interceptActivation = (name: string) => {
   const activated = vi.fn();
 
@@ -528,8 +521,6 @@ describe("sticky Article title", () => {
 
       observer.scrollTitleBehindChrome();
 
-      // The `h1` is still the only thing that says the title out loud; the
-      // toolbar copy is a visual reminder and nothing else.
       expect(
         screen.getAllByRole("heading", { name: "Sticky title" })
       ).toHaveLength(1);

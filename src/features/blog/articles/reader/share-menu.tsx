@@ -1,22 +1,5 @@
-// The Article Share menu.
-//
-// One control that hands a reader the complete Article: the canonical link on
-// the clipboard, an X or LinkedIn intent, or — where the platform has one — the
-// native share sheet. Composition accepted on #33 (the reference dropdown),
-// behaviour specified on #36. Transposed from ncdai/chanhdai.com @ 83e0b842
-// (MIT, © Chánh Đại): `src/features/doc/components/doc-share-menu.tsx`.
-//
-// The URL is rendering input, never `window.location`: what a reader shares has
-// to name the Article on the production origin, not the preview deployment,
-// trailing slash, fragment or leftover query parameter the browser happens to
-// be showing. `null` is the local Draft case, and the reader mounts no Share
-// control at all for it — the same rule the heading section links follow.
-//
-// Every item's feedback reproduces the shared CopyButton contract — the
-// click-soft tick inside the gesture, the vibration, the icon swap that snaps
-// under reduced motion, and the polite announcement — rather than mounting the
-// component itself: a `<button>` inside a `role="menuitem"` is two controls
-// where a menu promises one.
+// Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
+// Share URL is rendering input, never `window.location`: preview origin, fragment, and leftover query must not leak.
 
 "use client";
 
@@ -49,20 +32,14 @@ import { LinkedInIcon } from "@/shared/ui/icons/linkedin-icon";
 import { XIcon } from "@/shared/ui/icons/x-icon";
 
 interface ArticleShareMenuProps {
-  /** The absolute canonical Article URL. */
   readonly canonicalUrl: string;
   readonly title: string;
 }
 
-/**
- * What the menu is currently saying about the last thing a reader asked for.
- *
- * A cancelled native share is not in here: cancelling is a decision, not a
- * failure, and reporting it back would be the interface arguing with it.
- */
+// A cancelled native share is not in here: cancelling is a decision, not a failure.
 type ShareStatus = "copied" | "copy-failed" | "idle" | "share-failed";
 
-/** How long a result stays on screen. The shared CopyButton's own window. */
+// Same window as CopyButton.
 const STATUS_RESET_MS = 1500;
 
 const STATUS_ANNOUNCEMENT: Record<ShareStatus, string> = {
@@ -72,14 +49,7 @@ const STATUS_ANNOUNCEMENT: Record<ShareStatus, string> = {
   "share-failed": "Sharing failed",
 };
 
-/**
- * What each item reads as, per state.
- *
- * An item says its own result: the copy item becomes "Copied", the native item
- * becomes "Sharing failed". Feedback that lands on the control a reader used is
- * feedback they do not have to go looking for — and it costs the menu neither a
- * row that appears out of nowhere nor a toast dependency.
- */
+// Feedback lands on the control the reader used, so the menu needs neither an extra row nor a toast.
 type CopyState = Extract<ShareStatus, "copied" | "copy-failed" | "idle">;
 type NativeState = Extract<ShareStatus, "idle" | "share-failed">;
 
@@ -97,15 +67,7 @@ const NATIVE_ITEM: Record<
   "share-failed": { icon: CircleXIcon, label: "Sharing failed" },
 };
 
-/**
- * A web intent per network, each carrying its own mark.
- *
- * X takes the title as the post's text and the URL as the attached card.
- * LinkedIn's documented `share-offsite` endpoint only accepts a URL and, in
- * practice, opens an empty composer — so the feed share intent is used instead,
- * prefilled with title and URL the same way X is. LinkedIn still attaches the
- * Open Graph card from the URL in the text.
- */
+// LinkedIn's `share-offsite` endpoint only accepts a URL and opens an empty composer; the feed intent prefills title and URL.
 const SHARE_TARGETS = [
   {
     href: (url: string, title: string) =>
@@ -121,19 +83,11 @@ const SHARE_TARGETS = [
   },
 ] as const;
 
-/**
- * Whether this platform has a native share sheet.
- *
- * Read through `useSyncExternalStore` rather than an effect that sets state:
- * the trigger is server-rendered, the server has no platform to ask, and this
- * is exactly the "server says one thing, client says another" case the hook
- * exists for. The capability never changes for the lifetime of the document, so
- * there is nothing to subscribe to.
- */
 const subscribeToNothing = () => () => {
   // A platform does not grow a share sheet while the page is open.
 };
 
+// `useSyncExternalStore` rather than an effect: the trigger is server-rendered, the server has no platform to ask, and the capability never changes for the document lifetime.
 const useNativeShare = (): boolean =>
   useSyncExternalStore(
     subscribeToNothing,
@@ -141,17 +95,10 @@ const useNativeShare = (): boolean =>
     () => false
   );
 
-/** A share the reader called off, which the interface has nothing to say about. */
 const isAbort = (error: unknown): boolean =>
   error instanceof Error && error.name === "AbortError";
 
-/**
- * The icon slot inside a menu item.
- *
- * Mirrors the shared CopyButton: a spring cross-fade normally, a plain swap
- * where motion is unwelcome. `key` is what makes the swap a swap rather than a
- * mutation of one element.
- */
+// `key` makes the icon a swap rather than a mutation of one element.
 const ItemIcon = ({
   children,
   state,
@@ -186,6 +133,7 @@ const ItemIcon = ({
   );
 };
 
+// Reproduces CopyButton feedback instead of mounting it: a `<button>` inside `role="menuitem"` is two controls.
 export const ArticleShareMenu = ({
   canonicalUrl,
   title,

@@ -19,9 +19,8 @@ import { useSound } from "@/shared/audio/use-sound";
 import type { PlotterStroke } from "./digits";
 import { PEN_PARK_POINT, PLOT_STROKES, PLOT_VIEWBOX } from "./digits";
 
-/** Pen-down time for the whole word, spent at a constant carriage speed. */
 const PLOT_DRAW_MS = 1400;
-/** Pen-up traverse between two strokes. The carriage moves, the ink does not. */
+/** Carriage moves between strokes without inking. */
 const PEN_UP_MS = 80;
 const PLOT_TOTAL_MS = PLOT_DRAW_MS + PEN_UP_MS * (PLOT_STROKES.length - 1);
 const INK_FADE_S = 0.12;
@@ -35,13 +34,11 @@ const LATCH_VOLUME = 0.45;
 
 const POINTER_SPRING = { stiffness: 300, damping: 30, mass: 0.1 } as const;
 
-/** Pen width in viewBox units. Sized so the plot reads as a heavy display weight. */
+/** Sized so the plot reads as a heavy display weight. */
 const INK_STROKE_WIDTH = 10;
 
 interface PlotPass extends PlotterStroke {
-  /** Fraction of the plot timeline where this pen-down begins. */
   start: number;
-  /** Fraction of the plot timeline where this pen-down ends. */
   end: number;
 }
 
@@ -101,9 +98,8 @@ const traversePoint = (
 };
 
 /**
- * Where the pen sits at a point in the plot timeline, in viewBox units. Returns
- * `null` when the paths have no measurable geometry, which is how a non-browser
- * environment reports an SVG it cannot lay out.
+ * Returns `null` when SVG paths have no measurable geometry, as in a
+ * non-browser environment that cannot lay them out.
  */
 const resolvePenPoint = (
   paths: readonly (SVGPathElement | null | undefined)[],

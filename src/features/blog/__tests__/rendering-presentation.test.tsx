@@ -17,16 +17,8 @@ const CODE_THEMES: ArticleCodeThemes = {
 };
 
 /*
- * A representative Article, compiled by the production pipeline rather than
- * hand-written as markup: the heading ids, the GFM task-list classes and the
- * link shapes on screen are the ones a real Article produces. It carries the
- * complete core language once — the depth-two-through-four hierarchy, all three
- * link destinations, lists, task items, a quote, a rule, inline code, and a
- * table wide enough to need its scroll region.
- *
- * It lives here rather than in `content/` on purpose. An Article under
- * `content/` moves the generated manifest, the catalog, the search artifact,
- * the sitemap and the social images, none of which this slice owns.
+ * Compiled in-memory rather than living under content/: an Article there would
+ * move the manifest, catalog, search artifact, sitemap, and social images.
  */
 const REPRESENTATIVE_ARTICLE = `## Reading an Article
 
@@ -62,17 +54,7 @@ const removed = 1 // [!code --]
 \`\`\`
 `;
 
-/*
- * The rich half of the language, in the shapes that break it: a Callout of every
- * kind with and without a title, a Cards grid holding a linked, an unlinked and
- * an external Card, a file tree nested three deep with a name too long for the
- * rail, a Steps list, inline Kbd, and an Accordion and a Tabs group nested one
- * inside the other so the server output can be checked with a panel closed.
- *
- * Figures are covered directly in `rendering/components.test.tsx`: the contract
- * only accepts an imported Article-local image binding, which needs a real
- * source bundle rather than a string compiled in memory.
- */
+// Figures stay in components.test.tsx: the contract only accepts an imported Article-local image binding.
 const RICH_ARTICLE = `## Compositions
 
 <Callout kind="note" title="A note">
@@ -133,8 +115,6 @@ const renderArticle = (
   compiled: MDXContent,
   status: "draft" | "published"
 ): string => {
-  // The app supplies the Article registry through `src/mdx-components.tsx`;
-  // outside Next that wiring is the caller's, so it is applied here.
   const Content: MDXContent = () =>
     createElement(compiled, { components: getArticleMdxComponents() });
 
@@ -214,7 +194,7 @@ describe("Article presentation language", () => {
   test("offers section copying on a Published Article only", () => {
     expect(published).toContain('aria-label="Copy link to section"');
     expect(draft).not.toContain('aria-label="Copy link to section"');
-    // The Draft keeps its fragment links; only the public action is withheld.
+    // Drafts keep fragment links; only the public copy action is withheld.
     expect(draft).toContain('href="#the-second-section"');
   });
 
@@ -224,7 +204,7 @@ describe("Article presentation language", () => {
     );
     expect(published).toContain("(opens in a new tab)");
     expect(published).toContain("data-article-external-mark");
-    // A same-Article fragment and a root-relative path are not external.
+    // Fragment and in-app paths are not external.
     expect(published.match(/opens in a new tab/gu)).toHaveLength(1);
     expect(published).toContain('href="#the-second-section"');
     expect(published).toContain('href="/blog"');
@@ -239,9 +219,8 @@ describe("Article presentation language", () => {
   test("gives a Callout kind three channels, only one of which is colour", () => {
     expect(rich).toContain('<aside data-kind="note"');
     expect(rich).toContain('<aside data-kind="danger"');
-    // Static prose is not a live region.
+    // Callout is aside, not Alert: static prose must not be a live region.
     expect(rich).not.toContain('role="alert"');
-    // The mark is decoration; the kind's own word is what carries it.
     expect(rich).toContain('<span class="sr-only">Note: </span>');
     expect(rich).toContain('<span class="sr-only">Danger: </span>');
     expect(rich).toMatch(
@@ -252,8 +231,7 @@ describe("Article presentation language", () => {
   test("renders a Card collection as a list with one link per linked Card", () => {
     expect(rich).toContain('<ul data-slot="article-cards">');
     expect(rich.match(/<li data-slot="article-card">/gu)).toHaveLength(3);
-    // Two Cards are linked; the third carries an ordinary authored link in its
-    // body, which is why the count is taken on the tile's own anchor.
+    // Count the tile's own anchor: the third Card carries an ordinary authored link in its body.
     expect(rich).toMatch(
       /<li data-slot="article-card"><a href="\/blog\/deploy"/u
     );
@@ -263,19 +241,12 @@ describe("Article presentation language", () => {
     expect(rich).toMatch(/<li data-slot="article-card"><div data-slot="card"/u);
   });
 
-  /*
-   * A `files` fence compiles every Folder closed, so the server output is the
-   * tree's top level and a control for each Folder — the depth arrives when the
-   * reader opens one. Authored depth and the inferred marks below the first
-   * level are covered where they can be seen at once, in
-   * `rendering/components.test.tsx` and `rendering/interactions.dom.test.tsx`.
-   */
+  // A `files` fence compiles every Folder closed, so server output is the top level.
   test("renders a file tree's top level with an operable Folder control", () => {
     expect(rich).toContain('<ul data-slot="article-files">');
     expect(rich).toContain('aria-label="src folder"');
     expect(rich).toContain('aria-expanded="false"');
     expect(rich).toContain('data-file-kind="json"');
-    // A File row is static: the tree's only control is the Folder.
     expect(rich).toMatch(
       /<li data-file-kind="json" data-slot="article-file">/u
     );
@@ -285,7 +256,6 @@ describe("Article presentation language", () => {
     expect(rich).toContain('<ol data-slot="article-steps">');
     expect(rich).toContain('<div data-slot="article-step-title">Install</div>');
     expect(rich).toContain("<kbd");
-    // The only headings are the authored ones, including the one two panels deep.
     expect([...rich.matchAll(/<h[1-6][\s>]/gu)]).toHaveLength(3);
   });
 
@@ -294,11 +264,11 @@ describe("Article presentation language", () => {
     expect(rich).toContain('data-slot="article-accordion"');
     expect(rich).toContain('role="tablist"');
     expect(rich.match(/role="tab"/gu)).toHaveLength(2);
-    // A heading inside a closed Accordion inside an unselected Tab is still in
-    // the server output, which is what keeps the Article outline stable.
+    // A heading inside a closed Accordion inside an unselected Tab stays in
+    // the server output so the outline is stable.
     expect(rich).toContain('id="a-heading-inside-two-panels"');
     expect(rich).toContain('hidden="until-found"');
-    // Component labels are controls, never headings.
+    // Accordion.Header would emit h3 into the outline.
     expect(rich).not.toMatch(/<h[1-6][^>]*>Closed by default/u);
   });
 
@@ -308,10 +278,7 @@ describe("Article presentation language", () => {
     );
     expect(published).toContain('data-line-numbers-start="1"');
     expect(published).toContain('aria-label="Copy code"');
-    // The gutter is a CSS counter and never text, so a line number cannot be
-    // selected and cannot reach the clipboard. `contract.test.ts` proves the
-    // compiled copy source itself; here the point is that the rendered block
-    // carries no numbers to copy in the first place.
+    // Gutter is a CSS counter, never text, so a line number cannot reach the clipboard.
     expect(published).not.toContain(">1</span>");
     expect(published).not.toContain("[!code");
   });

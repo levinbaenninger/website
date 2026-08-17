@@ -16,30 +16,10 @@ import {
 
 interface ArticleViewProps {
   readonly article: ArticleDetail;
-  /**
-   * The absolute canonical Article URL, supplied by the app because origin is
-   * app-owned. `null` withholds the Share menu and the public section-copy
-   * controls alike, which is the local Draft case.
-   */
+  // Origin is app-owned. `null` withholds Share and section-copy: the local Draft case.
   readonly canonicalUrl?: string | null;
 }
 
-/**
- * The Article reader.
- *
- * Everything a visitor needs in order to read the Article and leave it is
- * server-rendered: the header, the compiled body, the Blog link, both
- * neighbour links, the end pager, and the outline's own heading links.
- * Hydration adds what the server cannot know — a scroll position, which heading
- * it puts the visitor in, and a keyboard.
- *
- * Neighbour links are ordinary route links, which is also what starts the
- * destination Article at the top: from anywhere past the fold the destination's
- * first element is outside the viewport, so Next.js scrolls to it, while
- * browser Back and Forward keep their own restored positions. Nothing here
- * stores navigation history of its own. The `h` and `l` keys are a shortcut to
- * those same two destinations and land on them the same way.
- */
 export const ArticleView = ({
   article,
   canonicalUrl = null,

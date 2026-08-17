@@ -3,17 +3,8 @@
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 
 export interface FluidGradientTextProps {
-  /** Text content rendered inside the SVG. */
   text: string;
-  /**
-   * SVG viewBox width used to scale the gradient and text layout.
-   * @default 1200
-   * */
   svgViewBoxWidth?: number;
-  /**
-   * SVG viewBox height used as the base text size.
-   * @default 300
-   * */
   svgViewBoxHeight?: number;
 }
 

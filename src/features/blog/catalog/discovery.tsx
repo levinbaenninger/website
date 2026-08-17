@@ -42,18 +42,15 @@ const LOADING_EMPTY_DELAY_MS = 150;
 // to settle, so a screen reader is not read a new number per letter.
 const ANNOUNCEMENT_DELAY_MS = 300;
 
-// Hydration signal. The server snapshot is `false` and the client snapshot is
-// `true`, so the server renders the inert catalog and the client swaps in the
-// live one the moment React takes over. Nothing ever changes after that, hence
-// the no-op subscription.
+// Hydration signal: server snapshot is `false`, client is `true`.
 const noopSubscribe = () => () => {
-  // Never emits: the value cannot change after hydration.
+  // The value cannot change after hydration, so nothing to emit.
 };
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 const noCleanup = () => {
-  // Nothing was scheduled, so there is nothing to undo.
+  // Nothing was scheduled.
 };
 
 const filterByTag = (
@@ -73,15 +70,8 @@ const countByTag = (
     articleCount: filterByTag(articles, tag.id).length,
   }));
 
-/**
- * The query's matches, in Fuse's relevance order, as catalog Articles.
- *
- * A result whose Article the server did not send is dropped rather than
- * rendered from the artifact. The two are built from the same source, so this
- * only bites when a cached artifact outlives a deploy — and then the visible
- * catalog, not the stale asset, decides what a visitor may see. That is what
- * keeps an unpublished Article out of results even if it once had a document.
- */
+// Drop matches the server did not send. A cached artifact can outlive a deploy;
+// the visible catalog, not the stale asset, decides what a visitor may see.
 const projectResults = (
   articles: readonly ArticleSummary[],
   results: readonly ArticleSearchResult[]
@@ -99,12 +89,7 @@ const explanationsBySlug = (
 ): ReadonlyMap<string, ArticleSearchResult> =>
   new Map(results.map((result) => [result.id, result]));
 
-/**
- * The first highlighted occurrence of each matched Tag label.
- *
- * One entry per Tag rather than per result: the strip shows a Tag once, and
- * the ranges only ever describe that Tag's own label.
- */
+// One highlight per Tag: the strip shows a Tag once.
 const tagHighlights = (
   results: readonly ArticleSearchResult[]
 ): ReadonlyMap<string, readonly HighlightRange[]> => {
@@ -130,13 +115,7 @@ const resultAnnouncement = (
     query === "" ? "" : ` for ‘${query}’`
   }${tagLabel === undefined ? "" : ` in ${tagLabel}`}.`;
 
-/**
- * `true` once `active` has been true for longer than `delayMs`.
- *
- * The catalog is marked busy the instant a load starts, but the grid is only
- * replaced once this turns true, so a load that settles inside the delay goes
- * straight from the previous cards to the results with nothing in between.
- */
+// Busy immediately; the grid waits so a fast load never flashes a loading state.
 const useDelayed = (active: boolean, delayMs: number): boolean => {
   const [elapsed, setElapsed] = useState(false);
   const [wasActive, setWasActive] = useState(active);
@@ -167,13 +146,7 @@ const ignoreQuery = () => {
   // The prerendered controls are inert; only the live catalog reads them.
 };
 
-/**
- * What the server renders, and what a visitor without JavaScript keeps.
- *
- * The complete linked catalog, under the same two strips the live catalog
- * renders — disabled, because nothing behind them is listening yet. Nothing
- * here reads the URL, which is what lets `/blog` stay a static page.
- */
+// Inert strips: nothing here reads the URL, so `/blog` stays a static page.
 const CatalogFallback = ({
   articles,
   tags,
@@ -204,14 +177,7 @@ const EmptyActions = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-/**
- * Everything below the two strips: the grid, or the one centered block that
- * replaces it.
- *
- * Each Empty offers exactly the actions that widen the catalog again, and each
- * action clears only the constraint it names — `Clear search` never touches
- * the Tag, `Show all Tags` never touches the query.
- */
+// Each Empty action clears only the constraint it names.
 const CatalogBody = ({
   explanations,
   loadingVisible,
@@ -307,22 +273,6 @@ const CatalogBody = ({
   );
 };
 
-/**
- * The catalog once the client owns it: the same strips and the same grid, now
- * reading and writing the URL and searching.
- *
- * The discovery state lives in `?q=` and `?tag=`, and nowhere else: there is
- * no second copy in component state that could disagree with the address bar.
- * The single exception is the field itself, which may hold one trailing space
- * the URL never sees — see `normalizeArticleSearchQuery`. An unknown or stale
- * Tag reads as `All` on the way in and drops out of the URL on the next tick,
- * leaving anything else in the query string alone.
- *
- * Browsing and Tag filtering never reorder: the server's canonical Article
- * order survives them, because a filter only removes. An active query replaces
- * that order with relevance, and applying a Tag to it removes without
- * reordering in exactly the same way.
- */
 const LiveCatalog = ({
   articles,
   tags,
@@ -335,12 +285,8 @@ const LiveCatalog = ({
   const fieldRef = useRef<HTMLInputElement>(null);
   const allOptionRef = useRef<HTMLInputElement>(null);
 
-  // The field is seeded from `?q=` once, on the render that first owns the
-  // catalog, and drives it from then on. It is not kept in sync in the other
-  // direction: `q` is written throttled and `history: "replace"` leaves no
-  // entry to go back to, so a URL that "changed on its own" is not a state
-  // this island can be in — while an echo of a throttled write would arrive
-  // mid-word and take the visitor's typing with it.
+  // Seeded from `?q=` once. Echoing the throttled URL back would arrive
+  // mid-word and steal the visitor's typing.
   const [field, setField] = useState(() =>
     normalizeArticleSearchQuery(queryParam ?? "")
   );
@@ -349,9 +295,7 @@ const LiveCatalog = ({
   const selected = known && tagParam !== null ? tagParam : ALL_TAGS;
 
   useEffect(() => {
-    // A Tag that no longer exists — renamed, or emptied by an unpublished
-    // Article — is not an error worth showing. It degrades to `All` above and
-    // the parameter is written out of the URL here.
+    // Stale Tag degrades to `All` above; drop it from the URL here.
     if (tagParam !== null && !known) {
       void setTagParam(null);
     }
@@ -419,23 +363,12 @@ const LiveCatalog = ({
   const announced = useRef(false);
 
   useEffect(() => {
-    // A Tag change is a deliberate act with one obvious answer, so it is
-    // spoken at once. Typing is a stream, and waiting for it to settle is what
-    // keeps a screen reader from reading a new count per letter.
-    //
-    // Deduplication is the message itself: writing the same string twice
-    // changes no DOM, so a repeat is never spoken. The accepted cost is that
-    // two different queries with the same count and Tag — `1 Article found for
-    // ‘x’.` is not one of them, because the query is in the sentence — would
-    // pass in silence. Every state a visitor can reach names itself, so in
-    // practice the only strings that collide are ones that mean the same
-    // thing.
+    // Tag changes speak at once; typing waits so a screen reader is not read a
+    // number per letter.
     const deliberate = announcedTag.current !== selected;
     announcedTag.current = selected;
 
-    // Arriving on the Blog is not a result change. The first state the visitor
-    // is handed is the one they can see, so nothing is read out until they
-    // have actually asked the catalog for something.
+    // Don't announce on first catalog arrival — that state is already on screen.
     if (!announced.current) {
       announced.current = true;
       return noCleanup;
@@ -508,22 +441,8 @@ const LiveCatalog = ({
   );
 };
 
-/**
- * The catalog's discovery island.
- *
- * It renders the inert catalog until the client has taken over, and only then
- * mounts the part that reads the URL. That order is the point: a component
- * that reads search params cannot be prerendered, and `/blog` is a static
- * page, so asking for them one render too early either drags the whole route
- * into request rendering or — at this Next version — fails the build outright.
- * Deferring the read by one render keeps the page static, and the visitor's
- * first paint carries every Article rather than a placeholder. A shared `?q=`
- * link therefore lands on the complete catalog and upgrades to its results
- * once the island hydrates.
- *
- * The swap is invisible: both branches render the same strips over the same
- * grid, so nothing moves unless the URL actually asked for something.
- */
+// Deferred so `/blog` stays static: a search-params read cannot be prerendered,
+// and at this Next version it fails the build.
 export const CatalogDiscovery = ({
   articles,
   tags,

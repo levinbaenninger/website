@@ -117,7 +117,6 @@ const fillHoles = (activities: Activity[]): Activity[] => {
     return [];
   }
 
-  // Sort activities by date to ensure correct date range
   const sortedActivities = [...activities].toSorted((a, b) =>
     a.date.localeCompare(b.date)
   );

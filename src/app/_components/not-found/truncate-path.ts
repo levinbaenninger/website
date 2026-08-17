@@ -2,10 +2,7 @@ const MAX_DISPLAY_LENGTH = 34;
 const ELLIPSIS = "…";
 const ROOT_PATH = "/";
 
-/**
- * Shortens a pathname for the plotter readout. The trailing segment survives
- * because it names the address the visitor actually asked for.
- */
+/** Keep the trailing characters: they name the address the visitor asked for. */
 export const truncatePath = (pathname: string): string => {
   if (pathname === "") {
     return ROOT_PATH;

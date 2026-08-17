@@ -7,11 +7,10 @@ import { MobileNavigation } from "@/app/_components/app-shell/navigation/mobile-
 import { ThemeToggle } from "@/app/_components/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
 
-/* The bar opts back out of the shell gutter and re-applies it inside, so it
-   keeps a full-bleed background while its rails stay aligned with the ones
-   below. Without the bleed, the `screen-line-*` hairlines — which sit at `-z-1`
-   in the root stacking context, above the body background that propagates to
-   the canvas — would slide through the bare gutters as the page scrolls. */
+/* The bar bleeds past the shell gutter and re-applies it inside so the
+   background stays full-bleed while rails stay aligned. Without the bleed,
+   `screen-line-*` hairlines at `-z-1` would show through the gutters as the
+   page scrolls. */
 export const Header = () => (
   <header className="sticky top-0 z-50 -mx-2 bg-background px-2">
     <div className="screen-line-bottom mx-auto flex w-full items-center justify-between border-x border-line p-2 md:w-3xl">

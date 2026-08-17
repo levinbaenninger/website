@@ -47,16 +47,9 @@ interface FigureProps {
 }
 
 /*
- * The Article rail is at most 48rem wide and the Figure fills it, so `sizes`
- * says exactly that. Without it Next emits a 1x/2x srcset built for a
- * fixed-size image; with it the browser picks a width-appropriate candidate,
- * which is the difference between the responsive pipeline running and merely
- * being present.
- *
- * The intrinsic width and height come from the static import — the contract
- * only accepts an imported Article-local binding — so the box is reserved
- * before the bytes arrive and nothing shifts while it loads. An SVG has no
- * raster sizes to pick from, so it stays unoptimized.
+ * The Article rail is at most 48rem; `sizes` says that so next/image emits
+ * width-appropriate candidates instead of a fixed 1x/2x srcset. SVG has no
+ * raster sizes, so it stays unoptimized.
  */
 export const ArticleFigure = ({
   alt,
@@ -75,18 +68,8 @@ export const ArticleFigure = ({
   </figure>
 );
 
-/*
- * Three destinations, three behaviors, all decided by the compiled href — the
- * contract already restricts an authored link to a same-Article fragment, a
- * root-relative path, or an absolute HTTPS URL, so there is no fourth case.
- *
- * A fragment stays a plain anchor: it is same-document navigation, and routing
- * it through the router would replace the browser's own behavior with a slower
- * copy of it. A root-relative path is an in-app destination and takes the
- * client-side transition. An external destination opens in a new tab and says
- * so — with an icon *and* a name, because a mark no screen reader can reach is
- * not a mark, and colour alone is not a mark either.
- */
+// Fragment stays a plain <a>, not Next Link: same-document navigation. External
+// destinations open in a new tab and say so with an icon and a name.
 export const ArticleLink = ({
   children,
   href = "",
@@ -141,18 +124,8 @@ const calloutLabels = {
   warning: "Warning",
 };
 
-/*
- * A Callout is static content, so it is an `aside` rather than shadcn's `Alert`:
- * `Alert` carries `role="alert"`, and an assertive live region on prose that was
- * there when the page loaded interrupts a screen reader for nothing. The title
- * and description slots are reused, which is the whole of what "Alert-backed"
- * buys — a shared spacing and typography contract.
- *
- * The kind reaches the reader on three channels, and the tint is only the third
- * of them: a real icon for the sighted reader, the kind's own word for anyone
- * who cannot see it, and the colour on top of both. `data-kind` stays on the
- * element because `article.css` keys the tint and the mark's colour off it.
- */
+// Callout is an aside, not Alert: role=alert on static prose would interrupt a
+// screen reader. Kind reaches the reader as icon, spoken word, and tint.
 export const ArticleCallout = ({ children, kind, title }: CalloutProps) => {
   const Mark = calloutMarks[kind];
 
@@ -166,11 +139,7 @@ export const ArticleCallout = ({ children, kind, title }: CalloutProps) => {
   );
 };
 
-/*
- * A Card collection is a list of things, so it is a list. The `li` is the Card,
- * which is why there is no inner `article` — a second element announcing itself
- * around every tile says nothing the list item did not already say.
- */
+// A Card collection is a list; no inner article — the list item already announces the tile.
 export const ArticleCards = ({
   children,
 }: {
@@ -198,12 +167,8 @@ const ArticleCardContents = ({
   </Card>
 );
 
-/*
- * A linked Card is exactly one link wrapping the whole tile, which is what the
- * contract's `card-interactive` rule already guarantees by rejecting any other
- * interactive content inside it. An unlinked Card is not a target and gets no
- * pointer feedback: `article.css` reacts to the anchor, never to the item.
- */
+// A linked Card is one link wrapping the tile. Unlinked Cards get no pointer
+// feedback: article.css reacts to the anchor, never the item.
 export const ArticleCard = ({
   children,
   href,
@@ -315,35 +280,14 @@ type ArticleCodeBlockProps = ComponentPropsWithoutRef<"pre"> & {
   readonly "data-twoslash-internal"?: string;
 };
 
-/*
- * The line-number start reaches CSS as a custom property, because the gutter is
- * a counter and a counter needs its origin as a number. A declared interface
- * rather than an assertion: `style` accepts any subtype of `CSSProperties`, so
- * naming the property is enough to keep it typed.
- */
+// Line-number start as a custom property: the gutter is a CSS counter.
 interface ArticleCodeBlockStyle extends CSSProperties {
   readonly "--line-start"?: number;
 }
 
-/*
- * `pre` is a global Article mapping, so every `pre` in the compiled tree arrives
- * here — including the one Twoslash's rich renderer emits for a fenced example
- * inside a hover popup. That one already sits inside a frame of its own, and
- * wrapping it again produced a surface, a ring and a copy control nested in the
- * popup's own card, with a `max-content` width that stopped an inferred
- * signature from ever wrapping. The compiler marks it; here it passes straight
- * through as the plain `pre` it is.
- *
- * Everything else becomes the frame: an optional ruled title bar, the copy
- * control, and a compiler-derived accessible name — the language, plus the title
- * when the author gave one — so the figure announces what it holds instead of
- * presenting an unnamed region.
- *
- * The frame stays a Server Component. Only the copy control and the Twoslash pin
- * scope are client leaves, and the scope is mounted solely for a block that
- * actually carries Twoslash markup: it is what makes "one pinned popup" a
- * property of a CodeBlock rather than of the page.
- */
+// `pre` is a global mapping, including Twoslash popup examples. Those are
+// marked data-twoslash-internal so they pass through as a plain pre instead of
+// a nested CodeBlock.
 export const ArticleCodeBlock = ({
   "data-code-name": name,
   "data-code-tab-label": _tabLabel,
@@ -391,19 +335,8 @@ export const ArticleCodeBlock = ({
   );
 };
 
-/*
- * The heading text *is* its own fragment link, with the copy-link control beside
- * it. That shape needs no extra affordance to explain itself and no extra tab
- * stop to reach, and it is the reference's own.
- *
- * The `id` is the compiler's, deterministic and already deduplicated by
- * `github-slugger`, so the link can be written without knowing anything about
- * the Article. A heading compiled without one — which the contract does not
- * produce — degrades to plain text rather than to a broken link.
- *
- * The language stops at h4: `contract.ts` rejects h1 above it and h5/h6 below,
- * so these three are the complete set.
- */
+// The heading text is its own fragment link. A heading compiled without an id
+// degrades to plain text rather than a broken link.
 const ArticleHeadingContent = ({
   children,
   id,
@@ -453,17 +386,8 @@ export const ArticleQuote = (props: ComponentPropsWithoutRef<"blockquote">) => (
   <blockquote {...props} />
 );
 
-/*
- * A wide table scrolls inside the rail instead of compressing its columns into
- * unreadable ones, and it cannot be a rule: `.typeset-scroll` needs a wrapper
- * element, and CSS cannot add one.
- *
- * The region is focusable so a keyboard can scroll it. That costs a tab stop on
- * every table, including narrow ones that never overflow — the alternative is
- * content only a pointer can reach, which is worse. A named `section` is a
- * region, and the name is what makes the stop announce itself as something
- * rather than as an unlabelled box.
- */
+// Table scroll region needs a wrapper; `.typeset-scroll` cannot add one. The
+// region is a named keyboard tab stop so overflow is reachable without a pointer.
 export const ArticleTable = (props: ComponentPropsWithoutRef<"table">) => (
   <section
     aria-label="Table"

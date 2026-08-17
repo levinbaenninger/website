@@ -54,16 +54,8 @@ const useRequiredContext = <T,>(
 };
 
 /**
- * Wires an inactive panel to `hidden="until-found"` and to `beforematch`.
- *
- * The attribute is set imperatively rather than rendered, because React
- * normalises a `hidden` prop to a boolean and the string value is the whole
- * point: `until-found` is what lets a browser's find-in-page reveal a match
- * inside a panel the reader has not opened, and `beforematch` is how the panel
- * hears about it in time to open itself.
- *
- * Exported for `code-tabs.tsx`, which is the third panel kind and needs the
- * identical behaviour.
+ * React normalises a `hidden` prop to a boolean, so `until-found` is set
+ * imperatively. beforematch opens the panel so find-in-page can reveal a match.
  */
 export const useArticleFoundPanel = (reveal: () => void, hidden: boolean) => {
   const panelRef = useRef<HTMLElement>(null);
@@ -112,10 +104,8 @@ export const ArticleAccordionItem = ({
   return (
     <AccordionPrimitive.Item data-slot="article-accordion-item" value={value}>
       {/*
-       * `asChild` replaces Radix's own `h3`: an Accordion label is a component
-       * label, not an authored heading, and the Article outline is the set of
-       * authored headings. A disclosure with no mark reads as a heading anyway,
-       * so the trigger carries a real chevron that `article.css` rotates.
+       * asChild replaces Radix's h3: an Accordion label is not an authored
+       * heading, and Accordion.Header would emit h3 into the outline.
        */}
       <AccordionPrimitive.Header asChild>
         <div data-article-accordion-header data-slot="article-accordion-header">
@@ -239,10 +229,8 @@ export const ArticleTabs = ({
   return (
     <ArticleTabsContext value={context}>
       {/*
-       * Every other block in the language owns its own leading margin, and
-       * Radix's root renders a bare `div` — so without a slot of its own a Tabs
-       * placed directly after an Accordion had no gap at all. Presentation
-       * should not have to match on shape.
+       * Own data-slot so Tabs get a leading margin. Radix's root is a bare div;
+       * without a slot, Tabs after an Accordion had no gap.
        */}
       <TabsPrimitive.Root
         activationMode="automatic"

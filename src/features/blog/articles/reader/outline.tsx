@@ -1,11 +1,4 @@
-// The two Article outline surfaces: the desktop gutter minimap and the mobile
-// "On this page" card.
-//
-// Both render the same list from the same projection and differ only in how a
-// visitor asks for it. Geometry, indentation and timings are transposed from
-// ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại): `src/components/toc-minimap.tsx`
-// and `src/components/toc-inline.tsx`. Composition accepted on #33, behaviour
-// specified on #36.
+// Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
 
 "use client";
 
@@ -34,13 +27,7 @@ interface ArticleOutlineProps {
   readonly outline: readonly ArticleOutlineHeading[];
 }
 
-/**
- * The href a heading link carries.
- *
- * A real, encoded fragment: the link works before hydration, it survives being
- * copied out of the context menu, and it round-trips through the
- * `decodeURIComponent` that fragment navigation resolves it with.
- */
+// Encoded so the fragment works before hydration, survives copy, and round-trips through `decodeURIComponent`.
 const fragmentFor = (id: string): string => `#${encodeURIComponent(id)}`;
 
 const useOutlineSelection = () => {
@@ -73,14 +60,8 @@ const useOutlineSelection = () => {
   };
 };
 
-/**
- * The heading list, shared by both surfaces.
- *
- * One flat list with indentation rather than nested lists: the outline is a
- * reading order, and three levels of nesting announce a tree a visitor is not
- * navigating. `aria-current="location"` is what says which entry is the one
- * being read — the colour alone says it to some visitors only.
- */
+// Flat list rather than nested: nesting would announce a tree visitors are not navigating.
+// `aria-current="location"` because colour alone is not enough.
 const ArticleOutlineList = ({
   activeId,
   className,
@@ -118,7 +99,6 @@ const ArticleOutlineList = ({
   );
 };
 
-/** The decorative depth bars. 24 / 16 / 8 px for depth two, three and four. */
 const ArticleOutlineBars = ({
   activeId,
   outline,
@@ -145,14 +125,7 @@ const ArticleOutlineBars = ({
   </>
 );
 
-/**
- * Brings the item a visitor is about to read into view inside the list.
- *
- * The scroll is written onto the list's own `scrollTop` and the focus is taken
- * with `preventScroll`, because the one thing opening a table of contents must
- * not do is move the page the visitor is reading. `scrollIntoView` would walk
- * up through every scrollable ancestor to the document itself.
- */
+// `scrollIntoView` would scroll the page; write the list's `scrollTop` and focus with `preventScroll`.
 const revealInsideList = (list: HTMLElement, link: HTMLElement): void => {
   const listBox = list.getBoundingClientRect();
   const linkBox = link.getBoundingClientRect();
@@ -165,19 +138,7 @@ const revealInsideList = (list: HTMLElement, link: HTMLElement): void => {
 const LIST_FRAME =
   "z-50 flex max-h-[calc(100dvh-(--spacing(30)))] w-56 overflow-y-auto overscroll-contain rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-border";
 
-/**
- * The desktop gutter minimap.
- *
- * The bars are a picture of the Article: how many sections there are, how deep
- * they go, and where in them the visitor is. The list they open is the same
- * information in words, and it opens on click alone — a hover-opened panel over
- * a column of prose is a panel that opens while a visitor is reaching for the
- * scrollbar.
- *
- * Focus goes to the heading being read, or the first when the visitor has not
- * reached one yet, so the list opens at the place it is about to be used from.
- * Escape closes it and Radix returns focus to the bars.
- */
+// Click, not hover: a hover panel over prose opens while reaching for the scrollbar.
 export const ArticleOutlineMinimap = ({ outline }: ArticleOutlineProps) => {
   useArticleFragmentNavigation();
   const activeId = useActiveOutlineHeadingId(outline);
@@ -242,16 +203,8 @@ export const ArticleOutlineMinimap = ({ outline }: ArticleOutlineProps) => {
   );
 };
 
-/**
- * The mobile "On this page" card, inline at the top of the prose.
- *
- * Collapsed to begin with — the point of the Article is the Article, and a
- * table of contents that opens itself pushes the first paragraph off a phone
- * screen. Once a visitor opens it, it stays open for as long as they are on the
- * Article, including after they pick something from it: someone who wanted the
- * list once is likely to want it again, and a card that folds itself away after
- * every use has to be reopened every time.
- */
+// Starts collapsed so the card does not push the first paragraph off a phone.
+// Stays open after a selection so it is not reopened every time.
 export const ArticleOutlineCard = ({
   className,
   outline,
@@ -289,8 +242,6 @@ export const ArticleOutlineCard = ({
           <ArticleOutlineList
             activeId={activeId}
             className="flex flex-col px-4 pb-2"
-            // Full wrapping, unlike the desktop popover: the card has the width
-            // of the prose column and no reason to cut a heading short.
             linkClassName="text-sm"
             outline={outline}
           />

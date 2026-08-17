@@ -569,8 +569,6 @@ describe("Article operations", () => {
 
     const detail = await articles.findArticle("outlined-article");
 
-    // Document order, every authored depth, and nothing the compiler knows
-    // beyond the three fields the reader is allowed to render.
     expect(detail?.outline).toEqual(headings);
     expect(JSON.stringify(detail?.outline)).not.toContain("Body text");
   });
@@ -886,7 +884,6 @@ describe("Article operations", () => {
       articles.findArticle("older"),
     ]);
 
-    // The listing is alpha, zebra, newer, older.
     expect(first?.navigation).toEqual({
       previous: null,
       next: { href: "/blog/zebra", title: "Draft zebra" },

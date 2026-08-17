@@ -37,10 +37,8 @@ import {
 } from "./test-fixtures";
 import { BlogView } from "./view";
 
-// The one true boundary in this island: the lazy import of Fuse and the fetch
-// of the static artifact. Everything behind it — the real service, the real
-// Fuse configuration, real highlight ranges — is exercised for real, because
-// the point of most of these tests is what the visitor is shown about a match.
+// Mock only the Fuse import and artifact fetch. The real service is exercised
+// because these tests care what the visitor is shown about a match.
 const { loadArticleSearch } = vi.hoisted(() => ({
   loadArticleSearch: vi.fn<() => Promise<ArticleSearch>>(),
 }));
@@ -50,9 +48,8 @@ vi.mock(import("@/features/blog/search/loader"), async (importOriginal) => ({
   loadArticleSearch,
 }));
 
-// The prerender: `renderToStaticMarkup` runs no effects, so the island never
-// reaches its live branch. This is exactly the catalog a visitor receives
-// before — or without — any JavaScript, and it needs no URL adapter.
+// `renderToStaticMarkup` runs no effects, so this is the catalog before — or
+// without — JavaScript, and it needs no URL adapter.
 const renderServer = (articles: readonly ArticleSummary[]) => {
   const markup = renderToStaticMarkup(
     <BlogView articles={articles} tags={TAG_FACETS} />
@@ -441,7 +438,6 @@ describe("Tag filter", () => {
     const { queryString } = onUrlUpdate.mock.calls.at(-1)?.[0] ?? {};
 
     expect(queryString).toBe("?q=cache");
-    // The query outlives the Tag it was combined with.
     await waitFor(() => {
       expect(hrefsOf()).toEqual(["/blog/cache"]);
     });
@@ -841,7 +837,6 @@ describe("explained Article search results", () => {
       name: "Filter Articles by Tag",
     });
 
-    // One mark per token, and only on the Tag the query actually matched.
     expect(marksIn(group)).toEqual(["Web", "performance"]);
   });
 });
@@ -863,7 +858,6 @@ describe("query-relative Tag counts", () => {
 
     await user.click(radio("Web performance 1 Article"));
 
-    // Selecting a Tag narrows the cards, never the counts beside the options.
     expect(hrefsOf()).toEqual(["/blog/cache"]);
     expect(radio("All 2 Articles")).toBeTruthy();
     expect(radio("Next.js 2 Articles")).toBeTruthy();
@@ -902,9 +896,8 @@ describe("shareable query state", () => {
 
     renderHydrated(taggedArticles, { onUrlUpdate });
 
-    // One committed edit rather than twenty keystrokes: the contract here is
-    // what a settled query looks like in the URL, and the adapter coalesces a
-    // burst of writes into an arbitrary subset of them.
+    // Paste rather than type: the adapter coalesces a burst of writes into an
+    // arbitrary subset of them.
     await user.click(searchBox());
     await user.paste("  Cache   Components");
 
@@ -1001,8 +994,6 @@ describe("Article search loading and recovery", () => {
     renderHydrated(taggedArticles);
     await user.type(searchBox(), "cache");
 
-    // The previous catalog stays put while the artifact is in flight, and the
-    // strip says so rather than changing any chip's width.
     expect(hrefsOf()).toHaveLength(3);
     expect(screen.queryByText("Leafing through the Blog\u2026")).toBeNull();
     expect(radio("All 3 Articles")).toBeTruthy();
@@ -1039,7 +1030,6 @@ describe("Article search loading and recovery", () => {
 
     await user.type(field, "s");
 
-    // Latched: the visitor keeps typing, the failure does not multiply.
     expect(loadArticleSearch).toHaveBeenCalledOnce();
     expect(field).toHaveProperty("value", "caches");
     expect(document.activeElement).toBe(field);
@@ -1117,8 +1107,6 @@ describe("result announcements", () => {
       expect(hrefsOf()).toEqual(["/blog/cache"]);
     });
 
-    // Cards first, words later: the count is not read out on the keystroke
-    // that produced it.
     expect(
       screen.queryByText("1 Article found for \u2018cache\u2019.")
     ).toBeNull();

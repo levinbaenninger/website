@@ -102,6 +102,8 @@ const twoslasher = createTwoslasher({
 });
 const transformerTwoslash = createTransformerFactory(
   twoslasher,
+  // Explicit ^? queries and expected-error diagnostics stay as static lines,
+  // not client-only popovers.
   rendererRich({ queryRendering: "line" })
 );
 
@@ -174,13 +176,8 @@ const isCodePre = (node: Element): boolean => {
   );
 };
 
-/*
- * Shiki writes its classes as the raw `class` attribute rather than as hast's
- * `className`, and it writes a single class as a bare string and several as an
- * array. Both shapes and both names occur in one tree — the `pre` carries an
- * array under `class`, a Twoslash hover carries a string under the same key —
- * so a reader that assumes either one silently matches nothing.
- */
+// Shiki writes `class` not `className`, and a single class as a string vs an
+// array for several. Both shapes occur in one tree.
 const hasClass = (node: Element, name: string): boolean => {
   const value = node.properties.class ?? node.properties.className;
   if (typeof value === "string") {
@@ -196,17 +193,9 @@ const srOnlyLabel = (text: string): Element => ({
   children: [{ type: "text", value: text }],
 });
 
-/*
- * Every annotation says its meaning in words as well as in colour.
- *
- * A highlighted line, an added line and a removed line differ by fill alone,
- * and a removed line differs from an added one by hue alone — which is the
- * exact shape of a colour-only distinction. The label is a visually hidden
- * span rather than an `aria-label`, because a `span` carries no role for a name
- * to attach to; `user-select: none` in the stylesheet keeps it out of a
- * selection, and the copy control never sees it at all, since `data-copy-source`
- * is compiled from the authored fence rather than read back off the DOM.
- */
+// Annotation meaning as hidden spans, not aria-label: a span has no role for a
+// name to attach to. Copy never sees them; data-copy-source is compiled from
+// the fence.
 const LINE_ANNOTATION_LABELS: readonly (readonly [string, string])[] = [
   ["highlighted", "Highlighted line: "],
   ["focused", "Focused line: "],
@@ -245,21 +234,8 @@ const labelAnnotatedLines = (root: Root): void => {
   });
 };
 
-/*
- * Twoslash's hover markup becomes three named elements the Article registry can
- * map, so the popup can be a real Radix Popover instead of a CSS hover state.
- *
- * The split happens here, at compile time, and not in a client component that
- * reads `props.children`: across the server/client boundary a child is an
- * unresolved lazy reference during SSR and an element after hydration, so
- * routing children by inspection renders one tree on the server and another on
- * the client. That is the defect #50 exists to have removed, and the compiler is
- * the one place that can partition a tree without guessing at it.
- *
- * Class names are preserved rather than replaced: Shiki's own
- * `twoslash-popup-*` classes are what `code.css` styles the popup's contents
- * with, and the lifted elements carry them through unchanged.
- */
+// Split Twoslash hover markup at compile time, not in a client that reads
+// props.children (lazy ref during SSR vs element after hydration).
 const liftTwoslashHovers = (root: Root): void => {
   visit(root, "element", (node: Element) => {
     if (!hasClass(node, "twoslash-hover")) {
@@ -274,12 +250,7 @@ const liftTwoslashHovers = (root: Root): void => {
       return CONTINUE;
     }
 
-    /*
-     * A JSDoc example inside a hover popup arrives as a `pre`, and `pre` is a
-     * global Article mapping — so without a mark it comes back out as a full
-     * CodeBlock frame, complete with a surface, a ring and a copy control,
-     * nested inside the popup's own frame.
-     */
+    // A JSDoc example `pre` would become a nested CodeBlock without this mark.
     visit(popup, "element", (inner: Element) => {
       if (inner.tagName === "pre") {
         inner.properties["data-twoslash-internal"] = "";
@@ -353,14 +324,8 @@ export default function articleCode(options: ArticleCodePluginOptions) {
     });
     await Reflect.apply(transform, undefined, [root]);
 
-    /*
-     * The compiled fence properties go back onto the highlighted `pre` by
-     * position, so the walk has to count exactly the `pre` elements the walk
-     * above counted. Twoslash's rich renderer can emit a `pre` of its own
-     * inside a hover popup — a fenced example in a JSDoc comment — and every
-     * such `pre` used to consume one entry, shifting the title, the copy source
-     * and the line-number start of every later block by one.
-     */
+    // Count `pre`s excluding Twoslash popup pres: an inner JSDoc `pre` used to
+    // consume one entry and shift later blocks' title, copy source, and line start.
     let index = 0;
     visit(root, "element", (node: Element) => {
       if (node.tagName !== "pre") {

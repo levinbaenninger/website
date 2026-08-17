@@ -19,10 +19,9 @@ const geistMono = Geist_Mono({
 });
 export const metadata: Metadata = createRootMetadata();
 
-/* `--safe-area-bottom` resolves to 0 unless the viewport opts into the
-   display cutout area. The bottom-anchored mobile UI in `header.tsx` and
-   `scroll-to-top.tsx` already reads that token, so without `cover` they
-   were reading zero and never cleared the home indicator. */
+/* `--safe-area-bottom` is 0 without `viewport-fit: cover`. Bottom-anchored
+   mobile UI in `header.tsx` and `scroll-to-top.tsx` reads that token, so
+   without `cover` it never cleared the home indicator. */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,

@@ -504,11 +504,7 @@ const validateTwoslashSource = (node: Code): void => {
   }
 };
 
-/*
- * The spoken name of a language, which is not its fence keyword: "ts" is a
- * fence, "TypeScript" is what a reader hears. Every approved language has one,
- * so the lookup is total and needs no fallback beyond the keyword itself.
- */
+// Spoken name vs fence keyword: "ts" is a fence, "TypeScript" is what a reader hears.
 const CODE_LANGUAGE_NAMES: Readonly<Record<string, string>> = {
   bash: "Bash",
   css: "CSS",
@@ -565,12 +561,7 @@ const annotateCodeNode = (
       ...node.data.hProperties,
       "data-code-title": parsed.title,
       "data-code-tab-label": parsed.tab,
-      /*
-       * The CodeBlock's accessible name is compiled rather than read back off
-       * the rendered tokens: the authored language and title are the only two
-       * facts that describe a block, and both are known here. A reader arriving
-       * on the frame hears what the example is before deciding to enter it.
-       */
+      // Accessible name is compiled from language + title, not read back off tokens.
       "data-code-name": codeBlockName(language, parsed.title),
       "data-copy-source": cleanCopySource(node.value),
       "data-line-numbers-start": parsed.lineNumbers,
@@ -607,22 +598,9 @@ const codeTabsNode = (
     children: [...children],
   }) satisfies ArticleFlowElement;
 
-/*
- * Grouping walks the whole tree, not just `root.children`.
- *
- * A tabbed run authored inside a Step, a Tab or an AccordionItem — "run this,
- * in npm or pnpm" — used to be annotated and then silently dropped on the
- * floor: the labels reached the DOM as `data-code-tab-label` and no `CodeTabs`
- * was ever formed, and the `code-tabs-size`, `code-tabs-boundary`,
- * `code-tabs-label` and `code-tabs-group` diagnostics never fired there either.
- * A silent mistake is the worse half of that; grouping recurses so both halves
- * go away together.
- *
- * The recursion has no allowlist of container names on purpose. The fences live
- * in the leaf composition — `Step`, `Tab`, `AccordionItem` — and an allowlist of
- * containers goes stale the moment the language grows one. Every JSX flow
- * element's children are grouped by the same rule the root's are.
- */
+// Grouping must walk the whole tree, not just root.children: a tabbed run inside
+// a Step/Tab/AccordionItem used to be annotated then dropped, and the size,
+// boundary, label, and group diagnostics never fired there either.
 const groupCodeRuns = <TChild extends RootContent>(
   children: readonly TChild[],
   metadata: ReadonlyMap<Code, CodeFenceMetadata>,
@@ -711,7 +689,7 @@ const validateAndGroupCode = (
   });
 
   visit(root, "mdxJsxFlowElement", (node) => {
-    // A `CodeTabs` this pass just built already holds a grouped run; grouping
+    // A CodeTabs this pass just built already holds a grouped run; grouping
     // it again would nest one CodeTabs inside another.
     if (node.name === "CodeTabs") {
       return SKIP;
@@ -805,7 +783,7 @@ const assignHeadingIds = (
         );
       }
 
-      // The heading text becomes the section's fragment link, so an authored
+      // Heading text becomes the section's fragment link, so an authored
       // link inside it would nest an anchor inside an anchor.
       visit(heading, (descendant) => {
         if (descendant.type === "link" || descendant.type === "linkReference") {

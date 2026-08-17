@@ -16,7 +16,7 @@ export type CopyButtonProps = Omit<
   ComponentProps<typeof Button>,
   "children"
 > & {
-  /** The text to copy, resolved when the button is clicked. */
+  /** Resolved on click so the copied value isn't captured early. */
   text: string | (() => string);
   idleIcon?: ReactNode;
 };

@@ -43,25 +43,18 @@ const replaceOnNavigator = (key: string, value: unknown) => {
   Object.defineProperty(navigator, key, { configurable: true, value });
 };
 
-/** The clipboard a browser hands a page that has permission to write to it. */
 const grantClipboard = () => {
   const writeText = vi.fn<(text: string) => Promise<void>>(async () => {});
   replaceOnNavigator("clipboard", { writeText });
   return writeText;
 };
 
-/**
- * A browser API that refuses.
- *
- * A synchronous throw, as elsewhere in this suite: the caller awaits the result
- * inside a `try`, where a throw and a rejection are the same event.
- */
+// Synchronous throw: the caller awaits inside `try`, where a throw and a rejection are the same event.
 const denied = (error: Error) =>
   vi.fn(() => {
     throw error;
   });
 
-/** The rejection a browser produces when the reader dismissed the sheet. */
 const abort = () =>
   Object.assign(new Error("Share canceled"), { name: "AbortError" });
 

@@ -68,17 +68,13 @@ const TagOption = ({
       }}
       onKeyDown={onKeyDown}
       ref={optionRef}
-      // One stop for the whole group, the way a radio group behaves
-      // everywhere else: Tab reaches the selected option, arrows do the rest.
+      // Single tab stop: Tab lands on the selected option, arrows move.
       tabIndex={selected ? 0 : -1}
       type="radio"
       value={value}
     />
-    {/* The chip is the visual half only, and the sr-only line beside it is the
-        whole accessible name. Highlighting splits a label into several
-        elements, and an accessible name computed from those reads `Next . js`
-        — the option's name must not depend on what a query happened to
-        match. */}
+    {/* Chip is visual only: highlighting splits a label into `Next . js`, so
+        the accessible name lives on the sr-only line beside it. */}
     <Badge
       aria-hidden
       className="peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:opacity-50"
@@ -92,25 +88,9 @@ const TagOption = ({
 );
 
 /**
- * The Tag filter: `All` followed by every Tag in the stable order the server
- * sent, as one radio group with exactly one selected option.
- *
- * Arrow, Home and End are handled here rather than left to the browser. Native
- * radio groups move with the arrow keys but know nothing about Home and End,
- * and the movement has to skip disabled options and wrap, so the group owns
- * the whole policy instead of half of it.
- *
- * A Tag that matches nothing is a dead end and is disabled — unless it is the
- * selected one, which would leave the visitor unable to leave an empty
- * catalog from the keyboard.
- *
- * The strip is also where a Tag-only search match is explained: `highlights`
- * marks the part of a visible Tag label the query matched. Nothing about that
- * belongs on a result card, which is why the card never grows a Badge.
- *
- * `busy` covers the first search load. The counts stay catalog-wide until
- * results exist, so no chip changes width mid-load and nothing under the
- * visitor's pointer moves.
+ * Keyboard is owned here because native radios skip Home/End, disabled options,
+ * and wrap. A selected empty Tag stays enabled so the keyboard can leave.
+ * Tag-only matches are explained on the chips, not the cards.
  */
 export const TagFilter = ({
   allOptionRef,

@@ -60,7 +60,7 @@ export const useSound = (
       try {
         sourceRef.current.stop();
       } catch {
-        // Already stopped
+        // stop() throws if the source has already ended.
       }
       sourceRef.current = null;
     }
@@ -136,7 +136,7 @@ export const useSound = (
         try {
           sourceRef.current.stop();
         } catch {
-          // Already stopped
+          // stop() throws if the source has already ended.
         }
       }
       sourceRef.current = null;

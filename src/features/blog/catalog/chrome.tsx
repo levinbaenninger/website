@@ -1,7 +1,3 @@
-// The settled parts of the Blog catalog presentation: the lined page heading,
-// the Cover frame, and the publication-state row. Server-safe on purpose — the
-// catalog prerenders every card before the discovery island hydrates.
-//
 // Adapted from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
 
 import Image from "next/image";
@@ -21,27 +17,20 @@ export const PageHeading = ({
     <div className="px-4 pb-2 font-heading text-sm/none font-medium tracking-wider text-muted-foreground">
       {tagline}
     </div>
-    {/* Deviation from the reference, accepted in #32: its h1 has no vertical
-        padding, and the title read as cramped between its two guide lines. */}
+    {/* Extra vertical padding: the reference h1 sat cramped between the guide lines. */}
     <h1 className="screen-line-top screen-line-bottom px-4 py-2 font-heading text-4xl font-medium tracking-tight text-balance">
       {title}
     </h1>
   </div>
 );
 
-// Two columns inside the 48 rem rail leave the Cover 22.5 rem at the widest.
+// Two columns in the 48 rem rail cap the Cover at 22.5 rem.
 const COVER_SIZES = "(min-width: 48rem) 22.5rem, (min-width: 40rem) 45vw, 96vw";
 
 /**
- * The decorative Cover. `alt` is empty because the Article link beside it
- * already carries the title, and the image adds nothing a reader would miss.
- *
- * The frame is always 1200:630 and the source is cropped into it, so a card
- * reserves the same space whatever an author's Cover happens to measure.
- *
- * Grayscale is limited to devices with genuine hover: a coarse pointer can
- * neither hover nor reveal the color, so it gets the colored Cover outright.
- * Reduced motion drops the transition, not the color change.
+ * `alt` is empty because the Article link already names the title.
+ * Grayscale only on genuine hover: a coarse pointer cannot reveal the color.
+ * The 1200:630 frame reserves the same space whatever the source measures.
  */
 export const ArticleCover = ({
   cover,
@@ -73,11 +62,7 @@ export const CoverDraftBadge = () => (
   <Badge className="absolute top-2 left-2 shadow-sm">Draft</Badge>
 );
 
-/**
- * The publication state of an Article. A local Draft says so in words rather
- * than showing a date it does not have; a Published Article pairs the visible
- * `dd.MM.yyyy` with the canonical ISO value machines read.
- */
+// Drafts say so in words rather than showing a date they do not have.
 export const PublicationState = ({
   publishedAt,
 }: {

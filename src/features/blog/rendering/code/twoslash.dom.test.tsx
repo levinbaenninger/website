@@ -9,12 +9,8 @@ import {
   ArticleTwoslashTrigger,
 } from "./twoslash";
 
-/*
- * The shape `code.ts` compiles: a hover wrapping a popup and a trigger, the
- * whole thing inside one CodeBlock's pin scope. Written out rather than compiled
- * here so the interaction is the only variable; `contract.test.ts` proves the
- * compiler produces exactly this.
- */
+// Compiled shape: hover wrapping popup + trigger inside one CodeBlock pin
+// scope. Hand-written so interaction is the only variable.
 const Token = ({ signature }: { readonly signature: string }) => (
   <ArticleTwoslashHover className="twoslash-hover">
     <ArticleTwoslashPopup className="twoslash-popup-container">
@@ -54,8 +50,7 @@ describe("Twoslash type popovers", () => {
 
     expect(await screen.findByText("greeting: string")).toBeDefined();
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    // A preview is not a destination: focus stays on the token so Escape and
-    // ordinary tabbing still work from where the reader is.
+    // Preview must not steal focus: Escape and tabbing still work from the token.
     expect(document.activeElement).toBe(trigger);
   });
 
@@ -68,8 +63,7 @@ describe("Twoslash type popovers", () => {
     await screen.findByText("greeting: string");
     await user.unhover(trigger);
 
-    // Clicking a token already previewing under the pointer means "keep this",
-    // never "close it" — which is why the trigger is not Radix's own.
+    // Don't use Radix Trigger: clicking a previewing token would toggle close.
     expect(screen.getByText("greeting: string")).toBeDefined();
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
@@ -98,7 +92,6 @@ describe("Twoslash type popovers", () => {
     await user.click(screen.getByRole("button", { name: "answer" }));
     await screen.findByText("answer: number");
 
-    // A long example must not end under a stack of overlapping cards.
     await waitFor(() => {
       expect(screen.queryByText("greeting: string")).toBeNull();
     });
@@ -143,8 +136,6 @@ describe("Twoslash type popovers", () => {
     await screen.findByText("greeting: string");
     await user.click(screen.getByText("Prose after the example."));
 
-    // Reading on is a dismissal. A pinned popup that survives the reader
-    // leaving the example is a popup sitting on top of the next paragraph.
     await waitFor(() => {
       expect(screen.queryByText("greeting: string")).toBeNull();
     });

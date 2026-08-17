@@ -96,7 +96,6 @@ describe("synchronized code tabs", () => {
           .getAttribute("aria-selected")
       ).toBe("true");
     });
-    // The second strip followed the first without taking the reader with it.
     expect(document.activeElement).toBe(clicked);
   });
 
@@ -148,7 +147,6 @@ describe("synchronized code tabs", () => {
 
     await user.keyboard("{ArrowRight}");
 
-    // Automatic activation: arriving on a tab selects it, no Enter needed.
     await waitFor(() => {
       expect(
         screen

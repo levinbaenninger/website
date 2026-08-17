@@ -1,5 +1,3 @@
-// Catalog fixtures shared by the server and DOM tests for this directory.
-
 import type { Tag } from "@/features/blog/articles/tags";
 import type {
   ArticleSearchDocument,

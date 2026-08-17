@@ -11,8 +11,7 @@ import { CatalogDiscovery } from "./discovery";
 
 const BLOG_TAGLINE = "Blog";
 
-// Kept beside the presentation it belongs to rather than imported from the
-// app's metadata: Blog owns its own copy, and the module cannot reach into app.
+// Blog owns its own copy: this module cannot import from app.
 const BLOG_TITLE =
   "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.";
 
@@ -21,16 +20,6 @@ interface BlogViewProps {
   readonly tags: readonly ArticleTagFacet[];
 }
 
-/**
- * The Blog catalog.
- *
- * Everything a visitor needs in order to find and open an Article is rendered
- * on the server: the heading, every card, and every Article link. The
- * discovery island layers Tag filtering on top once the client takes over.
- *
- * An empty catalog drops the discovery controls entirely — there is nothing to
- * search or filter — and puts the zero state directly under the heading.
- */
 export const BlogView = ({ articles, tags }: BlogViewProps) => (
   <div className="mx-auto w-full border-x border-line pt-12 pb-4 md:w-3xl">
     <PageHeading tagline={BLOG_TAGLINE} title={BLOG_TITLE} />

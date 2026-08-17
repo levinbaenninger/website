@@ -122,8 +122,7 @@ describe("semantic Article components", () => {
     expect(informative).toContain("<figcaption>Diagram caption</figcaption>");
     expect(decorative).toContain('<img alt=""');
     expect(decorative).toContain('width="200" height="100"');
-    // `sizes` is what makes the pipeline responsive: without it Next emits a
-    // fixed-size 1x/2x srcset instead of width-appropriate candidates.
+    // `sizes` makes next/image emit width-appropriate candidates, not a fixed 1x/2x srcset.
     expect(informative).toContain('sizes="(min-width: 48rem) 48rem, 100vw"');
     expect(informative).toContain("srcSet=");
     // An SVG has no raster candidates to choose between.
@@ -158,16 +157,13 @@ describe("semantic Article components", () => {
 
     expect(callout).toContain("<aside");
     expect(callout).toContain('data-kind="warning"');
-    // Static prose is not a live region, so the kind reaches a screen reader as
-    // its own word rather than through the tint or the decorative mark.
+    // Callout is aside, not Alert: static prose must not be a live region.
     expect(callout).not.toContain('role="alert"');
     expect(callout).toContain('data-slot="article-callout-mark"');
     expect(callout).toContain('<span class="sr-only">Warning: </span>');
     expect(untitled).toContain('<span class="sr-only">Danger: </span>');
     expect(untitled).not.toContain('data-slot="alert-title"');
 
-    // A Card collection is a list, the Card is its item, and a linked Card is
-    // exactly one link around the whole tile.
     expect(cards).toContain('<ul data-slot="article-cards">');
     expect(cards.match(/<li data-slot="article-card">/gu)).toHaveLength(2);
     expect(cards).toContain('<a href="/blog/deploy"');
@@ -199,13 +195,11 @@ describe("semantic Article components", () => {
     expect(output).toContain('<ul data-slot="article-files">');
     expect(output).toContain('aria-label="app folder"');
     expect(output).toContain('aria-label="(marketing) folder"');
-    // A Folder nests to whatever depth is authored, and every nested list is a
-    // list — carrying its own slot so the prose marker rules leave it alone.
+    // Nested lists carry their own slot so prose marker rules leave them alone.
     expect(output.match(/data-slot="article-folder-entries"/gu)).toHaveLength(
       2
     );
     expect(output).toContain("a-considerably-longer-route-name.tsx");
-    // The file mark is inferred from the name and is decoration throughout.
     expect(output).toContain('data-file-kind="tsx"');
     expect(output).toContain('data-file-kind="json"');
     expect(output).toContain('data-file-kind="file"');

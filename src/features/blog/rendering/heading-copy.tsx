@@ -1,14 +1,7 @@
 "use client";
 
-// The heading's "Copy link to section" control.
-//
-// Its own client module so the heading itself stays a server component: only
-// this leaf reads the canonical URL and only this leaf hydrates.
-//
-// It renders nothing without a canonical Article URL, which is exactly the local
-// Draft case — an unpublished Article has no public section to link to. The
-// heading keeps its native fragment link either way, so navigating within a
-// Draft still works.
+// Own client module so the heading stays a server component. Renders nothing
+// without a canonical URL (local Drafts have no public section to share).
 
 import { LinkIcon } from "lucide-react";
 

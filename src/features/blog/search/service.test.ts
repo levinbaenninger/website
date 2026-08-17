@@ -89,9 +89,7 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
-    // Titles outrank the body, and equal titles fall back to slug order. The
-    // body-only Article is last but present: it says the words, so it is an
-    // answer, which is the whole point of a full-text search.
+    // Body-only is last but present: it says the words, so it is an answer.
     expect(search.search("cache components").map(({ id }) => id)).toEqual([
       "a-title",
       "z-title",
@@ -212,7 +210,6 @@ describe("client-safe Article search", () => {
         await Promise.resolve();
         return createResponse(
           artifact([
-            // Says the word.
             document("exact", {
               body: "Caching is the topic here.",
               description: "Unrelated.",
@@ -236,7 +233,6 @@ describe("client-safe Article search", () => {
     }).load();
 
     expect(search.search("caching").map(({ id }) => id)).toEqual(["exact"]);
-    // Nothing here shares enough with `rust` to be a candidate at all.
     expect(search.search("rust")).toEqual([]);
   });
 

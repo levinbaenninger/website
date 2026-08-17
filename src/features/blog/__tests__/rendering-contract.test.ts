@@ -940,8 +940,8 @@ key: value
   </AccordionItem>
 </Accordion>`);
 
-    // Three nested runs, each grouped rather than discarded. Before #53 the
-    // labels reached the DOM and no strip was ever formed.
+    // Grouping walked the whole tree: nested runs used to reach the DOM as
+    // labels with no strip.
     expect(markup.match(/data-code-tabs/gu)).toHaveLength(3);
     expect(markup).not.toContain("data-code-tab-label");
     for (const label of [
@@ -958,8 +958,7 @@ key: value
   });
 
   test("reports CodeTabs diagnostics at nested depth", async () => {
-    // The worse half of the old defect was silence: a mistake authored inside a
-    // Step compiled cleanly and rendered as loose blocks.
+    // Nested mistakes used to compile cleanly and render as loose blocks.
     const invalid = [
       [
         '<Steps>\n  <Step title="One">\n```ts tab="Only"\nvalue\n```\n  </Step>\n</Steps>',
@@ -1006,16 +1005,14 @@ key: value
 
     expect(markup).toContain("--shiki-light:");
     expect(markup).toContain("--shiki-dark:");
-    // The frame owns the surface; an inline background could only be beaten
-    // with `!important`, and the stylesheet carries none.
+    // The frame owns the surface; an inline background could only be beaten with `!important`.
     expect(markup).not.toMatch(/style="[^"]*background-color:/u);
     expect(markup).not.toMatch(/style="[^"]*[^-]color:\s*#/u);
   });
 
   test("keeps compiled fence facts aligned across a Twoslash block", async () => {
-    // Twoslash can emit a `pre` of its own inside a popup, and the facts are
-    // reapplied by position: an uncounted `pre` used to shift the title, the
-    // copy source and the line-number start of every later block by one.
+    // Count `pre`s excluding Twoslash popup pres: an uncounted inner `pre`
+    // used to shift later blocks' title, copy source, and line start.
     const { codeBlocks } = await renderArticle(`\`\`\`ts twoslash
 const greeting: string = "hello"
 \`\`\`
@@ -1055,20 +1052,15 @@ const worded = 5 // [!code word:worded]
 const greeting: string = "hello"
 \`\`\``);
 
-    // One frame for the fence, and Twoslash's own markup is not a second one:
-    // the compiler marks the `pre` a popup may carry so the global `pre`
-    // mapping leaves it alone.
+    // Compiler marks a popup `pre` so the global `pre` mapping leaves it alone.
     expect(hover.codeBlocks).toHaveLength(1);
     expect(hover.markup.match(/data-code-block/gu)).toHaveLength(1);
-    // The token became a real control rather than a hover-only span. Its popup
-    // is portalled, so it is client-only by construction — which is exactly why
-    // an explicit query or diagnostic must not be one.
+    // Popup is portalled, so it is client-only — explicit queries must not be one.
     expect(hover.markup).toContain('data-twoslash-trigger=""');
     expect(hover.markup).toContain('aria-haspopup="dialog"');
     expect(hover.markup).toContain(">greeting</button>");
 
-    // An explicit query and an expected error are authored output: the reader
-    // asked for them to be *shown*, so they stay static visible code.
+    // Explicit ^? / expected-error stay static visible code, not a control.
     const explicit = await renderArticle(`\`\`\`ts twoslash
 // @errors: 2322
 const answer: number = 42
@@ -1080,8 +1072,7 @@ const teaching: string = 42
     expect(explicit.markup).toContain(
       "Type &#x27;number&#x27; is not assignable to type &#x27;string&#x27;."
     );
-    // The query prints the inferred type as code under the line, not as a
-    // control: an authored `^?` is output, and output does not need operating.
+    // Authored `^?` is output under the line, not a trigger.
     expect(explicit.markup).not.toMatch(
       /twoslash-query-line[^>]*>[\s\S]*?data-twoslash-trigger/u
     );

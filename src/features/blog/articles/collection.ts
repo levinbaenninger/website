@@ -170,11 +170,8 @@ const toNeighbourLink = (
   article === undefined ? null : { href: article.href, title: article.title };
 
 /**
- * Previous and Next in the exact order the catalog lists, which is why they are
- * derived from the visible collection rather than from a separate query: an
- * unfiltered list is the only thing that reproduces what a visitor scrolled
- * past. The collection does not wrap, so a boundary yields `null`, and in
- * production a Draft is not in the array at all — it cannot become a neighbour.
+ * Neighbours come from the visible collection so they match catalog order. A
+ * production Draft is not in the array, so it cannot become a neighbour.
  */
 const toReaderNavigation = (
   articles: readonly CanonicalArticle[],
@@ -184,14 +181,7 @@ const toReaderNavigation = (
   next: toNeighbourLink(articles[index + 1]),
 });
 
-/**
- * The reader's view of the compiled headings.
- *
- * Copied field by field rather than handed over: `ArticleCompilationFacts` also
- * carries the link inventory and the search text, and the reader has no business
- * with either. Everything downstream of here — the projection, the islands, the
- * rendered links — sees only depth, ID and text.
- */
+// Copied field-by-field so link inventory and search text stay private.
 const toOutline = (
   article: CanonicalArticle
 ): readonly ArticleOutlineHeading[] =>

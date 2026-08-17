@@ -29,7 +29,6 @@ const RECOVERY_HREF_ORDER: Record<NotFoundVariant, readonly string[]> = {
   article: ["/blog", "/"],
 };
 
-/** Leads with the area the visitor was already in. */
 export const orderRecoveryDestinations = (
   variant: NotFoundVariant
 ): AppDestination[] =>
