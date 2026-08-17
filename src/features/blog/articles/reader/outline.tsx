@@ -263,7 +263,7 @@ export const ArticleOutlineCard = ({
   return (
     <Collapsible
       className={cn(
-        "group/outline-card rounded-xl bg-[var(--surface)] font-sans text-[var(--surface-foreground)] inset-ring-1 inset-ring-border/64",
+        "group/outline-card rounded-xl font-sans inset-ring-1 inset-ring-border/64",
         className
       )}
       data-slot="article-outline-card"

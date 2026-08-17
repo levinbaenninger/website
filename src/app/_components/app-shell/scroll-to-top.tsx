@@ -32,7 +32,7 @@ export const ScrollToTop = () => {
       aria-label="Scroll to top"
       data-visible={visible}
       tabIndex={visible ? 0 : -1}
-      className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-50 border-none opacity-0 shadow-sm transition-opacity duration-300 data-[visible=false]:pointer-events-none data-[visible=true]:opacity-100 lg:right-8 lg:bottom-[calc(2rem+env(safe-area-inset-bottom,0px))]"
+      className="fixed right-4 bottom-safe-4 z-50 border-none opacity-0 shadow-sm transition-opacity duration-300 data-[visible=false]:pointer-events-none data-[visible=true]:opacity-100 lg:right-8 lg:bottom-safe-8"
       onClick={() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }}

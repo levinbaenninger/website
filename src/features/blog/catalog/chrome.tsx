@@ -54,7 +54,7 @@ export const ArticleCover = ({
     <Image
       alt=""
       blurDataURL={cover.blurDataURL}
-      className="aspect-1200/630 w-full rounded-(--image-radius) object-cover transition-[filter] duration-300 ease-[cubic-bezier(0.42,0,0.58,1)] group-hover:grayscale-0 group-has-[a:focus-visible]:grayscale-0 motion-reduce:transition-none [@media(hover:hover)]:grayscale"
+      className="aspect-1200/630 w-full rounded-(--image-radius) object-cover transition-[filter] duration-300 ease-in-out group-hover:grayscale-0 group-has-[a:focus-visible]:grayscale-0 motion-reduce:transition-none [@media(hover:hover)]:grayscale"
       height={cover.height}
       loading={eager ? "eager" : "lazy"}
       placeholder={cover.blurDataURL === undefined ? "empty" : "blur"}

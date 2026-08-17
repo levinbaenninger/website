@@ -31,7 +31,7 @@ export const ThemeToggle = () => {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          className="touch-manipulation not-pointer-fine:hit-area-2"
+          className="touch-manipulation"
           variant="ghost"
           size="icon-sm"
           aria-label="Toggle Mode"

@@ -21,6 +21,8 @@
  * The title bar takes Fumadocs' shape instead, minus its language icon.
  */
 
+/* fallow-ignore-file css-selector-complexity */
+
 /* ---------------------------------------------------------------- FRAME -- */
 
 /*
@@ -98,10 +100,12 @@
  * block on the site renders the light theme in dark mode, which was true here
  * until #53.
  */
+/* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] :is(.shiki, .shiki span) {
   color: var(--shiki-light);
 }
 
+/* fallow-ignore-next-line css-dead-surface */
 .dark [data-slot="article-body"] :is(.shiki, .shiki span) {
   color: var(--shiki-dark);
 }
@@ -252,6 +256,7 @@
   background-color: var(--code-highlight);
 }
 
+/* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] .highlighted-word {
   border-radius: 0.25rem;
   background-color: var(--code-highlight);
@@ -266,6 +271,7 @@
  * the tab stop Shiki already gives it. Without the second half, the unfocused
  * lines were unreadable to anyone not using a mouse.
  */
+/* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] pre.has-focused .line:not(.focused) {
   filter: blur(2px);
   opacity: 0.7;
@@ -274,6 +280,7 @@
     opacity 200ms ease;
 }
 
+/* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] pre.has-focused:hover .line:not(.focused),
 [data-slot="article-body"] pre.has-focused:focus-within .line:not(.focused) {
   filter: none;
@@ -295,6 +302,7 @@
   opacity: 0.75;
 }
 
+/* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] pre.has-diff .line {
   position: relative;
 }
@@ -455,11 +463,13 @@
   overflow-wrap: break-word;
 }
 
+/* fallow-ignore-next-line css-dead-surface */
 [data-article-twoslash-popup]
   :is(.shiki, .shiki span, .twoslash-popup-code span) {
   color: var(--shiki-light);
 }
 
+/* fallow-ignore-next-line css-dead-surface */
 .dark
   [data-article-twoslash-popup]
   :is(.shiki, .shiki span, .twoslash-popup-code span) {
@@ -486,7 +496,10 @@
 /* --------------------------------------------------------------- MOTION -- */
 
 @media (prefers-reduced-motion: reduce) {
-  [data-slot="article-body"] [data-article-code-copy],
+  [data-slot="article-body"] [data-article-code-copy] {
+    transition: none;
+  }
+  /* fallow-ignore-next-line css-dead-surface */
   [data-slot="article-body"] pre.has-focused .line:not(.focused) {
     transition: none;
   }
@@ -510,6 +523,7 @@
     overflow-wrap: break-word;
   }
 
+  /* fallow-ignore-next-line css-dead-surface */
   [data-slot="article-body"] pre.has-focused .line:not(.focused) {
     filter: none;
     opacity: 1;

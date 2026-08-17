@@ -1130,6 +1130,32 @@ const expressionIconName = (
   return element.openingElement.name.name;
 };
 
+const validateIconAttribute = (
+  iconAttribute: ArticleAttribute | undefined,
+  iconImports: ReadonlySet<string>,
+  consumedIcons: Set<string>,
+  diagnostics: ArticleDiagnostics,
+  invalidMessage: (offendingValue: unknown) => string
+): void => {
+  if (iconAttribute === undefined) {
+    return;
+  }
+
+  diagnostics.capture(iconAttribute, () => {
+    const iconName = expressionIconName(iconAttribute);
+    if (iconName === undefined || !iconImports.has(iconName)) {
+      const offendingValue =
+        iconAttribute.type === "mdxJsxAttribute" &&
+        typeof iconAttribute.value === "object" &&
+        iconAttribute.value !== null
+          ? iconAttribute.value.value
+          : iconAttribute;
+      throw new Error(invalidMessage(offendingValue));
+    }
+    consumedIcons.add(iconName);
+  });
+};
+
 interface FileTreeEntry {
   readonly children: FileTreeEntry[];
   readonly folder: boolean;
@@ -1523,24 +1549,14 @@ const validateCard = (
     diagnostics,
     false
   );
-  const iconAttribute = attributes.get("icon");
-  if (iconAttribute !== undefined) {
-    diagnostics.capture(iconAttribute, () => {
-      const iconName = expressionIconName(iconAttribute);
-      if (iconName === undefined || !iconImports.has(iconName)) {
-        const offendingValue =
-          iconAttribute.type === "mdxJsxAttribute" &&
-          typeof iconAttribute.value === "object" &&
-          iconAttribute.value !== null
-            ? iconAttribute.value.value
-            : iconAttribute;
-        throw new Error(
-          `[blog/card-icon] Card.icon ${JSON.stringify(offendingValue)} is invalid. Use one imported, zero-prop Lucide icon element such as icon={<RocketIcon />}.`
-        );
-      }
-      consumedIcons.add(iconName);
-    });
-  }
+  validateIconAttribute(
+    attributes.get("icon"),
+    iconImports,
+    consumedIcons,
+    diagnostics,
+    (offendingValue) =>
+      `[blog/card-icon] Card.icon ${JSON.stringify(offendingValue)} is invalid. Use one imported, zero-prop Lucide icon element such as icon={<RocketIcon />}.`
+  );
   validateNoNamedChildren(node, "blog/card-children", diagnostics);
   if (href !== undefined) {
     visit({ type: "root", children: node.children } as Root, (child) => {
@@ -1881,24 +1897,14 @@ const validateTab = (
     "blog/tab-title",
     diagnostics
   );
-  const iconAttribute = attributes.get("icon");
-  if (iconAttribute !== undefined) {
-    diagnostics.capture(iconAttribute, () => {
-      const iconName = expressionIconName(iconAttribute);
-      if (iconName === undefined || !iconImports.has(iconName)) {
-        const offendingValue =
-          iconAttribute.type === "mdxJsxAttribute" &&
-          typeof iconAttribute.value === "object" &&
-          iconAttribute.value !== null
-            ? iconAttribute.value.value
-            : iconAttribute;
-        throw new Error(
-          `[blog/tab-icon] Tab icon ${JSON.stringify(offendingValue)} is invalid. Use one imported Lucide icon rendered as a zero-prop self-closing element.`
-        );
-      }
-      consumedIcons.add(iconName);
-    });
-  }
+  validateIconAttribute(
+    attributes.get("icon"),
+    iconImports,
+    consumedIcons,
+    diagnostics,
+    (offendingValue) =>
+      `[blog/tab-icon] Tab icon ${JSON.stringify(offendingValue)} is invalid. Use one imported Lucide icon rendered as a zero-prop self-closing element.`
+  );
   diagnostics.capture(node, () => {
     if (meaningfulChildren(node).length === 0) {
       throw new Error(

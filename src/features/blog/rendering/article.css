@@ -30,6 +30,8 @@
  * tokens.
  */
 
+/* fallow-ignore-file css-selector-complexity */
+
 /* ---------------------------------------------------------------- TOKENS -- */
 
 /*
@@ -56,6 +58,11 @@
 
 .dark [data-slot="article-reader"] {
   --surface: oklch(0.21 0.006 285.823);
+}
+
+[data-slot="article-outline-card"] {
+  background-color: var(--surface);
+  color: var(--surface-foreground);
 }
 
 [data-slot="article-body"] {
@@ -230,11 +237,14 @@
   box-shadow: none;
 }
 
-/* GFM task lists. The input is `disabled`, so it must not read as broken. */
+/* GFM task lists. The input is `disabled`, so it must not read as broken.
+   remark-gfm emits these classes. */
+/* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] ul.contains-task-list {
   padding-inline-start: 0;
 }
 
+/* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] li.task-list-item {
   padding-inline-start: 0;
 }
@@ -247,6 +257,7 @@
  * its alignment point. Both dimensions are `em`, so it tracks the text at any
  * size, and neither depends on the leading.
  */
+/* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] li.task-list-item > input[type="checkbox"] {
   accent-color: var(--foreground);
   opacity: 1;

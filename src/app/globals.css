@@ -11,19 +11,6 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-line: var(--line);
   --color-selection-foreground: var(--selection-foreground);
   --color-selection: var(--selection);
@@ -74,20 +61,8 @@
   --selection: oklch(0 0 0);
   --selection-foreground: oklch(1 0 0);
   --line: color-mix(in oklab, var(--border) 64%, var(--background));
-  --chart-1: oklch(0.871 0.006 286.286);
-  --chart-2: oklch(0.552 0.016 285.938);
-  --chart-3: oklch(0.442 0.017 285.786);
-  --chart-4: oklch(0.37 0.013 285.805);
-  --chart-5: oklch(0.274 0.006 286.033);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0 0 0);
 }
 
 .dark {
@@ -111,20 +86,6 @@
   --ring: oklch(0.985 0 0);
   --selection: oklch(1 0 0);
   --selection-foreground: oklch(0 0 0);
-  --line: color-mix(in oklab, var(--border) 64%, var(--background));
-  --chart-1: oklch(0.871 0.006 286.286);
-  --chart-2: oklch(0.552 0.016 285.938);
-  --chart-3: oklch(0.442 0.017 285.786);
-  --chart-4: oklch(0.37 0.013 285.805);
-  --chart-5: oklch(0.274 0.006 286.033);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0 0 0);
 }
 
 @layer base {
@@ -150,8 +111,7 @@
   }
 
   ::selection {
-    background-color: var(--selection);
-    color: var(--selection-foreground);
+    @apply bg-selection text-selection-foreground;
   }
 
   html {
@@ -166,160 +126,6 @@
      the vertical axis only, so horizontal content stays clipped. */
   html:has(body[data-scroll-locked]) {
     overflow-y: hidden;
-  }
-}
-
-.typeset-docs {
-  --typeset-font-body: var(--font-geist);
-  --typeset-font-heading: var(--font-geist);
-  --typeset-font-mono: var(--font-geist-mono);
-  --typeset-size: 14px;
-  --typeset-leading: 1.75;
-  --typeset-flow: 1em;
-}
-
-@utility hit-area-debug {
-  position: relative;
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-    @apply border border-dashed border-blue-500 bg-blue-500/10;
-  }
-  &:hover::before {
-    @apply border border-dashed border-green-500 bg-green-500/10;
-  }
-}
-
-@utility hit-area {
-  position: relative;
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-* {
-  position: relative;
-  --hit-area-t: --spacing(--value(number) * -1);
-  --hit-area-t: calc(--value([*]) * -1);
-  --hit-area-b: --spacing(--value(number) * -1);
-  --hit-area-b: calc(--value([*]) * -1);
-  --hit-area-l: --spacing(--value(number) * -1);
-  --hit-area-l: calc(--value([*]) * -1);
-  --hit-area-r: --spacing(--value(number) * -1);
-  --hit-area-r: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-l-* {
-  position: relative;
-  --hit-area-l: --spacing(--value(number) * -1);
-  --hit-area-l: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-r-* {
-  position: relative;
-  --hit-area-r: --spacing(--value(number) * -1);
-  --hit-area-r: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-t-* {
-  position: relative;
-  --hit-area-t: --spacing(--value(number) * -1);
-  --hit-area-t: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-b-* {
-  position: relative;
-  --hit-area-b: --spacing(--value(number) * -1);
-  --hit-area-b: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-x-* {
-  position: relative;
-  --hit-area-l: --spacing(--value(number) * -1);
-  --hit-area-l: calc(--value([*]) * -1);
-  --hit-area-r: --spacing(--value(number) * -1);
-  --hit-area-r: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-y-* {
-  position: relative;
-  --hit-area-t: --spacing(--value(number) * -1);
-  --hit-area-t: calc(--value([*]) * -1);
-  --hit-area-b: --spacing(--value(number) * -1);
-  --hit-area-b: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
   }
 }
 
@@ -374,4 +180,12 @@
     content: "";
     @apply absolute left-[-100vw] -z-1 h-full w-[200vw] diagonal-stripes;
   }
+}
+
+@utility bottom-safe-4 {
+  bottom: calc(1rem + var(--safe-area-bottom));
+}
+
+@utility bottom-safe-8 {
+  bottom: calc(2rem + var(--safe-area-bottom));
 }

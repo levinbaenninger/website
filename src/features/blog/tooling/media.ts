@@ -254,38 +254,51 @@ const diagnostic = (
   column,
 });
 
+const asciiBytes = (bytes: Uint8Array, start: number, length: number): string =>
+  Buffer.from(bytes.subarray(start, start + length)).toString("ascii");
+
+const isPngSignature = (bytes: Uint8Array): boolean =>
+  bytes.length >= 8 &&
+  bytes[0] === 0x89 &&
+  bytes[1] === 0x50 &&
+  bytes[2] === 0x4e &&
+  bytes[3] === 0x47 &&
+  bytes[4] === 0x0d &&
+  bytes[5] === 0x0a &&
+  bytes[6] === 0x1a &&
+  bytes[7] === 0x0a;
+
+const isJpegSignature = (bytes: Uint8Array): boolean =>
+  bytes.length >= 3 &&
+  bytes[0] === 0xff &&
+  bytes[1] === 0xd8 &&
+  bytes[2] === 0xff;
+
+const isWebpSignature = (bytes: Uint8Array): boolean =>
+  bytes.length >= 12 &&
+  asciiBytes(bytes, 0, 4) === "RIFF" &&
+  asciiBytes(bytes, 8, 4) === "WEBP";
+
+const isAvifSignature = (bytes: Uint8Array): boolean => {
+  if (bytes.length < 12 || asciiBytes(bytes, 4, 4) !== "ftyp") {
+    return false;
+  }
+  const brands = asciiBytes(bytes, 8, Math.min(bytes.length - 8, 32));
+  return brands.includes("avif") || brands.includes("avis");
+};
+
 const detectedRasterFormat = (bytes: Uint8Array): string | undefined => {
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
+  if (isPngSignature(bytes)) {
     return "png";
   }
-  if (
-    bytes.length >= 3 &&
-    bytes[0] === 0xff &&
-    bytes[1] === 0xd8 &&
-    bytes[2] === 0xff
-  ) {
+  if (isJpegSignature(bytes)) {
     return "jpeg";
   }
-  const ascii = (start: number, length: number): string =>
-    Buffer.from(bytes.subarray(start, start + length)).toString("ascii");
-  if (bytes.length >= 12 && ascii(0, 4) === "RIFF" && ascii(8, 4) === "WEBP") {
+  if (isWebpSignature(bytes)) {
     return "webp";
   }
-  if (bytes.length >= 12 && ascii(4, 4) === "ftyp") {
-    const brands = ascii(8, Math.min(bytes.length - 8, 32));
-    if (brands.includes("avif") || brands.includes("avis")) {
-      return "avif";
-    }
+  if (isAvifSignature(bytes)) {
+    return "avif";
   }
   return undefined;
 };
@@ -308,49 +321,136 @@ const hasApngAnimation = (bytes: Uint8Array): boolean => {
   return false;
 };
 
+interface RasterMetadata {
+  readonly width?: number;
+  readonly height?: number;
+  readonly pages?: number;
+  readonly delay?: number | readonly number[];
+  readonly loop?: number;
+  readonly format?: string;
+}
+
+interface SvgReference {
+  readonly id: string;
+  readonly line?: number;
+  readonly column?: number;
+}
+
+interface SvgWalkState {
+  readonly ids: Set<string>;
+  readonly references: SvgReference[];
+}
+
+type ParsedSvg =
+  | { readonly ok: true; readonly document: XmlDocument }
+  | { readonly ok: false; readonly diagnostics: readonly BlogDiagnostic[] };
+
+const expectedRasterFormat = (extension: string): string =>
+  extension === ".jpg" ? "jpeg" : extension.slice(1);
+
+const isAnimatedRaster = (metadata: RasterMetadata): boolean =>
+  (metadata.pages ?? 1) !== 1 ||
+  metadata.delay !== undefined ||
+  metadata.loop !== undefined;
+
+const rasterExceedsDimensionLimits = (width: number, height: number): boolean =>
+  width <= 0 ||
+  height <= 0 ||
+  width > DIMENSION_LIMIT ||
+  height > DIMENSION_LIMIT ||
+  width * height > PIXEL_LIMIT;
+
+const inspectRasterMetadata = (
+  input: MediaInput,
+  expected: string,
+  metadata: RasterMetadata
+): BlogDiagnostic[] => {
+  const diagnostics: BlogDiagnostic[] = [];
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  const pageCount = metadata.pages ?? 1;
+  const decodedFormat = metadata.format === "heif" ? "avif" : metadata.format;
+
+  if (isAnimatedRaster(metadata)) {
+    diagnostics.push(
+      diagnostic(
+        input,
+        "blog/media-animation",
+        "Animated or multi-frame images are not supported.",
+        "Replace the file with a single-frame still image.",
+        { pages: pageCount }
+      )
+    );
+  }
+  if (decodedFormat !== expected) {
+    diagnostics.push(
+      diagnostic(
+        input,
+        "blog/media-raster-format",
+        "The decoded image format does not match its lowercase extension.",
+        "Export the image in the format named by its extension.",
+        { decoded: decodedFormat ?? "unknown", expected }
+      )
+    );
+  }
+  if (rasterExceedsDimensionLimits(width, height)) {
+    diagnostics.push(
+      diagnostic(
+        input,
+        "blog/media-raster-dimensions",
+        "Raster dimensions must be positive, no axis may exceed 8,192 pixels, and the image may not exceed 40 megapixels.",
+        "Resize the image within all dimension ceilings.",
+        {
+          actual: { width, height, pixels: width * height },
+          allowed: {
+            maximumAxis: DIMENSION_LIMIT,
+            maximumPixels: PIXEL_LIMIT,
+          },
+        }
+      )
+    );
+  }
+  return diagnostics;
+};
+
 const validateRaster = async (
   input: MediaInput
 ): Promise<readonly BlogDiagnostic[]> => {
-  const diagnostics: BlogDiagnostic[] = [];
   if (input.bytes.byteLength > RASTER_BYTE_LIMIT) {
-    diagnostics.push(
+    return [
       diagnostic(
         input,
         "blog/media-raster-byte-limit",
         "The raster image exceeds the 10 MiB source-size ceiling.",
         "Reduce the file to at most 10 MiB.",
         { actual: input.bytes.byteLength, allowed: RASTER_BYTE_LIMIT }
-      )
-    );
-    return diagnostics;
+      ),
+    ];
   }
 
-  const expected =
-    input.extension === ".jpg" ? "jpeg" : input.extension.slice(1);
+  const expected = expectedRasterFormat(input.extension);
   const detected = detectedRasterFormat(input.bytes);
   if (detected !== expected) {
-    diagnostics.push(
+    return [
       diagnostic(
         input,
         "blog/media-raster-format",
         "The file signature does not match its lowercase extension.",
         "Export the image in the format named by its extension.",
         { detected: detected ?? "unknown", expected }
-      )
-    );
-    return diagnostics;
+      ),
+    ];
   }
 
   if (detected === "png" && hasApngAnimation(input.bytes)) {
-    diagnostics.push(
+    return [
       diagnostic(
         input,
         "blog/media-animation",
         "Animated PNG images are not supported.",
         "Replace the file with a single-frame still image."
-      )
-    );
-    return diagnostics;
+      ),
+    ];
   }
 
   try {
@@ -359,102 +459,42 @@ const validateRaster = async (
       limitInputPixels: PIXEL_LIMIT,
       unlimited: false,
     });
-    const metadata = await image.metadata();
-    const width = metadata.width ?? 0;
-    const height = metadata.height ?? 0;
-    const pageCount = metadata.pages ?? 1;
-    const decodedFormat = metadata.format === "heif" ? "avif" : metadata.format;
-    const animated =
-      pageCount !== 1 ||
-      metadata.delay !== undefined ||
-      metadata.loop !== undefined;
-
-    if (animated) {
-      diagnostics.push(
-        diagnostic(
-          input,
-          "blog/media-animation",
-          "Animated or multi-frame images are not supported.",
-          "Replace the file with a single-frame still image.",
-          { pages: pageCount }
-        )
-      );
-    }
-    if (decodedFormat !== expected) {
-      diagnostics.push(
-        diagnostic(
-          input,
-          "blog/media-raster-format",
-          "The decoded image format does not match its lowercase extension.",
-          "Export the image in the format named by its extension.",
-          { decoded: decodedFormat ?? "unknown", expected }
-        )
-      );
-    }
-    if (
-      width <= 0 ||
-      height <= 0 ||
-      width > DIMENSION_LIMIT ||
-      height > DIMENSION_LIMIT ||
-      width * height > PIXEL_LIMIT
-    ) {
-      diagnostics.push(
-        diagnostic(
-          input,
-          "blog/media-raster-dimensions",
-          "Raster dimensions must be positive, no axis may exceed 8,192 pixels, and the image may not exceed 40 megapixels.",
-          "Resize the image within all dimension ceilings.",
-          {
-            actual: { width, height, pixels: width * height },
-            allowed: {
-              maximumAxis: DIMENSION_LIMIT,
-              maximumPixels: PIXEL_LIMIT,
-            },
-          }
-        )
-      );
-    }
+    const diagnostics = inspectRasterMetadata(
+      input,
+      expected,
+      await image.metadata()
+    );
     if (diagnostics.length === 0) {
       await image.stats();
     }
+    return diagnostics;
   } catch (error) {
-    diagnostics.push(
+    return [
       diagnostic(
         input,
         "blog/media-raster-decode",
         "The raster image could not be decoded completely.",
         "Re-export or replace the corrupt image.",
         error instanceof Error ? error.message : String(error)
-      )
-    );
+      ),
+    ];
   }
-  return diagnostics;
 };
 
-const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
-  const diagnostics: BlogDiagnostic[] = [];
-  if (input.bytes.byteLength > SVG_BYTE_LIMIT) {
-    return [
-      diagnostic(
-        input,
-        "blog/media-svg-byte-limit",
-        "The SVG exceeds the 1 MiB source-size ceiling.",
-        "Reduce the SVG source to at most 1 MiB.",
-        { actual: input.bytes.byteLength, allowed: SVG_BYTE_LIMIT }
-      ),
-    ];
-  }
-
+const parseSvgDocument = (input: MediaInput): ParsedSvg => {
   const sourceText = Buffer.from(input.bytes).toString("utf-8");
   if (/<!DOCTYPE|<!ENTITY/iu.test(sourceText)) {
-    return [
-      diagnostic(
-        input,
-        "blog/media-svg-entity",
-        "SVG document types and entity declarations are forbidden.",
-        "Remove the DTD or entity declaration."
-      ),
-    ];
+    return {
+      ok: false,
+      diagnostics: [
+        diagnostic(
+          input,
+          "blog/media-svg-entity",
+          "SVG document types and entity declarations are forbidden.",
+          "Remove the DTD or entity declaration."
+        ),
+      ],
+    };
   }
 
   const parseFailures: string[] = [];
@@ -470,17 +510,26 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
     document = undefined;
   }
   if (parseFailures.length > 0 || document === undefined) {
-    return [
-      diagnostic(
-        input,
-        "blog/media-svg-xml",
-        "The SVG is not well-formed XML.",
-        "Correct the XML syntax.",
-        parseFailures
-      ),
-    ];
+    return {
+      ok: false,
+      diagnostics: [
+        diagnostic(
+          input,
+          "blog/media-svg-xml",
+          "The SVG is not well-formed XML.",
+          "Correct the XML syntax.",
+          parseFailures
+        ),
+      ],
+    };
   }
+  return { ok: true, document };
+};
 
+const svgRootDiagnostic = (
+  input: MediaInput,
+  document: XmlDocument
+): BlogDiagnostic | undefined => {
   const root = document.documentElement;
   if (
     document.doctype !== null ||
@@ -488,17 +537,20 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
     root.localName !== "svg" ||
     root.namespaceURI !== SVG_NAMESPACE
   ) {
-    diagnostics.push(
-      diagnostic(
-        input,
-        "blog/media-svg-root",
-        "An SVG must have exactly one svg root in the SVG namespace.",
-        'Use <svg xmlns="http://www.w3.org/2000/svg"> as the document root.'
-      )
+    return diagnostic(
+      input,
+      "blog/media-svg-root",
+      "An SVG must have exactly one svg root in the SVG namespace.",
+      'Use <svg xmlns="http://www.w3.org/2000/svg"> as the document root.'
     );
-    return diagnostics;
   }
+  return undefined;
+};
 
+const svgDimensionsDiagnostic = (
+  input: MediaInput,
+  root: XmlElement
+): BlogDiagnostic | undefined => {
   const dimensions = ["width", "height"].map((name) =>
     Number(root.getAttribute(name))
   );
@@ -513,29 +565,219 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
     viewBox[2] <= 0 ||
     viewBox[3] <= 0
   ) {
+    return diagnostic(
+      input,
+      "blog/media-svg-dimensions",
+      "SVGs require finite positive numeric width and height plus a valid four-number viewBox.",
+      "Add intrinsic dimensions and a positive viewBox.",
+      {
+        width: root.getAttribute("width"),
+        height: root.getAttribute("height"),
+        viewBox: root.getAttribute("viewBox"),
+      },
+      root.lineNumber,
+      root.columnNumber
+    );
+  }
+  return undefined;
+};
+
+const isForbiddenXmlNode = (node: XmlNode): boolean =>
+  node.nodeType === node.DOCUMENT_TYPE_NODE ||
+  node.nodeType === node.ENTITY_NODE ||
+  node.nodeType === node.ENTITY_REFERENCE_NODE ||
+  node.nodeType === node.PROCESSING_INSTRUCTION_NODE;
+
+const isForbiddenSvgAttribute = (name: string): boolean =>
+  name === "style" ||
+  name.toLowerCase().startsWith("on") ||
+  !SVG_ATTRIBUTES.has(name);
+
+const isLocalSvgFragment = (value: string): boolean =>
+  /^#[A-Za-z_][\w:.-]*$/u.test(value);
+
+const inspectSvgHref = (
+  input: MediaInput,
+  value: string,
+  line: number | undefined,
+  column: number | undefined,
+  state: SvgWalkState,
+  diagnostics: BlogDiagnostic[]
+): void => {
+  if (isLocalSvgFragment(value)) {
+    state.references.push({ id: value.slice(1), line, column });
+    return;
+  }
+  diagnostics.push(
+    diagnostic(
+      input,
+      "blog/media-svg-reference",
+      "SVG href values must be local fragment references.",
+      'Use a local reference such as "#shape".',
+      value,
+      line,
+      column
+    )
+  );
+};
+
+const inspectSvgPaintUrls = (
+  input: MediaInput,
+  value: string,
+  line: number | undefined,
+  column: number | undefined,
+  state: SvgWalkState,
+  diagnostics: BlogDiagnostic[]
+): void => {
+  for (const match of value.matchAll(/url\s*\(\s*([^)]*?)\s*\)/giu)) {
+    const target = match[1]?.replaceAll(/^["']|["']$/gu, "");
+    if (target === undefined || !isLocalSvgFragment(target)) {
+      diagnostics.push(
+        diagnostic(
+          input,
+          "blog/media-svg-external-resource",
+          "SVG URL values must be local fragment references.",
+          'Use url("#id") or remove the resource reference.',
+          value,
+          line,
+          column
+        )
+      );
+    } else {
+      state.references.push({ id: target.slice(1), line, column });
+    }
+  }
+};
+
+const inspectSvgId = (
+  input: MediaInput,
+  value: string,
+  line: number | undefined,
+  column: number | undefined,
+  state: SvgWalkState,
+  diagnostics: BlogDiagnostic[]
+): void => {
+  if (!/^[A-Za-z_][\w:.-]*$/u.test(value)) {
     diagnostics.push(
       diagnostic(
         input,
-        "blog/media-svg-dimensions",
-        "SVGs require finite positive numeric width and height plus a valid four-number viewBox.",
-        "Add intrinsic dimensions and a positive viewBox.",
-        {
-          width: root.getAttribute("width"),
-          height: root.getAttribute("height"),
-          viewBox: root.getAttribute("viewBox"),
-        },
-        root.lineNumber,
-        root.columnNumber
+        "blog/media-svg-id",
+        "SVG IDs must be non-empty XML-style identifiers.",
+        "Rename the ID using letters, digits, underscores, colons, periods, or hyphens.",
+        value,
+        line,
+        column
+      )
+    );
+  }
+  if (state.ids.has(value)) {
+    diagnostics.push(
+      diagnostic(
+        input,
+        "blog/media-svg-duplicate-id",
+        "SVG IDs must be unique.",
+        "Rename one of the duplicate IDs and update its references.",
+        value,
+        line,
+        column
+      )
+    );
+  }
+  state.ids.add(value);
+};
+
+const inspectSvgAttribute = (
+  input: MediaInput,
+  element: XmlElement,
+  name: string,
+  value: string,
+  state: SvgWalkState,
+  diagnostics: BlogDiagnostic[]
+): void => {
+  const line = element.lineNumber;
+  const column = element.columnNumber;
+  if (isForbiddenSvgAttribute(name)) {
+    diagnostics.push(
+      diagnostic(
+        input,
+        "blog/media-svg-attribute",
+        "The SVG contains an attribute outside the reviewed static vocabulary.",
+        "Remove styles, event handlers, and unsupported attributes.",
+        name,
+        line,
+        column
+      )
+    );
+    return;
+  }
+  if (name === "font-family" && /url\s*\(/iu.test(value)) {
+    diagnostics.push(
+      diagnostic(
+        input,
+        "blog/media-svg-external-resource",
+        "SVG fonts and external resources are forbidden.",
+        "Use ordinary local presentation attributes without external resources.",
+        value,
+        line,
+        column
+      )
+    );
+  }
+  if (name === "href" || name === "xlink:href") {
+    inspectSvgHref(input, value, line, column, state, diagnostics);
+    return;
+  }
+  inspectSvgPaintUrls(input, value, line, column, state, diagnostics);
+  if (name === "id") {
+    inspectSvgId(input, value, line, column, state, diagnostics);
+  }
+};
+
+const inspectSvgElement = (
+  input: MediaInput,
+  element: XmlElement,
+  state: SvgWalkState,
+  diagnostics: BlogDiagnostic[]
+): void => {
+  if (
+    element.namespaceURI !== SVG_NAMESPACE ||
+    !SVG_ELEMENTS.has(element.localName ?? "")
+  ) {
+    diagnostics.push(
+      diagnostic(
+        input,
+        "blog/media-svg-element",
+        "The SVG contains an element outside the reviewed static vocabulary.",
+        "Use only static SVG shapes, text, gradients, masks, filters, symbols, and grouping elements.",
+        element.tagName,
+        element.lineNumber,
+        element.columnNumber
       )
     );
   }
 
-  const ids = new Set<string>();
-  const references: {
-    readonly id: string;
-    readonly line?: number;
-    readonly column?: number;
-  }[] = [];
+  for (let index = 0; index < element.attributes.length; index += 1) {
+    const attribute = element.attributes.item(index);
+    if (attribute === null) {
+      continue;
+    }
+    inspectSvgAttribute(
+      input,
+      element,
+      attribute.name,
+      attribute.value.trim(),
+      state,
+      diagnostics
+    );
+  }
+};
+
+const walkSvgTree = (
+  input: MediaInput,
+  document: XmlDocument,
+  diagnostics: BlogDiagnostic[]
+): SvgWalkState => {
+  const state: SvgWalkState = { ids: new Set(), references: [] };
   const stack: { readonly node: XmlNode; readonly depth: number }[] = [
     { node: document, depth: 0 },
   ];
@@ -560,12 +802,7 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
     }
 
     const { node } = current;
-    if (
-      node.nodeType === node.DOCUMENT_TYPE_NODE ||
-      node.nodeType === node.ENTITY_NODE ||
-      node.nodeType === node.ENTITY_REFERENCE_NODE ||
-      node.nodeType === node.PROCESSING_INSTRUCTION_NODE
-    ) {
+    if (isForbiddenXmlNode(node)) {
       diagnostics.push(
         diagnostic(
           input,
@@ -580,130 +817,7 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
     }
 
     if (isXmlElement(node, node.ELEMENT_NODE)) {
-      const element = node;
-      const line = element.lineNumber;
-      const column = element.columnNumber;
-      if (
-        element.namespaceURI !== SVG_NAMESPACE ||
-        !SVG_ELEMENTS.has(element.localName ?? "")
-      ) {
-        diagnostics.push(
-          diagnostic(
-            input,
-            "blog/media-svg-element",
-            "The SVG contains an element outside the reviewed static vocabulary.",
-            "Use only static SVG shapes, text, gradients, masks, filters, symbols, and grouping elements.",
-            element.tagName,
-            line,
-            column
-          )
-        );
-      }
-
-      for (let index = 0; index < element.attributes.length; index += 1) {
-        const attribute = element.attributes.item(index);
-        if (attribute === null) {
-          continue;
-        }
-        const { name, value: rawValue } = attribute;
-        const value = rawValue.trim();
-        if (
-          name === "style" ||
-          name.toLowerCase().startsWith("on") ||
-          !SVG_ATTRIBUTES.has(name)
-        ) {
-          diagnostics.push(
-            diagnostic(
-              input,
-              "blog/media-svg-attribute",
-              "The SVG contains an attribute outside the reviewed static vocabulary.",
-              "Remove styles, event handlers, and unsupported attributes.",
-              name,
-              line,
-              column
-            )
-          );
-          continue;
-        }
-        if (name === "font-family" && /url\s*\(/iu.test(value)) {
-          diagnostics.push(
-            diagnostic(
-              input,
-              "blog/media-svg-external-resource",
-              "SVG fonts and external resources are forbidden.",
-              "Use ordinary local presentation attributes without external resources.",
-              value,
-              line,
-              column
-            )
-          );
-        }
-        if (name === "href" || name === "xlink:href") {
-          if (/^#[A-Za-z_][\w:.-]*$/u.test(value)) {
-            references.push({ id: value.slice(1), line, column });
-          } else {
-            diagnostics.push(
-              diagnostic(
-                input,
-                "blog/media-svg-reference",
-                "SVG href values must be local fragment references.",
-                'Use a local reference such as "#shape".',
-                value,
-                line,
-                column
-              )
-            );
-          }
-          continue;
-        }
-        for (const match of value.matchAll(/url\s*\(\s*([^)]*?)\s*\)/giu)) {
-          const target = match[1]?.replaceAll(/^["']|["']$/gu, "");
-          if (target === undefined || !/^#[A-Za-z_][\w:.-]*$/u.test(target)) {
-            diagnostics.push(
-              diagnostic(
-                input,
-                "blog/media-svg-external-resource",
-                "SVG URL values must be local fragment references.",
-                'Use url("#id") or remove the resource reference.',
-                value,
-                line,
-                column
-              )
-            );
-          } else {
-            references.push({ id: target.slice(1), line, column });
-          }
-        }
-        if (name === "id") {
-          if (!/^[A-Za-z_][\w:.-]*$/u.test(value)) {
-            diagnostics.push(
-              diagnostic(
-                input,
-                "blog/media-svg-id",
-                "SVG IDs must be non-empty XML-style identifiers.",
-                "Rename the ID using letters, digits, underscores, colons, periods, or hyphens.",
-                value,
-                line,
-                column
-              )
-            );
-          }
-          if (ids.has(value)) {
-            diagnostics.push(
-              diagnostic(
-                input,
-                "blog/media-svg-duplicate-id",
-                "SVG IDs must be unique.",
-                "Rename one of the duplicate IDs and update its references.",
-                value,
-                line,
-                column
-              )
-            );
-          }
-          ids.add(value);
-        }
-      }
+      inspectSvgElement(input, node, state, diagnostics);
     }
 
     for (
@@ -715,8 +829,16 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
     }
   }
 
-  for (const reference of references) {
-    if (!ids.has(reference.id)) {
+  return state;
+};
+
+const pushUnresolvedSvgReferences = (
+  input: MediaInput,
+  state: SvgWalkState,
+  diagnostics: BlogDiagnostic[]
+): void => {
+  for (const reference of state.references) {
+    if (!state.ids.has(reference.id)) {
       diagnostics.push(
         diagnostic(
           input,
@@ -730,6 +852,44 @@ const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
       );
     }
   }
+};
+
+const validateSvg = (input: MediaInput): readonly BlogDiagnostic[] => {
+  if (input.bytes.byteLength > SVG_BYTE_LIMIT) {
+    return [
+      diagnostic(
+        input,
+        "blog/media-svg-byte-limit",
+        "The SVG exceeds the 1 MiB source-size ceiling.",
+        "Reduce the SVG source to at most 1 MiB.",
+        { actual: input.bytes.byteLength, allowed: SVG_BYTE_LIMIT }
+      ),
+    ];
+  }
+
+  const parsed = parseSvgDocument(input);
+  if (!parsed.ok) {
+    return parsed.diagnostics;
+  }
+
+  const rootDiagnostic = svgRootDiagnostic(input, parsed.document);
+  if (rootDiagnostic !== undefined) {
+    return [rootDiagnostic];
+  }
+
+  const root = parsed.document.documentElement;
+  if (root === null) {
+    return [];
+  }
+
+  const diagnostics: BlogDiagnostic[] = [];
+  const dimensionsDiagnostic = svgDimensionsDiagnostic(input, root);
+  if (dimensionsDiagnostic !== undefined) {
+    diagnostics.push(dimensionsDiagnostic);
+  }
+
+  const state = walkSvgTree(input, parsed.document, diagnostics);
+  pushUnresolvedSvgReferences(input, state, diagnostics);
   return diagnostics;
 };
 

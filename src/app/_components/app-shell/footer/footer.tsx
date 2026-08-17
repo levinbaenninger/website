@@ -112,6 +112,6 @@ export const Footer = () => (
     </div>
 
     <div className="h-24" />
-    <div className="pb-[env(safe-area-inset-bottom,0)]" />
+    <div className="pb-(--safe-area-bottom)" />
   </footer>
 );

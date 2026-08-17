@@ -39,6 +39,7 @@ import type { ReactNode } from "react";
 
 import { ArticlePanel } from "@/features/blog/rendering/article-panel";
 import { useArticleFoundPanel } from "@/features/blog/rendering/interactions";
+import { flattenChildren } from "@/shared/ui/flatten-children";
 
 import { parseCodeTabLabels } from "./code-tabs-contract.ts";
 
@@ -120,30 +121,6 @@ interface ArticleCodeTabsProps {
 }
 
 /*
- * The panels are the compiled fences in their authored order, and the labels are
- * the compiled labels in theirs — one list, one index. Nothing inspects a child:
- * across the server/client boundary a child is an unresolved lazy reference
- * during SSR and an element after hydration, so reading `props.children` renders
- * one tree on the server and a different one on the client. Position is the only
- * fact about a child this module uses, and the compiler guarantees it.
- */
-const flattenChildren = (children: ReactNode): ReactNode[] => {
-  if (
-    children === null ||
-    children === undefined ||
-    typeof children === "boolean"
-  ) {
-    return [];
-  }
-
-  if (Array.isArray(children)) {
-    return children.flatMap((child: ReactNode) => flattenChildren(child));
-  }
-
-  return [children];
-};
-
-/*
  * Every panel stays mounted and the inactive ones are `hidden="until-found"`, so
  * a browser find-in-page can reveal a match inside a tab the reader has not
  * opened — and `beforematch` is how the panel hears about it and selects itself.
@@ -189,6 +166,15 @@ export const ArticleCodeTabs = ({
     () => parseCodeTabLabels(serializedLabels),
     [serializedLabels]
   );
+  /*
+   * The panels are the compiled fences in their authored order, and the labels
+   * are the compiled labels in theirs — one list, one index. Nothing inspects a
+   * child: across the server/client boundary a child is an unresolved lazy
+   * reference during SSR and an element after hydration, so reading
+   * `props.children` renders one tree on the server and a different one on the
+   * client. Position is the only fact about a child this module uses, and the
+   * compiler guarantees it.
+   */
   const panels = useMemo(() => flattenChildren(children), [children]);
   const defaultLabel = labels[0] ?? "";
   const [selected, setSelected] = useState(defaultLabel);

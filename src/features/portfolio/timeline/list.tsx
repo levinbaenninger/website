@@ -7,24 +7,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/shared/ui/collapsible";
+import { flattenChildren } from "@/shared/ui/flatten-children";
 
 const DEFAULT_MAX_VISIBLE_ITEMS = 3;
-
-const flattenChildren = (children: ReactNode): ReactNode[] => {
-  if (
-    children === null ||
-    children === undefined ||
-    typeof children === "boolean"
-  ) {
-    return [];
-  }
-
-  if (Array.isArray(children)) {
-    return children.flatMap((child: ReactNode) => flattenChildren(child));
-  }
-
-  return [children];
-};
 
 export const TimelineList = ({
   children,
