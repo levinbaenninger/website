@@ -5,8 +5,7 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { ArticleCanonicalUrlProvider } from "./canonical-url";
 import { ArticleHeading2 } from "./components";
 
-// The shared CopyButton plays a feedback sound inside the click gesture, and
-// Happy DOM has no Web Audio implementation to play it through.
+// CopyButton plays feedback inside the click gesture; Happy DOM has no Web Audio.
 vi.mock(import("@/shared/audio/use-sound"), () => ({
   useSound: () =>
     [

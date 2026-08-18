@@ -28,8 +28,7 @@ import { truncatePath } from "./truncate-path";
 const UNRESOLVED_PATH = "—";
 
 /**
- * A static 404 prerenders as `/_not-found`, so `path` is `null` until the
- * visited address is known after hydration.
+ * Static 404 prerenders as `/_not-found`; `path` is null until hydration.
  */
 export const NotFoundPanel = ({ path }: { path: string | null }) => {
   const [plotToken, setPlotToken] = useState(0);

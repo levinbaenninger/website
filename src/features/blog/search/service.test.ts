@@ -89,7 +89,6 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
-    // Body-only is last but present: it says the words, so it is an answer.
     expect(search.search("cache components").map(({ id }) => id)).toStrictEqual(
       ["a-title", "z-title", "body-only"]
     );
@@ -215,8 +214,6 @@ describe("client-safe Article search", () => {
               tags: [],
               title: "Unrelated prose",
             }),
-            // Close enough to reach the candidate gate on `coaching`, far
-            // enough that offering it as an answer would be a guess.
             document("near", {
               body: "A coaching manual for unrelated prose.",
               description: "Unrelated.",

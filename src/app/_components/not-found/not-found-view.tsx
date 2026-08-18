@@ -14,8 +14,8 @@ const onServer = () => false;
 
 export const NotFoundView = () => {
   const pathname = usePathname();
-  // A static 404 prerenders as `/_not-found`, so the address the visitor
-  // actually asked for is only knowable once hydrated.
+  // Static 404 prerenders as `/_not-found`; the visited address is knowable
+  // only after hydration.
   const isHydrated = useSyncExternalStore(
     subscribeToNothing,
     onClient,

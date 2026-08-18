@@ -15,8 +15,7 @@ const { reducedMotion } = vi.hoisted(() => ({
   reducedMotion: { current: false },
 }));
 
-// The menu plays the shared click-soft tick inside the click gesture, and Happy
-// DOM has no Web Audio implementation to play it through.
+// Happy DOM has no Web Audio; the menu plays a tick inside the click gesture.
 vi.mock(import("@/shared/audio/use-sound"), () => ({
   useSound: () =>
     [
@@ -49,7 +48,6 @@ const grantClipboard = () => {
   return writeText;
 };
 
-// Synchronous throw: the caller awaits inside `try`, where a throw and a rejection are the same event.
 const denied = (error: Error) =>
   vi.fn(() => {
     throw error;
@@ -83,8 +81,6 @@ describe("Article Share menu", () => {
   test("shares the canonical Article URL it was given, not the browser's", async () => {
     const user = userEvent.setup();
     const writeText = grantClipboard();
-    // A location the menu must not reach for: the same Article, but a preview
-    // origin carrying a fragment and an incidental query parameter.
     window.history.replaceState(
       null,
       "",
@@ -101,8 +97,6 @@ describe("Article Share menu", () => {
     expect(x.getAttribute("href")).toBe(
       `https://x.com/intent/tweet?text=${encodeURIComponent(TITLE)}&url=${encodeURIComponent(CANONICAL_URL)}`
     );
-    // LinkedIn's feed share intent prefills the composer with title and URL;
-    // share-offsite only accepts a URL and often opens empty.
     expect(linkedIn.getAttribute("href")).toBe(
       `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${TITLE} ${CANONICAL_URL}`)}`
     );
@@ -197,7 +191,6 @@ describe("Article Share menu", () => {
       screen.getByRole("menuitem", { name: "More sharing options…" })
     );
 
-    // Cancelling is a decision, not a failure. The menu keeps its own words.
     await waitFor(() => {
       expect(screen.getByRole("status").textContent).toBe("");
     });

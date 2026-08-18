@@ -1,10 +1,6 @@
 // No `"use client"`: this renders inside server-prerendered cards.
 import type { HighlightedText as HighlightedTextValue } from "@/features/blog/search/service";
 
-/**
- * Semantic `<mark>` so assistive technology can say why a result is here.
- * Tint at unchanged weight: a bold highlight would re-rank typography every keystroke.
- */
 export const HighlightedText = ({ value }: { value: HighlightedTextValue }) => {
   const { highlights, text } = value;
 

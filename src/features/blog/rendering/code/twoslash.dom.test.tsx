@@ -9,8 +9,6 @@ import {
   ArticleTwoslashTrigger,
 } from "./twoslash";
 
-// Compiled shape: hover wrapping popup + trigger inside one CodeBlock pin
-// scope. Hand-written so interaction is the only variable.
 const Token = ({ signature }: { readonly signature: string }) => (
   <ArticleTwoslashHover className="twoslash-hover">
     <ArticleTwoslashPopup className="twoslash-popup-container">
@@ -50,7 +48,6 @@ describe("Twoslash type popovers", () => {
 
     await expect(screen.findByText("greeting: string")).resolves.toBeDefined();
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    // Preview must not steal focus: Escape and tabbing still work from the token.
     expect(document.activeElement).toBe(trigger);
   });
 

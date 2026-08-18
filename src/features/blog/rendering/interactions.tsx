@@ -53,10 +53,7 @@ const useRequiredContext = <T,>(
   return context;
 };
 
-/**
- * React normalises a `hidden` prop to a boolean, so `until-found` is set
- * imperatively. beforematch opens the panel so find-in-page can reveal a match.
- */
+// React normalises a `hidden` prop to a boolean, so `until-found` is set imperatively.
 export const useArticleFoundPanel = (reveal: () => void, hidden: boolean) => {
   const panelRef = useRef<HTMLElement>(null);
 
@@ -103,10 +100,7 @@ export const ArticleAccordionItem = ({
 
   return (
     <AccordionPrimitive.Item data-slot="article-accordion-item" value={value}>
-      {/*
-       * asChild replaces Radix's h3: an Accordion label is not an authored
-       * heading, and Accordion.Header would emit h3 into the outline.
-       */}
+      {/* asChild replaces Radix's h3: Accordion.Header would emit h3 into the outline. */}
       <AccordionPrimitive.Header asChild>
         <div data-article-accordion-header data-slot="article-accordion-header">
           <AccordionPrimitive.Trigger
@@ -228,10 +222,7 @@ export const ArticleTabs = ({
 
   return (
     <ArticleTabsContext value={context}>
-      {/*
-       * Own data-slot so Tabs get a leading margin. Radix's root is a bare div;
-       * without a slot, Tabs after an Accordion had no gap.
-       */}
+      {/* Own data-slot so Tabs get a leading margin; Radix's root is a bare div. */}
       <TabsPrimitive.Root
         activationMode="automatic"
         data-slot="article-tabs"

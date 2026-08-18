@@ -193,8 +193,7 @@ describe("synchronized code tabs", () => {
     render(<CodeTabsFixture />);
 
     const inactive = screen.getByText("JavaScript panel").parentElement;
-    // `until-found` is what lets find-in-page reveal a match the reader has not
-    // opened; a plain `hidden` would make the text unreachable.
+    // `until-found` lets find-in-page reveal a match; a plain `hidden` would make the text unreachable.
     expect(inactive?.getAttribute("hidden")).toBe("until-found");
     expect(inactive?.getAttribute("role")).toBe("tabpanel");
   });

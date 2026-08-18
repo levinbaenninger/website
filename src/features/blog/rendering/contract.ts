@@ -270,8 +270,6 @@ const TWOSLASH_COPY_DIRECTIVE_PATTERN = new RegExp(
   "u"
 );
 
-// Mutable build type: the optional icon slot is added as a statement so an
-// absent icon stays absent instead of becoming an undefined-valued key.
 interface TabPanelInput {
   iconSlot?: string;
   label: string;
@@ -508,7 +506,6 @@ const validateTwoslashSource = (node: Code): void => {
   }
 };
 
-// Spoken name vs fence keyword: "ts" is a fence, "TypeScript" is what a reader hears.
 const CODE_LANGUAGE_NAMES = {
   bash: "Bash",
   css: "CSS",
@@ -572,7 +569,6 @@ const annotateCodeNode = (
       ...node.data.hProperties,
       "data-code-title": parsed.title,
       "data-code-tab-label": parsed.tab,
-      // Accessible name is compiled from language + title, not read back off tokens.
       "data-code-name": codeBlockName(language, parsed.title),
       "data-copy-source": cleanCopySource(node.value),
       "data-line-numbers-start": parsed.lineNumbers,
@@ -609,9 +605,7 @@ const codeTabsNode = (
     children: [...children],
   }) satisfies ArticleFlowElement;
 
-// Grouping must walk the whole tree, not just root.children: a tabbed run inside
-// a Step/Tab/AccordionItem used to be annotated then dropped, and the size,
-// boundary, label, and group diagnostics never fired there either.
+// Grouping must walk the whole tree, not just root.children; nested tabbed runs would otherwise be dropped.
 const groupCodeRuns = <TChild extends RootContent>(
   children: readonly TChild[],
   metadata: ReadonlyMap<Code, CodeFenceMetadata>,
@@ -700,8 +694,7 @@ const validateAndGroupCode = (
   });
 
   visit(root, "mdxJsxFlowElement", (node) => {
-    // A CodeTabs this pass just built already holds a grouped run; grouping
-    // it again would nest one CodeTabs inside another.
+    // Don't regroup a CodeTabs this pass just built; that would nest CodeTabs inside CodeTabs.
     if (node.name === "CodeTabs") {
       return SKIP;
     }
@@ -794,8 +787,7 @@ const assignHeadingIds = (
         );
       }
 
-      // Heading text becomes the section's fragment link, so an authored
-      // link inside it would nest an anchor inside an anchor.
+      // Heading text is the fragment link; an authored link would nest anchors.
       visit(heading, (descendant) => {
         if (descendant.type === "link" || descendant.type === "linkReference") {
           throw new Error(

@@ -1,10 +1,7 @@
 import { createElement } from "react";
 import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from "react";
 
-/**
- * Custom element so hidden="until-found" and data-article-panel live on one
- * host that Radix can asChild into.
- */
+// Custom element so hidden="until-found" and data-article-panel live on one host.
 export const ArticlePanel = ({
   children,
   hidden,

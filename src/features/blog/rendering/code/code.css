@@ -1,8 +1,7 @@
 /*
  * Unlayered so this beats `.typeset` in `@layer components` without
  * `!important`. `code.ts` passes `defaultColor: false`, so both themes arrive
- * as `--shiki-light` and `--shiki-dark` and the container owns its fill —
- * Shiki used to write inline `background-color` and `color` on the `pre`.
+ * as `--shiki-light` / `--shiki-dark` and the container owns its fill.
  *
  * Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
  */
@@ -11,9 +10,8 @@
 
 /*
  * `--frame-fill` rather than a literal: a frame inside a panel must not use
- * the panel's fill, or the code stops being a distinct object. The gutter
- * reads the same variable so a sticky line number stays opaque over scrolling
- * code.
+ * the panel's fill. The gutter reads the same variable so a sticky line number
+ * stays opaque over scrolling code.
  */
 [data-slot="article-body"] figure[data-code-block] {
   --frame-fill: var(--surface);
@@ -31,12 +29,6 @@
   --frame-fill: var(--background);
 }
 
-/*
- * The source scrolls horizontally and never wraps: a wrapped line silently
- * changes the program. Shiki gives the `pre` a `tabindex`, so the overflow is
- * reachable without a pointer. The scrollbar is hidden because the frame is
- * 4px of padding and a stock bar sits on the code.
- */
 [data-slot="article-body"] figure[data-code-block] pre {
   margin: 0;
   border-radius: 0;
@@ -57,7 +49,6 @@
   outline-offset: -2px;
 }
 
-/* 14/17 rather than the reference's 14/20: code is scanned in columns, so it wants tighter leading than prose. */
 [data-slot="article-body"] figure[data-code-block] code {
   display: block;
   min-width: 100%;
@@ -72,7 +63,7 @@
   padding-inline: 1rem;
 }
 
-/* Both themes from one compilation. Without the dark half every code block renders the light theme in dark mode. */
+/* Both themes from one compilation. Without the dark half, dark mode renders light. */
 /* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] :is(.shiki, .shiki span) {
   color: var(--shiki-light);
@@ -111,7 +102,6 @@
   white-space: nowrap;
 }
 
-/* With no title there is no row: the control lifts out of flow to the top-right and lines gain end padding so a long line never runs under it. */
 [data-slot="article-body"]
   figure[data-code-block]
   > figcaption:not(:has(> span)) {
@@ -128,11 +118,6 @@
   padding-inline-end: 3.5rem;
 }
 
-/*
- * Hover alone fails three ways: a keyboard has no hover, a touch screen has
- * no hover, and a control that hides itself the moment it is used reports
- * nothing back.
- */
 [data-slot="article-body"] [data-article-code-copy] {
   opacity: 0;
   transition: opacity 150ms ease;
@@ -154,9 +139,8 @@
 
 /*
  * Line numbers are a CSS counter, never text: generated content cannot be
- * selected or reach the clipboard, so a copy gets the program. The gutter is
- * sticky and paints `--frame-fill` because the `pre` underneath is transparent
- * and the code scrolls beneath.
+ * selected or copied. Gutter is sticky and paints `--frame-fill` because the
+ * `pre` underneath is transparent and the code scrolls beneath.
  */
 [data-slot="article-body"]
   figure[data-code-block][data-line-numbers-start]
@@ -187,12 +171,6 @@
   text-align: end;
 }
 
-/*
- * Each annotation says its meaning in words as well as colour: `code.ts`
- * writes a visually hidden label; a removed vs added line would otherwise
- * differ by hue alone. Labels take `user-select: none` so a selection still
- * yields the program.
- */
 [data-slot="article-body"] [data-code-annotation] {
   user-select: none;
 }
@@ -209,7 +187,7 @@
   box-shadow: 0 0 0 2px var(--code-highlight);
 }
 
-/* Focus blur must be escapable by every input mode. `:focus-within` restores it for a keyboard via Shiki's `pre` tab stop; without that, unfocused lines were unreadable without a mouse. */
+/* Focus blur must be escapable: `:focus-within` restores it via Shiki's `pre` tab stop. */
 /* fallow-ignore-next-line css-dead-surface */
 [data-slot="article-body"] pre.has-focused .line:not(.focused) {
   filter: blur(2px);
@@ -226,7 +204,6 @@
   opacity: 1;
 }
 
-/* A diff without colour is unreadable, so it keeps conventional green/red; the `+`/`-` gutter mark plus the hidden label carry the meaning when colour does not. */
 [data-slot="article-body"] .line.diff.add {
   background-color: var(--code-added);
 }
@@ -255,7 +232,6 @@
   content: "-";
 }
 
-/* A framed block inside a panel would otherwise take its own leading margin on top of the panel's padding. */
 [data-slot="article-body"]
   [data-code-tabs]
   [role="tabpanel"]
@@ -263,7 +239,6 @@
   margin-block-start: 0;
 }
 
-/* Twoslash's underline is the only affordance that the token has type information, and it is a real button, so it has to look like ordinary code until approached. */
 [data-slot="article-body"] [data-twoslash-trigger] {
   appearance: none;
   border: 0;
@@ -295,8 +270,7 @@
 }
 
 /*
- * `^?` queries and expected-error diagnostics are explicit authored output,
- * not popovers — they stay static under the line, visible with no interaction.
+ * `^?` queries and expected-error diagnostics stay static under the line.
  * They are block-level children of the code element, so they start at its
  * edge while real lines start 16px in; with a gutter that becomes 64px.
  */
@@ -313,7 +287,6 @@
   color: var(--muted-foreground);
 }
 
-/* A query prints its popup container inline under the line — it is not a card, so it reads as the code it is. */
 [data-slot="article-body"] .twoslash-query-line .twoslash-popup-container {
   display: inline;
 }
@@ -336,12 +309,10 @@
 }
 
 /*
- * The popup is portalled, so it renders outside `[data-slot="article-body"]`
- * and cannot inherit that scope's tokens. A portal takes it out of the `pre`'s
- * overflow instead of un-clipping the frame. Width is stated then clamped: a
- * popup is shrink-to-fit, and `overflow-wrap: anywhere` drives min-content
- * down to a single character. `break-word` wraps without touching intrinsic
- * sizing.
+ * Popup is portalled, so it cannot inherit `[data-slot="article-body"]` tokens
+ * and must leave the `pre`'s overflow. Width is stated then clamped: a popup
+ * is shrink-to-fit, and `overflow-wrap: anywhere` drives min-content to one
+ * character. `break-word` wraps without touching intrinsic sizing.
  */
 [data-article-twoslash-popup] {
   z-index: 50;
@@ -407,7 +378,7 @@
   }
 }
 
-/* On paper there is no scrolling, hover, or pointer: the source wraps, focus blur lifts (a blurred line prints blurred permanently), and the copy control goes. */
+/* Print: wrap (no scrolling), lift focus blur (would print permanently), hide copy. */
 @media print {
   [data-slot="article-body"] figure[data-code-block] pre,
   [data-slot="article-body"] figure[data-code-block] code {

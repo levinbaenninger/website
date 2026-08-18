@@ -12,8 +12,7 @@ const activitySchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/u)
     .refine((date) => {
-      // The pattern admits impossible dates like 2026-02-31; round-tripping
-      // through UTC proves the calendar day exists.
+      // Pattern admits 2026-02-31; UTC round-trip proves the calendar day exists.
       const parsed = new Date(`${date}T00:00:00.000Z`);
       return (
         !Number.isNaN(parsed.getTime()) &&

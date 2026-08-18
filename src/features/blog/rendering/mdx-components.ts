@@ -69,10 +69,7 @@ const articleMdxComponents: MDXComponents = Object.freeze({
   th: ArticleTableHeading,
   thead: ArticleTableHead,
   tr: ArticleTableRow,
-  /*
-   * Hyphenated twoslash tags are unreachable from authored MDX: the closed
-   * language rejects raw HTML and unknown component names.
-   */
+  // Hyphenated twoslash tags are unreachable from authored MDX.
   "twoslash-hover": ArticleTwoslashHover,
   "twoslash-popup": ArticleTwoslashPopup,
   "twoslash-trigger": ArticleTwoslashTrigger,

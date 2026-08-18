@@ -53,25 +53,17 @@ export interface ArticleDiscoveryEntry {
   readonly updatedAt: string | null;
 }
 
-/**
- * Not an `ArticleSummary`: a wider projection would invite Cover, dates, and
- * Draft state of an Article the visitor is not reading.
- */
+/** Not an `ArticleSummary`: a wider projection would invite Cover, dates, and Draft state of an Article the visitor is not reading. */
 export interface ArticleNeighbourLink {
   readonly href: `/blog/${string}`;
   readonly title: string;
 }
 
-// Null at a boundary: the collection does not wrap.
 export interface ArticleReaderNavigation {
   readonly previous: ArticleNeighbourLink | null;
   readonly next: ArticleNeighbourLink | null;
 }
 
-/**
- * Compiler-authored `id` and `text`: the reader never scrapes the DOM to
- * rebuild either.
- */
 export interface ArticleOutlineHeading {
   readonly depth: 2 | 3 | 4;
   readonly id: string;
@@ -81,10 +73,6 @@ export interface ArticleOutlineHeading {
 interface ArticleDetailBase {
   readonly Content: MDXContent;
   readonly navigation: ArticleReaderNavigation;
-  /**
-   * A heading inside a closed panel is still part of the Article. Copied
-   * field-by-field so links and search text stay private to the module.
-   */
   readonly outline: readonly ArticleOutlineHeading[];
 }
 

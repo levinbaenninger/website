@@ -36,10 +36,8 @@ interface ArticleShareMenuProps {
   readonly title: string;
 }
 
-// A cancelled native share is not in here: cancelling is a decision, not a failure.
 type ShareStatus = "copied" | "copy-failed" | "idle" | "share-failed";
 
-// Same window as CopyButton.
 const STATUS_RESET_MS = 1500;
 
 const STATUS_ANNOUNCEMENT = {
@@ -49,7 +47,6 @@ const STATUS_ANNOUNCEMENT = {
   "share-failed": "Sharing failed",
 } satisfies Record<ShareStatus, string>;
 
-// Feedback lands on the control the reader used, so the menu needs neither an extra row nor a toast.
 type CopyState = Extract<ShareStatus, "copied" | "copy-failed" | "idle">;
 type NativeState = Extract<ShareStatus, "idle" | "share-failed">;
 
@@ -89,14 +86,11 @@ const subscribeToNothing = () => () => {
   // A platform does not grow a share sheet while the page is open.
 };
 
-// Older desktop browsers ship no `navigator.share`, so the capability is
-// feature-detected rather than assumed from the DOM types.
 const supportsNativeShare = (
   nav: Navigator
 ): nav is Navigator & { share: (data: ShareData) => Promise<void> } =>
   typeof nav.share === "function";
 
-// `useSyncExternalStore` rather than an effect: the trigger is server-rendered, the server has no platform to ask, and the capability never changes for the document lifetime.
 const useNativeShare = (): boolean =>
   useSyncExternalStore(
     subscribeToNothing,
@@ -104,7 +98,6 @@ const useNativeShare = (): boolean =>
     () => false
   );
 
-// `key` makes the icon a swap rather than a mutation of one element.
 const ItemIcon = ({
   children,
   state,
@@ -173,7 +166,6 @@ export const ArticleShareMenu = ({
   }, []);
 
   const copyLink = useCallback(async () => {
-    // Inside the gesture, so the browser allows the sound to play.
     playFeedback();
 
     try {
@@ -209,10 +201,7 @@ export const ArticleShareMenu = ({
   const NativeStateIcon = NATIVE_ITEM[nativeState].icon;
 
   return (
-    // Non-modal: the trigger lives in a sticky toolbar, and Radix's default
-    // modal scroll-lock jumps the page to the top when the menu opens mid-
-    // scroll — leaving the menu stranded and the page unclickable under the
-    // inert overlay. A share menu does not need to freeze the document.
+    // Non-modal: Radix modal scroll-lock jumps the page when this sticky trigger opens mid-scroll.
     <DropdownMenu
       modal={false}
       onOpenChange={(open) => {
@@ -232,15 +221,10 @@ export const ArticleShareMenu = ({
           size="icon-sm"
           variant="secondary"
         >
-          {/* The box with the arrow leaving it, not the three connected dots:
-              it is what a share affordance looks like on every platform. */}
           <ShareIcon aria-hidden />
         </Button>
       </DropdownMenuTrigger>
 
-      {/* Outside the menu, and mounted whether or not it is open: a live region
-          announces changes made to it, not its own arrival, and a menu that
-          brings its own region with it has nothing to compare against. */}
       <output aria-live="polite" className="sr-only">
         {STATUS_ANNOUNCEMENT[status]}
       </output>
@@ -249,8 +233,7 @@ export const ArticleShareMenu = ({
         <DropdownMenuItem
           className="cursor-pointer"
           onSelect={(event) => {
-            // The menu stays open so the item can say what happened. A menu
-            // that closes on select takes its own success state with it.
+            // Menu stays open so the success state isn't taken with it.
             event.preventDefault();
             void copyLink();
           }}

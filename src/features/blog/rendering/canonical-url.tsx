@@ -1,8 +1,6 @@
 "use client";
 
-// Canonical URL is rendering input, not window.location: a preview URL or leftover
-// query must not land in a copied section link. The MDX registry is a frozen
-// singleton, so the value travels as context. null is the Draft / no-provider case.
+// Not window.location: a preview URL must not land in a copied section link. Context because the MDX registry is a frozen singleton.
 
 import { createContext, useContext } from "react";
 import type { ReactNode } from "react";

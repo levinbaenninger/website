@@ -37,8 +37,6 @@ import {
 } from "./test-fixtures";
 import { BlogView } from "./view";
 
-// Mock only the Fuse import and artifact fetch. The real service is exercised
-// because these tests care what the visitor is shown about a match.
 const { loadArticleSearch } = vi.hoisted(() => ({
   loadArticleSearch: vi.fn<() => Promise<ArticleSearch>>(),
 }));
@@ -48,8 +46,6 @@ vi.mock(import("@/features/blog/search/loader"), async (importOriginal) => ({
   loadArticleSearch,
 }));
 
-// `renderToStaticMarkup` runs no effects, so this is the catalog before — or
-// without — JavaScript, and it needs no URL adapter.
 const renderServer = (articles: readonly ArticleSummary[]) => {
   const markup = renderToStaticMarkup(
     <BlogView articles={articles} tags={TAG_FACETS} />
@@ -90,7 +86,6 @@ const threeArticles = [
   publishedArticle({ slug: "seams", title: "Seams worth testing" }),
 ];
 
-// Two Tags on one Article: the reason the facet counts do not sum to `All`.
 const taggedArticles = [
   publishedArticle({
     slug: "cache",
@@ -105,9 +100,6 @@ const taggedArticles = [
   publishedArticle({ slug: "seams", title: "Seams worth testing" }),
 ];
 
-// The same three Articles as `taggedArticles`, with the visible text the
-// artifact carries: a Tag-only match, a heading-only match and a body-only
-// match are each reachable by exactly one query.
 const searchDocuments: readonly ArticleSearchDocument[] = [
   searchDocument({
     body: "Every image budget dies in a spreadsheet.",
@@ -150,8 +142,6 @@ const radio = (name: string) => screen.getByRole("radio", { name });
 const searchBox = () =>
   screen.getByRole("searchbox", { name: "Search Articles" });
 
-// Two controls answer to `Clear search`: the one inside the field, and the one
-// an Empty state offers. They do the same thing; the Empty's is the later one.
 const emptyClearSearch = (): HTMLElement => {
   const control = screen
     .getAllByRole("button", { name: "Clear search" })
@@ -315,8 +305,7 @@ describe("hydrated discovery controls", () => {
     expect(radio("Web performance 1 Article")).toBeTruthy();
   });
 
-  // Clearing hides the Clear control, so a naive handler leaves focus on a
-  // `display:none` button and the visitor lands back on the document.
+  // Clearing hides the control; a naive handler leaves focus on `display:none`.
   test("returns focus to the field after the Clear control is used", async () => {
     const user = userEvent.setup();
 
@@ -464,9 +453,8 @@ describe("Tag filter", () => {
   test("degrades an unknown Tag to All and drops it from the URL", async () => {
     const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
 
-    // `hasMemory` re-renders the adapter on mount, and the adapter clears the
-    // pending update queue on every render — which would swallow the very
-    // update this test is about. The real adapter has no such reset.
+    // `hasMemory` re-renders the adapter on mount and clears the pending update
+    // queue — which would swallow this update. The real adapter has no such reset.
     renderHydrated(taggedArticles, {
       hasMemory: false,
       onUrlUpdate,
@@ -893,8 +881,7 @@ describe("shareable query state", () => {
 
     renderHydrated(taggedArticles, { onUrlUpdate });
 
-    // Paste rather than type: the adapter coalesces a burst of writes into an
-    // arbitrary subset of them.
+    // Paste rather than type: the adapter coalesces a burst of writes.
     await user.click(searchBox());
     await user.paste("  Cache   Components");
 

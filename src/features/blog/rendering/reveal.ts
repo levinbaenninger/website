@@ -2,17 +2,11 @@
 
 import { useEffect } from "react";
 
-/**
- * Heading IDs come from authored prose, so they are not safe CSS selectors.
- */
+// Heading IDs come from authored prose, so they are not safe CSS selectors.
 export const findArticleElement = (id: string): HTMLElement | null =>
   // eslint-disable-next-line unicorn/prefer-query-selector
   document.getElementById(id);
 
-/**
- * Panel ancestors, outermost first: a nested Tab's trigger is not mounted until
- * its Accordion is open.
- */
 const panelAncestorsOf = (target: HTMLElement): readonly HTMLElement[] => {
   const panels: HTMLElement[] = [];
   let ancestor = target.parentElement;
@@ -27,17 +21,11 @@ const panelAncestorsOf = (target: HTMLElement): readonly HTMLElement[] => {
   return panels;
 };
 
-/**
- * hidden="until-found" is a string, not true; test against false (absent).
- */
+// hidden="until-found" is a string, not true; test against false (absent).
 export const isArticleElementRevealed = (target: HTMLElement): boolean =>
   panelAncestorsOf(target).every((panel) => panel.hidden === false);
 
-/**
- * Open through the labelling control: Accordion, Tab, and code Tab all expose
- * aria-labelledby. Radix triggers act on mousedown, so the synthetic gesture
- * sends that too.
- */
+// Radix triggers act on mousedown, so the synthetic gesture sends that too.
 export const revealArticleElement = (target: HTMLElement): void => {
   for (const panel of panelAncestorsOf(target)) {
     if (panel.hidden === false) {
@@ -61,20 +49,13 @@ export const revealArticleElement = (target: HTMLElement): void => {
   }
 };
 
-/**
- * Two rAF: the first commits the click's state change; the second is the first
- * frame with a height. Scrolling in between lands on the closed geometry.
- */
+// Two rAF before scroll: the first commits the click; the second has height. Scrolling in between hits closed geometry.
 export const afterArticleLayoutSettles = (settled: () => void): void => {
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(settled);
   });
 };
 
-/**
- * Temporary tabindex so a heading can take focus; preventScroll because the
- * caller already scrolled.
- */
 export const focusArticleElement = (target: HTMLElement): void => {
   if (!target.hasAttribute("tabindex")) {
     target.setAttribute("tabindex", "-1");
@@ -90,9 +71,6 @@ export const focusArticleElement = (target: HTMLElement): void => {
   target.focus({ preventScroll: true });
 };
 
-/**
- * Malformed percent-encoding is left in the URL; nothing else happens.
- */
 export const readArticleFragmentId = (): string | null => {
   if (window.location.hash.length <= 1) {
     return null;
@@ -105,11 +83,6 @@ export const readArticleFragmentId = (): string | null => {
   }
 };
 
-/**
- * Instant scroll: an arriving visitor has no position to move from, and a
- * restored history entry should look like where they left. A fragment naming
- * nothing is left in the URL.
- */
 const revealCurrentArticleFragment = (): void => {
   const id = readArticleFragmentId();
   if (id === null) {
@@ -148,11 +121,6 @@ const scheduleFragmentReveal = (): void => {
   });
 };
 
-/**
- * Counted hashchange listener: several islands need this, one listener. First
- * consumer also reveals the arrival fragment; the microtask collapses
- * hydrate-together into one run.
- */
 export const useArticleFragmentNavigation = (): void => {
   useEffect(() => {
     fragmentConsumers += 1;

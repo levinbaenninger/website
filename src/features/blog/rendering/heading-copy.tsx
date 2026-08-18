@@ -1,7 +1,6 @@
 "use client";
 
-// Own client module so the heading stays a server component. Renders nothing
-// without a canonical URL (local Drafts have no public section to share).
+// Own client module so the heading stays a server component. Renders nothing without a canonical URL.
 
 import { LinkIcon } from "lucide-react";
 

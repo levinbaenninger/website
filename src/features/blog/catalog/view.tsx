@@ -11,7 +11,6 @@ import { CatalogDiscovery } from "./discovery";
 
 const BLOG_TAGLINE = "Blog";
 
-// Blog owns its own copy: this module cannot import from app.
 const BLOG_TITLE =
   "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.";
 

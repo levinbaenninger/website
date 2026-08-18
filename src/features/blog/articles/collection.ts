@@ -169,10 +169,7 @@ const toNeighbourLink = (
 ): ArticleNeighbourLink | null =>
   article === undefined ? null : { href: article.href, title: article.title };
 
-/**
- * Neighbours come from the visible collection so they match catalog order. A
- * production Draft is not in the array, so it cannot become a neighbour.
- */
+/** Neighbours come from the visible collection so they match catalog order. A production Draft is not in the array, so it cannot become a neighbour. */
 const toReaderNavigation = (
   articles: readonly CanonicalArticle[],
   index: number
@@ -181,7 +178,6 @@ const toReaderNavigation = (
   next: toNeighbourLink(articles[index + 1]),
 });
 
-// Copied field-by-field so link inventory and search text stay private.
 const toOutline = (
   article: CanonicalArticle
 ): readonly ArticleOutlineHeading[] =>

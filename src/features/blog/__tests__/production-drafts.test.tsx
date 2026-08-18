@@ -1,5 +1,3 @@
-// Walks the real catalog projection so a production build cannot advertise Drafts.
-
 import { Temporal } from "@js-temporal/polyfill";
 import type { MDXContent } from "mdx/types";
 import { renderToStaticMarkup } from "react-dom/server";

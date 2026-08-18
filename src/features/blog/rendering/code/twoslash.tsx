@@ -46,7 +46,6 @@ const useTwoslashHover = (componentName: string): ArticleTwoslashHoverValue => {
   return context;
 };
 
-// One pinned popup per CodeBlock. Missing scope pins nothing globally.
 export const ArticleTwoslashScope = ({
   children,
 }: {
@@ -54,8 +53,7 @@ export const ArticleTwoslashScope = ({
 }) => {
   const [pinnedId, setPinnedId] = useState<string | null>(null);
 
-  // Functional setState: pin/unpin of a second token happens in the same
-  // gesture, so a dismiss captured at render time would unpin the new pin.
+  // Functional setState: pin/unpin of a second token in the same gesture would otherwise unpin the new pin.
   const toggle = useCallback((id: string) => {
     setPinnedId((current) => (current === id ? null : id));
   }, []);
@@ -115,9 +113,7 @@ export const ArticleTwoslashHover = ({
   );
 };
 
-// Real button for a tab stop and expanded state. Don't use Radix Trigger: its
-// click toggles `open`, and `open` here is `pinned || previewing`, so clicking a
-// previewing token would close instead of pin.
+// Don't use Radix Trigger: click toggles `open`, and previewing would close instead of pin.
 export const ArticleTwoslashTrigger = ({
   children,
   className,
@@ -143,8 +139,7 @@ export const ArticleTwoslashTrigger = ({
           preview(true);
         }}
         onPointerEnter={(event) => {
-          // A coarse pointer synthesises enter/leave around a tap; previewing
-          // on it would open and immediately close the popup it just pinned.
+          // A coarse pointer synthesises enter/leave around a tap; previewing would close the popup it just pinned.
           if (event.pointerType === "mouse") {
             preview(true);
           }
@@ -170,9 +165,7 @@ export const ArticleTwoslashPopup = ({
     "ArticleTwoslashPopup"
   );
 
-  // The trigger sits outside the popup, so pressing it is an outside
-  // interaction. Don't dismiss on it: Radix fires that after the click has
-  // already pinned, which would close the popup the same gesture just opened.
+  // Don't dismiss on the trigger: Radix treats it as outside interaction after the click has already pinned.
   const dismissOutside: InteractOutsideHandler = (event) => {
     const { target } = event.detail.originalEvent;
     if (target instanceof Node && hostRef.current?.contains(target) === true) {
@@ -182,7 +175,6 @@ export const ArticleTwoslashPopup = ({
     dismiss();
   };
 
-  // Portal takes the popup outside the code scroller so collision is against the viewport, not the frame.
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
@@ -196,8 +188,6 @@ export const ArticleTwoslashPopup = ({
         }}
         onEscapeKeyDown={dismiss}
         onInteractOutside={dismissOutside}
-        // A preview must not steal focus: caret stays on the token so Escape
-        // still reaches the layer.
         onOpenAutoFocus={(event) => {
           event.preventDefault();
         }}

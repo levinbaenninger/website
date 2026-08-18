@@ -22,19 +22,13 @@ export interface ArticleSearchState {
   readonly status: ArticleSearchStatus;
 }
 
-/**
- * Fuse and `/blog/search.json` load only when there is a real query. A failure
- * latches so typing does not retry per keystroke; `retry` and clearing are the
- * only ways back.
- */
 export const useArticleSearch = (query: string): ArticleSearchState => {
   const [search, setSearch] = useState<ArticleSearch | null>(null);
   const [failed, setFailed] = useState(false);
   const active = query.length > 0;
   const [searchedFor, setSearchedFor] = useState(active);
 
-  // Failure reset in render, not an effect, so the next paint is already out
-  // of the error state.
+  // Reset failure in render, not an effect, so the next paint is already out of the error state.
   if (searchedFor !== active) {
     setSearchedFor(active);
     if (!active) {

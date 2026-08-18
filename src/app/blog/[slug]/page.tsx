@@ -43,9 +43,7 @@ export default async function ArticlePage(props: ArticlePageProps) {
       <ArticleStructuredData article={article} />
       <ArticleView
         article={article}
-        // Origin belongs to the app, not to the Article. A local Draft has no
-        // canonical destination, so it receives none and its headings keep the
-        // fragment link without the public section-copy control.
+        // Origin belongs to the app. A local Draft has no canonical destination, so headings keep the fragment without section-copy.
         canonicalUrl={
           article.status === "published" ? toCanonicalUrl(article.href) : null
         }

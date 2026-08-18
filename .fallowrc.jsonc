@@ -2,12 +2,10 @@
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "entry": [
     "src/features/blog/tooling/cli.ts",
-    // Loaded by path string from the Next MDX adapter / processor loader.
+    // Path-string load from the MDX adapter, not the import graph.
     "src/features/blog/rendering/code/code.ts",
     "src/features/blog/rendering/contract.ts",
   ],
-  // Vite+ requires the vite override/catalog pin; mprocs and MDX peers are
-  // intentional but not import-visible the way fallow models JS deps.
   "ignoreDependencies": [
     "@mdx-js/loader",
     "@mdx-js/react",
@@ -26,21 +24,18 @@
       "source": "pnpm-workspace.yaml",
     },
     {
-      // Pins the Vite+-bundled Vitest so no dependency can split the runner
-      // internals; resolved transitively, so fallow sees no direct declarer.
       "package": "vitest",
       "source": "pnpm-workspace.yaml",
     },
   ],
   "ignoreExportsUsedInFile": true,
-  // Vendored shadcn/ui surface — unused named exports are intentional API.
   "ignoreExports": [
     {
       "file": "src/shared/ui/**/*.{ts,tsx}",
       "exports": ["*"],
     },
     {
-      // `[slug]` must be escaped so the glob does not treat it as a char class.
+      // `[slug]` must be escaped so the glob is not a char class.
       "file": "src/app/blog/[[]slug]/**/route.ts",
       "exports": ["generateStaticParams"],
     },

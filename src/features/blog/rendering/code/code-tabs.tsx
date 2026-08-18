@@ -55,7 +55,6 @@ interface CodeTabChangeDetail {
   readonly label: string;
 }
 
-// Sync by label, not index: groups that share "npm"/"pnpm" agree even when order differs.
 export const matchSynchronizedCodeTab = (
   groupId: string | undefined,
   labels: readonly string[],
@@ -95,9 +94,7 @@ interface ArticleCodeTabsProps {
   readonly labels: string;
 }
 
-// Inactive panels stay mounted with hidden="until-found" so find-in-page can
-// reveal them; beforematch selects the matching tab. article-panel is the same
-// custom element Accordion/Tabs use so the fragment walk recognises it.
+// Inactive panels stay mounted with hidden="until-found" so find-in-page can reveal them.
 const ArticleCodeTabPanel = ({
   children,
   label,
@@ -133,14 +130,12 @@ export const ArticleCodeTabs = ({
     () => parseCodeTabLabels(serializedLabels),
     [serializedLabels]
   );
-  // Don't inspect props.children across the RSC boundary: a child is a lazy
-  // ref during SSR and an element after hydration.
+  // Don't inspect props.children across the RSC boundary (lazy ref during SSR vs element after hydration).
   const panels = useMemo(() => flattenChildren(children), [children]);
   const defaultLabel = labels[0] ?? "";
   const [selected, setSelected] = useState(defaultLabel);
 
-  // Apply storage after first paint: the server has no storage, so reading
-  // during render would mismatch SSR vs client.
+  // Apply storage after first paint; reading during render would mismatch SSR.
   useEffect(() => {
     const saved =
       groupId === undefined
@@ -198,7 +193,6 @@ export const ArticleCodeTabs = ({
       activationMode="automatic"
       asChild
       onValueChange={select}
-      // Controlled: a group updating because a different group was clicked must not move focus.
       value={selected}
     >
       <section data-code-tabs="" data-tab-group={groupId}>

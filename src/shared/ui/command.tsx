@@ -49,12 +49,8 @@ const CommandDialog = ({
       )}
       showCloseButton={showCloseButton}
     >
-      {/* Inside the content rather than beside it, which is where the upstream
-          registry puts it: the dialog root is not a portal, so a header
-          rendered as its sibling stays in the document while the dialog is
-          closed — an `h2` and a paragraph in the page outline, ahead of the
-          page's own `h1`. Inside, it mounts only with the open dialog and is
-          what names and describes it. */}
+      {/* Header inside content, not beside it: the dialog root is not a portal,
+          so a sibling header stays in the page outline while closed. */}
       <DialogHeader className="sr-only">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>

@@ -26,23 +26,16 @@ import { ALL_TAGS, articleCountLabel, TagFilter } from "./tag-filter";
 import { useArticleSearch } from "./use-article-search";
 import type { ArticleSearchStatus } from "./use-article-search";
 
-// Filter edits replace the current entry: a visitor who tried four Tags wants
-// Back to leave the Blog, not to walk their own filtering backwards. Shallow
-// keeps the change in the browser — the server has already sent every Article.
+// Replace so Back leaves the Blog instead of walking filter history; shallow because the server already sent every Article.
 const DISCOVERY_PARAM = parseAsString.withOptions({
   history: "replace",
   shallow: true,
 });
 
-// Long enough that a search which settles quickly never shows a loading state
-// at all, short enough that a slow one does not look broken.
 const LOADING_EMPTY_DELAY_MS = 150;
 
-// Result cards update on the keystroke; only the spoken count waits for typing
-// to settle, so a screen reader is not read a new number per letter.
 const ANNOUNCEMENT_DELAY_MS = 300;
 
-// Hydration signal: server snapshot is `false`, client is `true`.
 const noopSubscribe = () => () => {
   // The value cannot change after hydration, so nothing to emit.
 };
@@ -70,8 +63,7 @@ const countByTag = (
     articleCount: filterByTag(articles, tag.id).length,
   }));
 
-// Drop matches the server did not send. A cached artifact can outlive a deploy;
-// the visible catalog, not the stale asset, decides what a visitor may see.
+// Drop matches the server did not send. A cached artifact can outlive a deploy.
 const projectResults = (
   articles: readonly ArticleSummary[],
   results: readonly ArticleSearchResult[]
@@ -89,7 +81,6 @@ const explanationsBySlug = (
 ): ReadonlyMap<string, ArticleSearchResult> =>
   new Map(results.map((result) => [result.id, result]));
 
-// One highlight per Tag: the strip shows a Tag once.
 const tagHighlights = (
   results: readonly ArticleSearchResult[]
 ): ReadonlyMap<string, readonly HighlightRange[]> => {
@@ -115,7 +106,6 @@ const resultAnnouncement = (
     query === "" ? "" : ` for ‘${query}’`
   }${tagLabel === undefined ? "" : ` in ${tagLabel}`}.`;
 
-// Busy immediately; the grid waits so a fast load never flashes a loading state.
 const useDelayed = (active: boolean, delayMs: number): boolean => {
   const [elapsed, setElapsed] = useState(false);
   const [wasActive, setWasActive] = useState(active);
@@ -146,7 +136,6 @@ const ignoreQuery = () => {
   // The prerendered controls are inert; only the live catalog reads them.
 };
 
-// Inert strips: nothing here reads the URL, so `/blog` stays a static page.
 const CatalogFallback = ({
   articles,
   tags,
@@ -177,7 +166,6 @@ const EmptyActions = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// Each Empty action clears only the constraint it names.
 const CatalogBody = ({
   explanations,
   loadingVisible,
@@ -285,8 +273,7 @@ const LiveCatalog = ({
   const fieldRef = useRef<HTMLInputElement>(null);
   const allOptionRef = useRef<HTMLInputElement>(null);
 
-  // Seeded from `?q=` once. Echoing the throttled URL back would arrive
-  // mid-word and steal the visitor's typing.
+  // Seeded from `?q=` once. Echoing the URL back would steal typing mid-word.
   const [field, setField] = useState(() =>
     normalizeArticleSearchQuery(queryParam ?? "")
   );
@@ -295,7 +282,6 @@ const LiveCatalog = ({
   const selected = known && tagParam !== null ? tagParam : ALL_TAGS;
 
   useEffect(() => {
-    // Stale Tag degrades to `All` above; drop it from the URL here.
     if (tagParam !== null && !known) {
       void setTagParam(null);
     }
@@ -311,8 +297,6 @@ const LiveCatalog = ({
 
   const searched =
     status === "ready" ? projectResults(articles, results) : null;
-  // Until results exist the counts stay catalog-wide, so no chip changes width
-  // while the artifact is still in flight or after it failed to arrive.
   const facets = searched === null ? tags : countByTag(searched, tags);
   const matched = searched ?? articles;
   const visible = filterByTag(matched, selected);
@@ -330,8 +314,6 @@ const LiveCatalog = ({
 
   const clearSearch = () => {
     commitQuery("");
-    // Clearing hides the Clear control, so focus would fall to the document.
-    // Put it back where the visitor was working.
     fieldRef.current?.focus();
   };
 
@@ -349,8 +331,6 @@ const LiveCatalog = ({
     allOptionRef.current?.focus();
   };
 
-  // The failure speaks for itself in the alert region below; repeating the
-  // last count beside it would only contradict what is on screen.
   let message = "";
   if (status === "loading") {
     message = "Searching Articles.";
@@ -363,12 +343,9 @@ const LiveCatalog = ({
   const announced = useRef(false);
 
   useEffect(() => {
-    // Tag changes speak at once; typing waits so a screen reader is not read a
-    // number per letter.
     const deliberate = announcedTag.current !== selected;
     announcedTag.current = selected;
 
-    // Don't announce on first catalog arrival — that state is already on screen.
     if (!announced.current) {
       announced.current = true;
       return noCleanup;
@@ -412,8 +389,7 @@ const LiveCatalog = ({
         tags={facets}
       />
 
-      {/* Beside the group rather than inside it: a live region nested in a
-          radio group is read as part of the group by some screen readers. */}
+      {/* Nested live regions in a radio group are read as part of the group. */}
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
@@ -441,8 +417,7 @@ const LiveCatalog = ({
   );
 };
 
-// Deferred so `/blog` stays static: a search-params read cannot be prerendered,
-// and at this Next version it fails the build.
+// Deferred: a search-params read cannot be prerendered and fails the build.
 export const CatalogDiscovery = ({
   articles,
   tags,

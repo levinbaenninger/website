@@ -941,8 +941,6 @@ key: value
   </AccordionItem>
 </Accordion>`);
 
-    // Grouping walked the whole tree: nested runs used to reach the DOM as
-    // labels with no strip.
     expect(markup.match(/data-code-tabs/gu)).toHaveLength(3);
     expect(markup).not.toContain("data-code-tab-label");
     for (const label of [
@@ -959,7 +957,6 @@ key: value
   });
 
   test("reports CodeTabs diagnostics at nested depth", async () => {
-    // Nested mistakes used to compile cleanly and render as loose blocks.
     const invalid = [
       [
         '<Steps>\n  <Step title="One">\n```ts tab="Only"\nvalue\n```\n  </Step>\n</Steps>',
@@ -1006,14 +1003,11 @@ key: value
 
     expect(markup).toContain("--shiki-light:");
     expect(markup).toContain("--shiki-dark:");
-    // The frame owns the surface; an inline background could only be beaten with `!important`.
     expect(markup).not.toMatch(/style="[^"]*background-color:/u);
     expect(markup).not.toMatch(/style="[^"]*[^-]color:\s*#/u);
   });
 
   test("keeps compiled fence facts aligned across a Twoslash block", async () => {
-    // Count `pre`s excluding Twoslash popup pres: an uncounted inner `pre`
-    // used to shift later blocks' title, copy source, and line start.
     const { codeBlocks } = await renderArticle(`\`\`\`ts twoslash
 const greeting: string = "hello"
 \`\`\`
@@ -1053,15 +1047,12 @@ const worded = 5 // [!code word:worded]
 const greeting: string = "hello"
 \`\`\``);
 
-    // Compiler marks a popup `pre` so the global `pre` mapping leaves it alone.
     expect(hover.codeBlocks).toHaveLength(1);
     expect(hover.markup.match(/data-code-block/gu)).toHaveLength(1);
-    // Popup is portalled, so it is client-only — explicit queries must not be one.
     expect(hover.markup).toContain('data-twoslash-trigger=""');
     expect(hover.markup).toContain('aria-haspopup="dialog"');
     expect(hover.markup).toContain(">greeting</button>");
 
-    // Explicit ^? / expected-error stay static visible code, not a control.
     const explicit = await renderArticle(`\`\`\`ts twoslash
 // @errors: 2322
 const answer: number = 42
@@ -1073,7 +1064,6 @@ const teaching: string = 42
     expect(explicit.markup).toContain(
       "Type &#x27;number&#x27; is not assignable to type &#x27;string&#x27;."
     );
-    // Authored `^?` is output under the line, not a trigger.
     expect(explicit.markup).not.toMatch(
       /twoslash-query-line[^>]*>[\s\S]*?data-twoslash-trigger/u
     );

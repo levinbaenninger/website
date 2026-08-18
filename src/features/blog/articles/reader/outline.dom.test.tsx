@@ -33,8 +33,7 @@ const { playOpen, reducedMotion } = vi.hoisted(() => ({
   reducedMotion: { current: false },
 }));
 
-// Happy DOM has no Web Audio implementation, and the outline's one sound is a
-// behavior this file asserts rather than an incidental effect.
+// Happy DOM has no Web Audio; the outline's sound is a behavior this file asserts.
 vi.mock(import("@/shared/audio/use-sound"), () => ({
   useSound: () =>
     [
@@ -141,7 +140,6 @@ const minimapTrigger = () => {
   return within(minimap).getByRole("button", { name: "On this page" });
 };
 
-// Mobile card: no portal.
 const openCard = async (user: ReturnType<typeof userEvent.setup>) => {
   const card = outlineCard();
 
@@ -163,7 +161,7 @@ const placeHeading = (id: string, top: number) => {
   } as DOMRect);
 };
 
-// Drain the macrotask queue rather than a wall-clock sleep: rAF is stubbed onto zero-delay timers, and a timer queued here is always served after the ones already waiting.
+// Drain the macrotask queue, not a wall-clock sleep: rAF is stubbed onto zero-delay timers.
 const nextTurn = async () =>
   await new Promise((resolve) => {
     window.setTimeout(resolve, 0);
@@ -202,8 +200,6 @@ beforeEach(() => {
   vi.stubGlobal("cancelAnimationFrame", (handle: number) => {
     window.clearTimeout(handle);
   });
-  // The reader's sticky title and every Next.js `Link` observe something; none
-  // of it is what this file is about.
   vi.stubGlobal(
     "IntersectionObserver",
     class {
@@ -299,8 +295,6 @@ describe("Article outline list", () => {
 
     const card = await openCard(user);
 
-    // Clamping is a visual limit. The name a screen reader announces, and the
-    // name this query matches, is the whole heading.
     expect(card.getByRole("link", { name: long }).textContent).toBe(long);
   });
 
@@ -413,8 +407,6 @@ describe("active Article heading", () => {
       );
     });
 
-    // Opening the panel is neither a scroll nor a resize, and it is exactly
-    // what makes the heading inside it reachable.
     await user.click(screen.getByRole("button", { name: "Deep dive" }));
 
     await waitFor(() => {
@@ -525,7 +517,6 @@ describe("Article fragment navigation", () => {
       expect(panel()?.hidden).toBeFalsy();
     });
 
-    // Restored fragment should get the same reveal as a fresh one.
     scrollIntoViewMock.mockClear();
     await act(async () => {
       window.history.replaceState(null, "", "/blog/representative-article");
@@ -556,7 +547,6 @@ describe("Article fragment navigation", () => {
     const active = document.activeElement;
     scrollIntoViewMock.mockClear();
 
-    // Not valid percent-encoding, so there is nothing to look up.
     await act(async () => {
       window.dispatchEvent(new HashChangeEvent("hashchange"));
       await Promise.resolve();
@@ -567,7 +557,6 @@ describe("Article fragment navigation", () => {
     expect(document.activeElement).toBe(active);
     expect(scrollIntoViewMock).not.toHaveBeenCalled();
 
-    // Well-formed, and names nothing in this Article.
     await act(async () => {
       window.history.replaceState(
         null,
@@ -589,7 +578,6 @@ describe("Article outline disclosure", () => {
   test("opens the desktop list on click and returns focus on Escape", async () => {
     const user = userEvent.setup();
     renderReader();
-    // Nothing has crossed the activation line, so the list opens at its start.
     placeHeading("intro", 400);
     placeHeading("details", 700);
     placeHeading("closing", 900);

@@ -6,8 +6,7 @@ import { BlogView } from "@/features/blog/catalog/view";
 
 export const metadata: Metadata = createBlogMetadata();
 
-// The catalog reads no request-time API: `?q=` and `?tag=` are owned by the
-// discovery island once it hydrates, which is what keeps `/blog` a static page.
+// Catalog reads no request-time API: `?q=` and `?tag=` belong to the discovery island, which keeps `/blog` static.
 export default async function BlogPage() {
   const [articles, tags] = await Promise.all([
     listArticles(),

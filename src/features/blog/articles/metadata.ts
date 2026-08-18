@@ -187,9 +187,6 @@ export const validateArticleMetadata = (
     redirectFrom: metadata.redirectFrom ?? [],
   };
 
-  // Optional dates are added as statements so absent stays absent: an
-  // undefined-valued key would leak into serialized manifests and strict
-  // equality checks.
   if (metadata.status === "Published") {
     const published: ValidatedArticleMetadataBase & {
       status: "Published";

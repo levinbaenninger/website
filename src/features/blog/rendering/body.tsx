@@ -1,4 +1,4 @@
-// Import stylesheets here, not from globals.css, so Blog presentation tokens stay out of the shell.
+// Import stylesheets here, not from globals.css, so Blog tokens stay out of the shell.
 
 import type { ReactNode } from "react";
 

@@ -23,9 +23,8 @@ const ZERO_STROKES = [
 ] as const;
 
 /**
- * `0` sits tighter against the trailing `4` than `4` does against `0`: that
- * glyph's diagonal recedes up and to the right, so an even metric gap reads as
- * an uneven optical one. The last advance is unused.
+ * `0` sits tighter against the trailing `4` than `4` against `0`; an even
+ * metric gap reads uneven. Last advance is unused.
  */
 const PLOT_GLYPHS = [
   { strokes: FOUR_STROKES, advance: 108 },
@@ -33,7 +32,6 @@ const PLOT_GLYPHS = [
   { strokes: FOUR_STROKES, advance: 0 },
 ] as const;
 
-/** Chosen so the inked word sits centred in the viewBox. */
 const FIRST_GLYPH_ORIGIN_X = 43;
 
 const createPlotStrokes = (): readonly PlotterStroke[] => {

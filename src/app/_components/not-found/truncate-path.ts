@@ -2,7 +2,6 @@ const MAX_DISPLAY_LENGTH = 34;
 const ELLIPSIS = "…";
 const ROOT_PATH = "/";
 
-/** Keep the trailing characters: they name the address the visitor asked for. */
 export const truncatePath = (pathname: string): string => {
   if (pathname === "") {
     return ROOT_PATH;

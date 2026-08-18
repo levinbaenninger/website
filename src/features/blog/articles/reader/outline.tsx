@@ -27,17 +27,13 @@ interface ArticleOutlineProps {
   readonly outline: readonly ArticleOutlineHeading[];
 }
 
-// Encoded so the fragment works before hydration, survives copy, and round-trips through `decodeURIComponent`.
 const fragmentFor = (id: string): string => `#${encodeURIComponent(id)}`;
 
 const useOutlineSelection = () => {
-  // `useReducedMotion` reports `null` until it has read the media query, and an
-  // unknown preference is not a stated one.
   const reducedMotion = useReducedMotion() ?? false;
 
   return (event: React.MouseEvent<HTMLAnchorElement>) => {
-    // Modified clicks belong to the browser: a new tab on a fragment link is a
-    // fresh page load, and this handler would keep it in the current one.
+    // Modified clicks belong to the browser: a new tab on a fragment link is a fresh page load.
     if (
       event.defaultPrevented ||
       event.metaKey ||
@@ -60,8 +56,6 @@ const useOutlineSelection = () => {
   };
 };
 
-// Flat list rather than nested: nesting would announce a tree visitors are not navigating.
-// `aria-current="location"` because colour alone is not enough.
 const ArticleOutlineList = ({
   activeId,
   className,
@@ -108,10 +102,7 @@ const ArticleOutlineBars = ({
       <div
         aria-hidden
         className={cn(
-          // The reference draws inactive bars with `bg-ring/50`. This
-          // repository's `--ring` is pure black in both themes, so that lands as
-          // black-on-near-black in dark mode; `muted-foreground` is the token
-          // that actually flips, and it keeps the light-mode weight.
+          // `--ring` is pure black in both themes, so `muted-foreground` instead of `bg-ring/50`.
           "pointer-events-none h-0.5 w-6 shrink-0 rounded-xs bg-muted-foreground transition-colors duration-200 ease-out",
           "data-[depth=3]:ml-2 data-[depth=3]:w-4",
           "data-[depth=4]:ml-4 data-[depth=4]:w-2",
@@ -203,8 +194,6 @@ export const ArticleOutlineMinimap = ({ outline }: ArticleOutlineProps) => {
   );
 };
 
-// Starts collapsed so the card does not push the first paragraph off a phone.
-// Stays open after a selection so it is not reopened every time.
 export const ArticleOutlineCard = ({
   className,
   outline,

@@ -17,21 +17,15 @@ export const PageHeading = ({
     <div className="px-4 pb-2 font-heading text-sm/none font-medium tracking-wider text-muted-foreground">
       {tagline}
     </div>
-    {/* Extra vertical padding: the reference h1 sat cramped between the guide lines. */}
     <h1 className="screen-line-top screen-line-bottom px-4 py-2 font-heading text-4xl font-medium tracking-tight text-balance">
       {title}
     </h1>
   </div>
 );
 
-// Two columns in the 48 rem rail cap the Cover at 22.5 rem.
 const COVER_SIZES = "(min-width: 48rem) 22.5rem, (min-width: 40rem) 45vw, 96vw";
 
-/**
- * `alt` is empty because the Article link already names the title.
- * Grayscale only on genuine hover: a coarse pointer cannot reveal the color.
- * The 1200:630 frame reserves the same space whatever the source measures.
- */
+/** `alt` is empty because the Article link already names the title. Grayscale only on genuine hover: a coarse pointer cannot reveal the color. */
 export const ArticleCover = ({
   cover,
   eager,
@@ -62,7 +56,6 @@ export const CoverDraftBadge = () => (
   <Badge className="absolute top-2 left-2 shadow-sm">Draft</Badge>
 );
 
-// Drafts say so in words rather than showing a date they do not have.
 export const PublicationState = ({
   publishedAt,
 }: {

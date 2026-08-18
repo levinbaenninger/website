@@ -20,21 +20,17 @@ import type { PlotterStroke } from "./digits";
 import { PEN_PARK_POINT, PLOT_STROKES, PLOT_VIEWBOX } from "./digits";
 
 const PLOT_DRAW_MS = 1400;
-/** Carriage moves between strokes without inking. */
 const PEN_UP_MS = 80;
 const PLOT_TOTAL_MS = PLOT_DRAW_MS + PEN_UP_MS * (PLOT_STROKES.length - 1);
 const INK_FADE_S = 0.12;
-/** Reduced motion replaces the draw with a re-ink, which is not a motion cue. */
 const RE_INK_S = 0.22;
 
-/** Authored so a re-plot sounds like the same program, not a machine gun. */
 const TICK_PLAYBACK_RATES = [1, 1.09, 0.94, 1.05, 0.97, 1.12] as const;
 const TICK_VOLUME = 0.3;
 const LATCH_VOLUME = 0.45;
 
 const POINTER_SPRING = { stiffness: 300, damping: 30, mass: 0.1 } as const;
 
-/** Sized so the plot reads as a heavy display weight. */
 const INK_STROKE_WIDTH = 10;
 
 interface PlotPass extends PlotterStroke {
@@ -97,10 +93,7 @@ const traversePoint = (
   };
 };
 
-/**
- * Returns `null` when SVG paths have no measurable geometry, as in a
- * non-browser environment that cannot lay them out.
- */
+/** `null` when SVG paths have no measurable geometry (non-browser). */
 const resolvePenPoint = (
   paths: readonly (SVGPathElement | null | undefined)[],
   progress: number
@@ -144,8 +137,7 @@ const PlotterPass = ({
   plotProgress: MotionValue<number>;
 }) => {
   const pathLength = useTransform(plotProgress, [pass.start, pass.end], [0, 1]);
-  // A round cap on a zero-length dash paints a dot, so a stroke stays hidden
-  // until the pen actually reaches it.
+  // A round cap on a zero-length dash paints a dot, so hide until the pen reaches it.
   const opacity = useTransform(plotProgress, (progress) =>
     progress > pass.start ? 1 : 0
   );
@@ -191,7 +183,6 @@ export const PlotterFigure = ({
 
   const plotProgress = useMotionValue(0);
   const plotOpacity = useMotionValue(0);
-  /** The crosshair is the pen, so it retires once the carriage parks. */
   const penOpacity = useMotionValue(0);
   const pointerX = useMotionValue(PEN_PARK_POINT.x);
   const pointerY = useMotionValue(PEN_PARK_POINT.y);
@@ -320,9 +311,8 @@ export const PlotterFigure = ({
 
     hasAutoPlottedRef.current = true;
 
-    // A visitor who clicked a dead link left sticky activation on the document,
-    // so audio is allowed. Typing the address directly leaves none, and the
-    // browser would reject playback anyway.
+    // Sticky userActivation after a clicked dead link; a typed address has none
+    // and playback would be rejected.
     const isAudible = navigator.userActivation?.hasBeenActive;
 
     if (shouldReduceMotion) {

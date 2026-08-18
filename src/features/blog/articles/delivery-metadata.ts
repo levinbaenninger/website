@@ -43,8 +43,6 @@ interface SocialImage {
   width: number;
 }
 
-// Mutable build types: optional fields are added as statements so absent
-// stays absent — consumers assert on property absence, not undefined values.
 interface ArticleOpenGraphDraft {
   type: "article";
   title: string;
@@ -196,8 +194,6 @@ export const createPublishedArticleStructuredData = (
     description: article.description,
     image: new URL(article.cover.src, identity.origin).href,
     datePublished: toZurichMidnight(article.publishedAt),
-    // JSON.stringify drops undefined-valued properties, so the serialized
-    // JSON-LD omits dateModified for never-updated articles.
     dateModified:
       article.updatedAt === null
         ? undefined

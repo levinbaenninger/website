@@ -46,11 +46,6 @@ interface FigureProps {
   readonly src: StaticImageData;
 }
 
-/*
- * The Article rail is at most 48rem; `sizes` says that so next/image emits
- * width-appropriate candidates instead of a fixed 1x/2x srcset. SVG has no
- * raster sizes, so it stays unoptimized.
- */
 export const ArticleFigure = ({
   alt,
   children,
@@ -68,8 +63,6 @@ export const ArticleFigure = ({
   </figure>
 );
 
-// Fragment stays a plain <a>, not Next Link: same-document navigation. External
-// destinations open in a new tab and say so with an icon and a name.
 export const ArticleLink = ({
   children,
   href = "",
@@ -124,8 +117,7 @@ const calloutLabels = {
   warning: "Warning",
 };
 
-// Callout is an aside, not Alert: role=alert on static prose would interrupt a
-// screen reader. Kind reaches the reader as icon, spoken word, and tint.
+// Callout is an aside, not Alert: role=alert on static prose would interrupt a screen reader.
 export const ArticleCallout = ({ children, kind, title }: CalloutProps) => {
   const Mark = calloutMarks[kind];
 
@@ -139,7 +131,6 @@ export const ArticleCallout = ({ children, kind, title }: CalloutProps) => {
   );
 };
 
-// A Card collection is a list; no inner article — the list item already announces the tile.
 export const ArticleCards = ({
   children,
 }: {
@@ -167,8 +158,6 @@ const ArticleCardContents = ({
   </Card>
 );
 
-// A linked Card is one link wrapping the tile. Unlinked Cards get no pointer
-// feedback: article.css reacts to the anchor, never the item.
 export const ArticleCard = ({
   children,
   href,
@@ -280,14 +269,11 @@ type ArticleCodeBlockProps = ComponentPropsWithoutRef<"pre"> & {
   readonly "data-twoslash-internal"?: string;
 };
 
-// Line-number start as a custom property: the gutter is a CSS counter.
 interface ArticleCodeBlockStyle extends CSSProperties {
   readonly "--line-start"?: number;
 }
 
-// `pre` is a global mapping, including Twoslash popup examples. Those are
-// marked data-twoslash-internal so they pass through as a plain pre instead of
-// a nested CodeBlock.
+// `pre` is a global mapping, including Twoslash; data-twoslash-internal passes through as a plain pre.
 export const ArticleCodeBlock = ({
   "data-code-name": name,
   "data-code-tab-label": _tabLabel,
@@ -335,8 +321,6 @@ export const ArticleCodeBlock = ({
   );
 };
 
-// The heading text is its own fragment link. A heading compiled without an id
-// degrades to plain text rather than a broken link.
 const ArticleHeadingContent = ({
   children,
   id,
@@ -386,8 +370,6 @@ export const ArticleQuote = (props: ComponentPropsWithoutRef<"blockquote">) => (
   <blockquote {...props} />
 );
 
-// Table scroll region needs a wrapper; `.typeset-scroll` cannot add one. The
-// region is a named keyboard tab stop so overflow is reachable without a pointer.
 export const ArticleTable = (props: ComponentPropsWithoutRef<"table">) => (
   <section
     aria-label="Table"

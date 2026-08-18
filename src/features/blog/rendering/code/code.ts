@@ -108,8 +108,7 @@ const twoslasher = createTwoslasher({
 });
 const transformerTwoslash = createTransformerFactory(
   twoslasher,
-  // Explicit ^? queries and expected-error diagnostics stay as static lines,
-  // not client-only popovers.
+  // Explicit ^? queries stay as static lines, not client-only popovers.
   rendererRich({ queryRendering: "line" })
 );
 
@@ -182,8 +181,7 @@ const isCodePre = (node: Element): boolean => {
   );
 };
 
-// Shiki writes `class` not `className`, and a single class as a string vs an
-// array for several. Both shapes occur in one tree.
+// Shiki writes `class` not `className`, and a single class as a string vs an array.
 const isSpaceSeparatedClassList = (
   value: Element["properties"][string]
 ): value is string => typeof value === "string";
@@ -203,9 +201,7 @@ const srOnlyLabel = (text: string): Element => ({
   children: [{ type: "text", value: text }],
 });
 
-// Annotation meaning as hidden spans, not aria-label: a span has no role for a
-// name to attach to. Copy never sees them; data-copy-source is compiled from
-// the fence.
+// Annotation as hidden spans, not aria-label: a span has no role for a name to attach to.
 const LINE_ANNOTATION_LABELS: readonly (readonly [string, string])[] = [
   ["highlighted", "Highlighted line: "],
   ["focused", "Focused line: "],
@@ -244,8 +240,7 @@ const labelAnnotatedLines = (root: Root): void => {
   });
 };
 
-// Split Twoslash hover markup at compile time, not in a client that reads
-// props.children (lazy ref during SSR vs element after hydration).
+// Split Twoslash hover at compile time; don't read props.children on the client (SSR lazy ref vs hydrated element).
 const liftTwoslashHovers = (root: Root): void => {
   visit(root, "element", (node: Element) => {
     if (!hasClass(node, "twoslash-hover")) {
@@ -334,8 +329,7 @@ export default function articleCode(options: ArticleCodePluginOptions) {
     });
     await Reflect.apply(transform, undefined, [root]);
 
-    // Count `pre`s excluding Twoslash popup pres: an inner JSDoc `pre` used to
-    // consume one entry and shift later blocks' title, copy source, and line start.
+    // Count `pre`s excluding Twoslash popup pres; an inner JSDoc `pre` would shift later blocks.
     let index = 0;
     visit(root, "element", (node: Element) => {
       if (node.tagName !== "pre") {

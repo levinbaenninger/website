@@ -89,12 +89,9 @@
 }
 
 @layer base {
-  /* Stays on `*` because `scrollbar-width` does not inherit: scoping it to the
-     root would leave every nested scroll container at the default width.
-     Deliberately no `::-webkit-scrollbar` counterpart — setting
-     `scrollbar-width` disables those pseudo-elements in Blink, and Gecko never
-     implemented them, so a webkit block renders in Safari alone and is the
-     reason the scrollbar used to look different there. */
+  /* On `*`: `scrollbar-width` does not inherit. No `::-webkit-scrollbar` —
+     `scrollbar-width` disables those in Blink, Gecko never had them, and a
+     webkit-only block made Safari look different. */
   * {
     @apply border-border outline-ring/50;
     scrollbar-color: color-mix(in oklab, var(--foreground) 28%, transparent)
@@ -118,12 +115,9 @@
     @apply scroll-pt-12 font-sans;
   }
 
-  /* Dialog scroll locks set `overflow: hidden` on <body>, which only reaches
-     the viewport when the root element's own overflow is visible. `overflow-x:
-     clip` on <html> blocks that propagation, so the scrollbar would survive
-     the lock while the lock's compensating body margin still applies — moving
-     the page sideways by half the scrollbar width. Lock the root instead, on
-     the vertical axis only, so horizontal content stays clipped. */
+  /* Body `overflow: hidden` only locks the viewport if html overflow is
+     visible; `overflow-x: clip` on html blocks that, so lock `overflow-y` on
+     the root instead. */
   html:has(body[data-scroll-locked]) {
     overflow-y: hidden;
   }

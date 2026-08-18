@@ -76,7 +76,6 @@ const article = ({
   };
 };
 
-// `renderToStaticMarkup` runs no effects: the reader a visitor receives before any JavaScript.
 const renderServer = (
   detail: ArticleDetail,
   canonicalUrl: string | null = null
@@ -93,13 +92,12 @@ const renderServer = (
   return container;
 };
 
-// Happy DOM's IntersectionObserver never reports; the sticky title is a report about scroll position.
+// Happy DOM's IntersectionObserver never reports; sticky title is a scroll-position report.
 const stubIntersectionObserver = () => {
   const original = globalThis.IntersectionObserver;
   let report: ((intersecting: boolean) => void) | null = null;
 
-  // Next.js `Link` observes its own anchors, so the stub only answers for the
-  // observer that watches the Article title.
+  // Next.js `Link` observes its own anchors; the stub only answers for the Article title.
   class ObserverStub {
     readonly #callback: IntersectionObserverCallback;
     #watchesTitle = false;
@@ -124,8 +122,7 @@ const stubIntersectionObserver = () => {
       };
     }
 
-    // Next.js `Link` releases its own observers on unmount, so each instance
-    // only ever withdraws the report it registered itself.
+    // Next.js `Link` releases its own observers on unmount; each instance withdraws only its own report.
     unobserve(target: Element) {
       if (target.matches('[data-slot="article-title"]')) {
         this.disconnect();
@@ -304,7 +301,6 @@ describe("Article reader navigation", () => {
     });
 
     expect(within(pager).getAllByRole("link")).toHaveLength(1);
-    // The empty cell is what holds Next on the right at two columns.
     expect(pager.children).toHaveLength(2);
   });
 
@@ -380,8 +376,6 @@ describe("Article reader navigation", () => {
     const previous = interceptActivation("Previous Article");
     const next = interceptActivation("Next Article");
 
-    // The Share menu, reduced to what makes it a layer: a portalled role that
-    // is not a field, so the library's own input guard does not cover it.
     const menu = document.createElement("div");
     menu.setAttribute("role", "menu");
     document.body.append(menu);
@@ -452,8 +446,6 @@ describe("Article sharing", () => {
       CANONICAL_URL
     );
 
-    // Document order is the contract here, and no accessible query expresses
-    // one control coming before another.
     expect(
       [
         ...container.querySelectorAll(
@@ -544,8 +536,6 @@ describe("sticky Article title", () => {
         .getAllByText("Sticky title")
         .find((element) => element.tagName === "P");
 
-      // Reduced motion is answered in CSS rather than in JavaScript, so the
-      // observable contract is that the fade is conditional at all.
       expect(copy?.className).toContain("motion-reduce:transition-none");
     } finally {
       observer.restore();

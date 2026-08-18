@@ -9,9 +9,6 @@ import type {
 import { ArticleCover, CoverDraftBadge, PublicationState } from "./chrome";
 import { HighlightedText } from "./highlighted-text";
 
-// Unmatched descriptions stay unmarked — a mark would claim a match the query
-// never made. Heading and body prefixes exist because a cropped excerpt is
-// otherwise unidentifiable to a screen reader.
 const SNIPPET_PREFIX = {
   body: "Matching excerpt:",
   description: "",
@@ -41,12 +38,6 @@ const CardProse = ({
   );
 };
 
-/**
- * One control per card (the overlay link); the focus ring is on the card so it
- * matches the clickable target. Tags stay off the card: they are a filter, and
- * Tag-only matches are explained in the strip. Query highlighting never changes
- * the card's shape.
- */
 export const ArticleCard = ({
   article,
   eager,
@@ -65,12 +56,8 @@ export const ArticleCard = ({
     </div>
 
     <div className="flex flex-1 flex-col gap-1 p-2">
-      {/* Title is never clamped; the meta row is pinned so dates stay in line
-          across a row however long the titles run. */}
       <h2 className="text-lg leading-snug font-medium text-balance">
-        {/* Named explicitly while highlighting: a `<mark>` inside a word splits
-            the link's accessible name, and the link must stay named by the
-            complete title. */}
+        {/* A `<mark>` inside a word splits the accessible name, so the link is named by the complete title. */}
         <Link
           aria-label={title === null ? undefined : article.title}
           className="focus-visible:outline-none"
@@ -86,8 +73,6 @@ export const ArticleCard = ({
       </p>
 
       <div className="mt-auto pt-1">
-        {/* A Draft may already carry a future publication date; the catalog
-            still reports it as unpublished, because it is. */}
         <PublicationState
           publishedAt={article.status === "draft" ? null : article.publishedAt}
         />

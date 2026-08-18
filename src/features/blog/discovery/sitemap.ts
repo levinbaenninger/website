@@ -5,8 +5,6 @@ export interface BlogSitemapEntry {
   readonly lastModified?: string;
 }
 
-// Mutable build type: optional fields are added as statements so an absent
-// date stays absent instead of becoming an undefined-valued key.
 interface BlogSitemapEntryDraft {
   href: BlogSitemapEntry["href"];
   lastModified?: string;

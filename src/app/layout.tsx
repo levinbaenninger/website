@@ -20,8 +20,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = createRootMetadata();
 
 /* `--safe-area-bottom` is 0 without `viewport-fit: cover`. Bottom-anchored
-   mobile UI in `header.tsx` and `scroll-to-top.tsx` reads that token, so
-   without `cover` it never cleared the home indicator. */
+   mobile UI reads that token. */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -39,11 +38,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full overflow-x-clip antialiased`}
       suppressHydrationWarning
     >
-      {/* The shell gutter lives here so the header, main and footer rails all
-          inset by the same amount. It drops at `md` because the rails are
-          `w-3xl` (48rem) at exactly the `md` breakpoint: a gutter would
-          overconstrain them in the 768-784px band and push the right border
-          out of the clipped viewport. */}
+      {/* Shared gutter for header, main, and footer. Drops at `md`: rails are
+          `w-3xl` (48rem) at that breakpoint, and a gutter overconstrains 768–784px. */}
       <body className="flex min-h-full flex-col overflow-x-clip px-2 md:px-0">
         <ThemeProvider
           attribute="class"

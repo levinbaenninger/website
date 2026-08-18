@@ -9,7 +9,6 @@ import { TooltipProvider } from "@/shared/ui/tooltip";
 vi.mock(import("next/navigation"), async (importOriginal) => ({
   ...(await importOriginal()),
   usePathname: () => "/blog",
-  // Navigation is outside this shell-rendering seam.
   useRouter: () => ({
     back: () => {},
     bfcacheId: "test",
@@ -64,8 +63,6 @@ describe("App shell accessibility", () => {
 
     const [first] = screen.getAllByRole("heading");
 
-    // Closed overlays contribute nothing to the outline, so the first heading
-    // a visitor meets is the page's own, not one belonging to the shell.
     expect(first).toHaveProperty("tagName", "H1");
   });
 

@@ -16,7 +16,6 @@ export const StickyArticleTitle = ({ title }: { readonly title: string }) => {
       `[data-slot="${ARTICLE_TITLE_SLOT}"]`
     );
 
-    // Negative top margin so the title counts as gone under the toolbar, not 92 px later when it leaves the viewport.
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries.at(-1);

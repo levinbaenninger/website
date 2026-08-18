@@ -7,8 +7,7 @@ import {
   ARTICLE_PREVIOUS_CONTROL,
 } from "./reader-contract";
 
-// Skip when a menu or dialog is open: Share gives `h` a typeahead meaning of its own.
-// Radix portals both into the body with a role, and neither is a text field, so the library's input guard does not cover this.
+// Skip when a menu or dialog is open: Share typeahead, and Radix portals with a role so the input guard doesn't cover them.
 const activateNeighbour = (control: string) => {
   if (document.querySelector('[role="dialog"], [role="menu"]') !== null) {
     return;
@@ -17,7 +16,6 @@ const activateNeighbour = (control: string) => {
   document.querySelector<HTMLAnchorElement>(control)?.click();
 };
 
-// Clicks the toolbar `Link` rather than pushing a route, so scroll, history, and prefetch stay the Link's.
 export const ArticleNeighbourHotkeys = () => {
   useHotkeys([
     {

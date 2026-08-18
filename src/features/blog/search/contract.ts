@@ -92,8 +92,7 @@ const validateDocumentIdentity = (
   }
 };
 
-// Probed before full validation so a version mismatch reports as such
-// instead of as a pile of field errors.
+// Probe version before full validation so a mismatch isn't reported as field errors.
 const versionProbeSchema = z.looseObject({ schemaVersion: z.unknown() });
 
 export const parseArticleSearchArtifact = (

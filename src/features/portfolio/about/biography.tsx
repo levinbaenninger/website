@@ -23,14 +23,8 @@ export const Biography = ({
       <PanelTitle>Hello</PanelTitle>
     </PanelHeader>
 
-    {/*
-      `.typeset` scales its own font size up by 1.125 below 48rem, which would
-      render this block larger on a phone than on a desktop and larger than
-      every other body on the page. The utility restates the size — it sits in
-      `@layer utilities`, so it beats `.typeset` in `@layer components` — and
-      the children stay in `em`, so they follow. 16/28 is the same measure an
-      Article reads at.
-    */}
+    {/* `.typeset` scales 1.125 below 48rem; `text-base/7` restates 16/28 in
+      `@layer utilities` so it beats typeset and children stay in `em`. */}
     <PanelContent className="typeset text-base/7">
       <p>
         {`Hi 👋 I'm`} <strong>{name}</strong>, a{" "}

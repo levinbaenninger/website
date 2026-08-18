@@ -17,8 +17,8 @@ const CODE_THEMES: ArticleCodeThemes = {
 };
 
 /*
- * Compiled in-memory rather than living under content/: an Article there would
- * move the manifest, catalog, search artifact, sitemap, and social images.
+ * Compiled in-memory rather than under content/: an Article there would move
+ * the manifest, catalog, search artifact, sitemap, and social images.
  */
 const REPRESENTATIVE_ARTICLE = `## Reading an Article
 
@@ -54,7 +54,6 @@ const removed = 1 // [!code --]
 \`\`\`
 `;
 
-// Figures stay in components.test.tsx: the contract only accepts an imported Article-local image binding.
 const RICH_ARTICLE = `## Compositions
 
 <Callout kind="note" title="A note">
@@ -194,7 +193,6 @@ describe("Article presentation language", () => {
   test("offers section copying on a Published Article only", () => {
     expect(published).toContain('aria-label="Copy link to section"');
     expect(draft).not.toContain('aria-label="Copy link to section"');
-    // Drafts keep fragment links; only the public copy action is withheld.
     expect(draft).toContain('href="#the-second-section"');
   });
 
@@ -204,7 +202,6 @@ describe("Article presentation language", () => {
     );
     expect(published).toContain("(opens in a new tab)");
     expect(published).toContain("data-article-external-mark");
-    // Fragment and in-app paths are not external.
     expect(published.match(/opens in a new tab/gu)).toHaveLength(1);
     expect(published).toContain('href="#the-second-section"');
     expect(published).toContain('href="/blog"');
@@ -219,7 +216,6 @@ describe("Article presentation language", () => {
   test("gives a Callout kind three channels, only one of which is colour", () => {
     expect(rich).toContain('<aside data-kind="note"');
     expect(rich).toContain('<aside data-kind="danger"');
-    // Callout is aside, not Alert: static prose must not be a live region.
     expect(rich).not.toContain('role="alert"');
     expect(rich).toContain('<span class="sr-only">Note: </span>');
     expect(rich).toContain('<span class="sr-only">Danger: </span>');
@@ -231,7 +227,6 @@ describe("Article presentation language", () => {
   test("renders a Card collection as a list with one link per linked Card", () => {
     expect(rich).toContain('<ul data-slot="article-cards">');
     expect(rich.match(/<li data-slot="article-card">/gu)).toHaveLength(3);
-    // Count the tile's own anchor: the third Card carries an ordinary authored link in its body.
     expect(rich).toMatch(
       /<li data-slot="article-card"><a href="\/blog\/deploy"/u
     );
@@ -241,7 +236,6 @@ describe("Article presentation language", () => {
     expect(rich).toMatch(/<li data-slot="article-card"><div data-slot="card"/u);
   });
 
-  // A `files` fence compiles every Folder closed, so server output is the top level.
   test("renders a file tree's top level with an operable Folder control", () => {
     expect(rich).toContain('<ul data-slot="article-files">');
     expect(rich).toContain('aria-label="src folder"');
@@ -264,11 +258,8 @@ describe("Article presentation language", () => {
     expect(rich).toContain('data-slot="article-accordion"');
     expect(rich).toContain('role="tablist"');
     expect(rich.match(/role="tab"/gu)).toHaveLength(2);
-    // A heading inside a closed Accordion inside an unselected Tab stays in
-    // the server output so the outline is stable.
     expect(rich).toContain('id="a-heading-inside-two-panels"');
     expect(rich).toContain('hidden="until-found"');
-    // Accordion.Header would emit h3 into the outline.
     expect(rich).not.toMatch(/<h[1-6][^>]*>Closed by default/u);
   });
 
@@ -278,7 +269,6 @@ describe("Article presentation language", () => {
     );
     expect(published).toContain('data-line-numbers-start="1"');
     expect(published).toContain('aria-label="Copy code"');
-    // Gutter is a CSS counter, never text, so a line number cannot reach the clipboard.
     expect(published).not.toContain(">1</span>");
     expect(published).not.toContain("[!code");
   });

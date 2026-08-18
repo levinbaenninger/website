@@ -402,7 +402,6 @@ export const ContributionGraphCalendar = ({
     [weeks, labels.months]
   );
 
-  // Newest days sit on the right; keep them in view when the graph overflows.
   useLayoutEffect(() => {
     const node = scrollRef.current;
     if (!node) {

@@ -16,7 +16,6 @@ import {
 
 interface ArticleViewProps {
   readonly article: ArticleDetail;
-  // Origin is app-owned. `null` withholds Share and section-copy: the local Draft case.
   readonly canonicalUrl?: string | null;
 }
 
@@ -26,9 +25,6 @@ export const ArticleView = ({
 }: ArticleViewProps) => {
   const { Content, navigation } = article;
 
-  // One heading is not an outline: it names the Article a second time and gives
-  // a visitor nothing to choose between. Below two, both surfaces are omitted
-  // and the space they would have taken goes back to the Article.
   const outline = article.outline.length < 2 ? null : article.outline;
 
   return (

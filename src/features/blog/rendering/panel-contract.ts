@@ -10,9 +10,6 @@ export interface ArticleTabPanel {
   readonly value: string;
 }
 
-// Mutable build type: the optional icon slot is added as a statement so an
-// absent icon stays absent in the serialized panel JSON instead of becoming
-// an undefined-valued key.
 interface ArticleTabPanelDraft {
   iconSlot?: string;
   label: string;

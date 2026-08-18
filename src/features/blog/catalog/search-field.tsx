@@ -10,11 +10,7 @@ import {
   InputGroupInput,
 } from "@/shared/ui/input-group";
 
-/**
- * Never autofocused and no `/` shortcut: stealing focus on load moves the
- * viewport off the first Articles. Escape on an empty query is inert so it
- * can still reach other listeners.
- */
+/** Escape on an empty query is inert so it can still reach other listeners. */
 export const SearchField = ({
   enabled,
   fieldRef,

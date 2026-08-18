@@ -14,12 +14,6 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => (
     <main id="main-content" className="flex flex-1 flex-col">
       {children}
 
-      {/* Carries the column rails through the leftover space, so a short page
-          does not leave the borders hanging above the footer. Being main's
-          last child, it also owns the line that closes the page off: on a full
-          page it collapses to zero height and its rule lands exactly on the
-          last section's, instead of stacking a second pixel the way a line of
-          the footer's own would. */}
       <div
         aria-hidden
         className="screen-line-bottom mx-auto w-full flex-1 border-x border-line md:w-3xl"

@@ -11,12 +11,8 @@ import { defineConfig } from "vite-plus";
 const blogTool = (subcommand: string): string =>
   `node src/features/blog/tooling/cli.ts ${subcommand}`;
 
-// Vitest unit tests use `.test.*`; `e2e/*.spec.ts` belongs to Playwright, so
-// the ultracite vitest preset must not lint spec files. The preset's own
-// override outranks local ones, so repo-convention relaxations live here:
-// tests assert whole behaviors in single cases and shape fixtures with
-// assertions, so describe wrappers, expect budgets, and typed mocks add no
-// signal.
+// Playwright owns `e2e/*.spec.ts`. The vitest preset's override outranks later
+// ones, so the file glob and rule relaxations have to live on this copy.
 const vitestTestsOnly: typeof vitest = {
   ...vitest,
   overrides: (vitest.overrides ?? []).map((override) => ({
@@ -60,8 +56,7 @@ export default defineConfig({
         cache: false,
       },
       fallow: {
-        // Advisory surfacing of duplication and complexity; the zero-tolerance
-        // gates live in `architecture` and the changed-code `fallow audit`.
+        // Advisory; zero-tolerance gates are `architecture` and `fallow audit`.
         command:
           "fallow dupes --format compact && fallow health --complexity --report-only --format compact",
         dependsOn: ["architecture"],
@@ -137,8 +132,6 @@ export default defineConfig({
         },
       },
       {
-        // The rendering contract parses untyped MDX/hast nodes; typeof-driven
-        // discrimination and boundary assertions are its domain.
         files: ["src/features/blog/rendering/contract.ts"],
         rules: {
           "anti-slop/no-runtime-typeof": "off",
@@ -146,8 +139,6 @@ export default defineConfig({
         },
       },
       {
-        // Boundary parsers and type guards take `unknown` by definition; the
-        // rule has no carve-out for type predicates.
         files: [
           "src/features/blog/articles/metadata.ts",
           "src/features/blog/rendering/contract.ts",
@@ -161,15 +152,12 @@ export default defineConfig({
         },
       },
       {
-        // Serialized panel JSON narrows through Record<string, unknown>.
         files: ["src/features/blog/rendering/panel-contract.ts"],
         rules: {
           "anti-slop/no-unsafe-dictionary-type": "off",
         },
       },
       {
-        // Reflect.apply bridges unified's callback-style Transformer type
-        // without a fabricated VFile or an unsafe assertion.
         files: ["src/features/blog/rendering/code/code.ts"],
         rules: {
           "anti-slop/no-reflect-apply": "off",

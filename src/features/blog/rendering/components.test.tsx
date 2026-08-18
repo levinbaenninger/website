@@ -122,10 +122,8 @@ describe("semantic Article components", () => {
     expect(informative).toContain("<figcaption>Diagram caption</figcaption>");
     expect(decorative).toContain('<img alt=""');
     expect(decorative).toContain('width="200" height="100"');
-    // `sizes` makes next/image emit width-appropriate candidates, not a fixed 1x/2x srcset.
     expect(informative).toContain('sizes="(min-width: 48rem) 48rem, 100vw"');
     expect(informative).toContain("srcSet=");
-    // An SVG has no raster candidates to choose between.
     expect(decorative).toContain('src="/decoration.svg"');
   });
 
@@ -157,7 +155,6 @@ describe("semantic Article components", () => {
 
     expect(callout).toContain("<aside");
     expect(callout).toContain('data-kind="warning"');
-    // Callout is aside, not Alert: static prose must not be a live region.
     expect(callout).not.toContain('role="alert"');
     expect(callout).toContain('data-slot="article-callout-mark"');
     expect(callout).toContain('<span class="sr-only">Warning: </span>');
@@ -195,7 +192,6 @@ describe("semantic Article components", () => {
     expect(output).toContain('<ul data-slot="article-files">');
     expect(output).toContain('aria-label="app folder"');
     expect(output).toContain('aria-label="(marketing) folder"');
-    // Nested lists carry their own slot so prose marker rules leave them alone.
     expect(output.match(/data-slot="article-folder-entries"/gu)).toHaveLength(
       2
     );
@@ -206,7 +202,6 @@ describe("semantic Article components", () => {
     expect(output.match(/<svg[^>]*aria-hidden="true"/gu)).not.toBeNull();
     expect(output).toContain('<ol data-slot="article-steps">');
     expect(output).toContain("<kbd");
-    // A Step label reads like a heading and must never become one.
     expect(output).toContain('<div data-slot="article-step-title">Run</div>');
     expect(output).not.toMatch(/<h[1-6]/u);
   });

@@ -13,7 +13,6 @@ import {
 
 import { STICKY_CHROME_PX } from "./reader-contract";
 
-// A heading counts as reached when it passes under the opaque chrome, not when it leaves the viewport.
 const ACTIVATION_LINE_PX = STICKY_CHROME_PX;
 
 // Not an IntersectionObserver: a long section's heading is far above the viewport and is still being read.
@@ -30,7 +29,6 @@ const measureActiveHeadingId = (
       continue;
     }
 
-    // Last heading that has crossed the line wins (document order).
     if (heading.getBoundingClientRect().top <= ACTIVATION_LINE_PX) {
       activeId = id;
     }
@@ -54,7 +52,6 @@ export const useActiveOutlineHeadingId = (
 
     const schedule = () => {
       if (frame === 0) {
-        // Scroll fires more often than paint; a reading position one frame old is never wrong to a visitor.
         frame = window.requestAnimationFrame(measure);
       }
     };

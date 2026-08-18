@@ -15,16 +15,12 @@ import type { ArticleSearchArtifact } from "./contract";
 
 export const ARTICLE_SEARCH_ARTIFACT_URL = "/blog/search.json";
 
-// Two gates, tuned against the fixtures beside this file. `threshold` 0.2 still
-// absorbs a typo; 0.35 let `rust` match an Article about caching.
-// `FINAL_SCORE_CUTOFF` 0.8 and `ignoreFieldNorm` keep an exact body-only match
-// (`spreadsheet`) distinct from near-threshold noise.
+// threshold 0.2 still absorbs a typo; 0.35 let `rust` match an Article about caching.
+// FINAL_SCORE_CUTOFF 0.8 and ignoreFieldNorm keep an exact body-only match (`spreadsheet`) distinct from near-threshold noise.
 const FINAL_SCORE_CUTOFF = 0.8;
 
 const MAX_BODY_SNIPPET_GRAPHEMES = 160;
 
-// The card's two-line excerpt slot is ~110 characters at 390 px; more lead-in
-// pushes the first highlight out of view.
 const BODY_SNIPPET_LEADING_GRAPHEMES = 40;
 
 const FUSE_OPTIONS = {
@@ -37,8 +33,6 @@ const FUSE_OPTIONS = {
   ignoreDiacritics: true,
   includeScore: true,
   threshold: 0.2,
-  // Visible text only. Canonical Tag IDs are addressed by `?tag=`, and a
-  // free-text match a visitor cannot see on the page cannot be explained.
   keys: [
     { name: "title", weight: 8 },
     { name: "tags.label", weight: 5 },

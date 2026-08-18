@@ -38,8 +38,6 @@ export const ReaderRail = ({
 
 export const ReaderTopLine = () => <div className="screen-line-bottom h-px" />;
 
-// `screen-line-top` is a `::before` at `top: 0` and `screen-line-bottom` an `::after` at `bottom: 0`.
-// Stacked under the toolbar's bottom rule they would draw two adjacent 1 px lines; the toolbar owns the rule that must survive scrolling.
 const ReaderTitleSpacer = () => (
   <div className="screen-line-bottom py-px screen-line-top-none">
     <div className="h-4" />
@@ -48,8 +46,6 @@ const ReaderTitleSpacer = () => (
 
 export const ReaderBottomLine = () => <div className="screen-line-top h-4" />;
 
-// Real `/blog`, never `history.back()`: a control that claims a destination has to go there.
-// Prefetch is off because the link is on screen at every scroll position.
 const BackToBlog = () => (
   <Button
     asChild
@@ -65,7 +61,6 @@ const BackToBlog = () => (
 );
 
 // Marked with direction because these anchors are what the `h`/`l` keys click.
-// Tooltip repeats the accessible name rather than adding the key to it: a screen reader should not hear the shortcut as part of what the control does.
 const ToolbarNeighbourLink = ({
   direction,
   neighbour,
@@ -105,8 +100,6 @@ const ToolbarNeighbourLink = ({
   );
 };
 
-// Omit unavailable neighbours rather than disable them: a control that cannot do anything is noise in the tab order.
-// Share is omitted without a canonical URL (local Draft): the only link it could offer is one nobody else can open.
 const ReaderToolbarActions = ({
   canonicalUrl,
   navigation,
@@ -132,7 +125,6 @@ const ReaderToolbarActions = ({
   </div>
 );
 
-// Equal `flex-1 basis-0` shoulders centre the title and hold width while it fades, so the action cluster does not shift.
 export const ReaderToolbar = ({
   canonicalUrl,
   navigation,
@@ -170,8 +162,6 @@ const ArticleTitle = ({ children }: { readonly children: string }) => (
   </h1>
 );
 
-// `updatedAt` equal to `publishedAt` is legal and redundant on screen. Drafts say unpublished instead of showing a date they have not earned.
-// Tags are inert: a link here would send a reader out of the Article they opened.
 const ArticleFacts = ({ article }: { readonly article: ArticleSummary }) => {
   // ISO dates compare lexicographically, and both are validated `YYYY-MM-DD`.
   const meaningfulUpdate =
@@ -211,8 +201,6 @@ const ArticleFacts = ({ article }: { readonly article: ArticleSummary }) => {
         </>
       )}
 
-      {/* No separator before the Tags: the Badges already read as a break, and
-          a dangling "·" is what is left behind when the row wraps. */}
       {article.tags.length > 0 ? (
         <ul className="flex flex-wrap items-center gap-1.5">
           {article.tags.map((tag) => (
@@ -228,7 +216,6 @@ const ArticleFacts = ({ article }: { readonly article: ArticleSummary }) => {
   );
 };
 
-// No Cover: a Cover represents an Article to someone deciding whether to open it, which the reader has done.
 export const ArticleHeader = ({
   article,
 }: {
@@ -247,7 +234,6 @@ export const ArticleHeader = ({
   </>
 );
 
-// Empty gutters stay inert; with no outline the right gutter is reclaimed rather than reserved for a control that never appears.
 export const ReaderGrid = ({
   children,
   outline = null,
@@ -268,7 +254,6 @@ export const ReaderGrid = ({
   </div>
 );
 
-// Own opening offset rather than inheriting the first authored block's margin. `pb-8` is not a mirror of `pt-8`: the last block has no collapsed margin, so padding is what makes the closing line sit like the opening one.
 export const ProseColumn = ({
   children,
 }: {
@@ -279,9 +264,7 @@ export const ProseColumn = ({
   </div>
 );
 
-// Levin's own; the reference Article ends at the prose.
 // From `sm`, a missing Previous keeps its empty cell so Next stays on the right.
-// Default prefetch: these duplicate the toolbar, so nothing is prepared until a reader has scrolled this far.
 export const EndPager = ({
   navigation,
 }: {

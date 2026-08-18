@@ -10,8 +10,7 @@ import { cn } from "@/shared/ui/cn";
 
 import { HighlightedText } from "./highlighted-text";
 
-// The `All` option is a UI value only: an unfiltered catalog carries no `tag`
-// parameter, so this string never reaches the URL.
+// UI-only: an unfiltered catalog has no `tag` parameter, so this never reaches the URL.
 export const ALL_TAGS = "all";
 
 export const articleCountLabel = (count: number): string =>
@@ -63,21 +62,17 @@ const TagOption = ({
       checked={selected}
       className="peer sr-only"
       disabled={disabled}
-      // No `name`: the group is controlled, and its keyboard behaviour is
-      // explicit below. A shared name would only let a second copy of the
-      // strip — the inert one, mid-swap — steal this group's checked state.
+      // No `name`: a shared name would let the inert prerendered copy steal this group's checked state.
       onChange={() => {
         onSelect(value);
       }}
       onKeyDown={onKeyDown}
       ref={optionRef}
-      // Single tab stop: Tab lands on the selected option, arrows move.
       tabIndex={selected ? 0 : -1}
       type="radio"
       value={value}
     />
-    {/* Chip is visual only: highlighting splits a label into `Next . js`, so
-        the accessible name lives on the sr-only line beside it. */}
+    {/* Chip is visual only: `<mark>` splits the label, so the accessible name lives on the sr-only line. */}
     <Badge
       aria-hidden
       className="peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:opacity-50"
@@ -90,11 +85,6 @@ const TagOption = ({
   </label>
 );
 
-/**
- * Keyboard is owned here because native radios skip Home/End, disabled options,
- * and wrap. A selected empty Tag stays enabled so the keyboard can leave.
- * Tag-only matches are explained on the chips, not the cards.
- */
 export const TagFilter = ({
   allOptionRef,
   articleCount,
@@ -135,8 +125,6 @@ export const TagFilter = ({
 
   const select = (value: string) => {
     onSelect(value);
-    // Arrow movement selects and focuses together; the option outlives the
-    // re-render, so the visitor stays exactly where the key took them.
     optionRefs.current.get(value)?.focus();
   };
 
