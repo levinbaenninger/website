@@ -24,10 +24,8 @@ const tagSchema = z
   })
   .strict();
 
-const articleHrefSchema = z.custom<`/blog/${string}`>(
-  (value) =>
-    typeof value === "string" &&
-    /^\/blog\/[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value),
+const articleHrefSchema = z.templateLiteral(
+  ["/blog/", z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u)],
   "Invalid canonical Article href."
 );
 
@@ -94,14 +92,18 @@ const validateDocumentIdentity = (
   }
 };
 
+// Probed before full validation so a version mismatch reports as such
+// instead of as a pile of field errors.
+const versionProbeSchema = z.looseObject({ schemaVersion: z.unknown() });
+
 export const parseArticleSearchArtifact = (
   value: unknown
 ): ArticleSearchArtifact => {
+  const probe = versionProbeSchema.safeParse(value);
   if (
-    typeof value === "object" &&
-    value !== null &&
-    "schemaVersion" in value &&
-    value.schemaVersion !== ARTICLE_SEARCH_SCHEMA_VERSION
+    probe.success &&
+    probe.data.schemaVersion !== undefined &&
+    probe.data.schemaVersion !== ARTICLE_SEARCH_SCHEMA_VERSION
   ) {
     throw new Error("Unsupported Article search artifact schema version.");
   }

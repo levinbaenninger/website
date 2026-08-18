@@ -10,5 +10,3 @@ overrides:
 peerDependencyRules:
   allowAny:
     - vite
-  allowedVersions:
-    typescript: "*"

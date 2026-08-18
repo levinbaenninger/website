@@ -22,13 +22,13 @@ import {
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import { createTransformerFactory, rendererRich } from "@shikijs/twoslash/core";
-import ts from "@typescript/typescript6";
 import { createDefaultMapFromNodeModules } from "@typescript/vfs";
 import type { Element, Root } from "hast";
 import { createHighlighterCore } from "shiki/core";
 import type { ThemeRegistration } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
 import { createTwoslasher } from "twoslash/core";
+import ts from "typescript";
 import { CONTINUE, SKIP, visit } from "unist-util-visit";
 
 import { isArticleCodeTheme } from "./code-theme-contract.ts";
@@ -61,7 +61,7 @@ const csstypeEntry = path.resolve(
 const TWOSLASH_LIBRARIES = ["lib.es2022.d.ts", "lib.dom.d.ts"];
 const TWOSLASH_TARGET = ts.ScriptTarget.ES2022;
 const tsLibDirectory = path.join(
-  path.dirname(require.resolve("@typescript/typescript6/package.json")),
+  path.dirname(require.resolve("typescript/package.json")),
   "lib"
 );
 const twoslashFileSystem = createDefaultMapFromNodeModules(
@@ -103,10 +103,7 @@ const twoslasher = createTwoslasher({
   fsMap: twoslashFileSystem,
   fsCache: false,
   tsLibDirectory,
-  // Twoslash types `tsModule` as the `typescript` package, which is native 7
-  // and has no compiler API. The runtime value is the TypeScript 6 JS API.
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion
-  tsModule: ts as never,
+  tsModule: ts,
   vfsRoot: "/blog-twoslash",
 });
 const transformerTwoslash = createTransformerFactory(
@@ -187,9 +184,13 @@ const isCodePre = (node: Element): boolean => {
 
 // Shiki writes `class` not `className`, and a single class as a string vs an
 // array for several. Both shapes occur in one tree.
+const isSpaceSeparatedClassList = (
+  value: Element["properties"][string]
+): value is string => typeof value === "string";
+
 const hasClass = (node: Element, name: string): boolean => {
   const value = node.properties.class ?? node.properties.className;
-  if (typeof value === "string") {
+  if (isSpaceSeparatedClassList(value)) {
     return value.split(/\s+/u).includes(name);
   }
   return Array.isArray(value) && value.includes(name);

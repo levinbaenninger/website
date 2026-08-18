@@ -1,6 +1,7 @@
+const isString = (value: unknown): value is string => typeof value === "string";
+
 const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) &&
-  value.every((item: unknown) => typeof item === "string");
+  Array.isArray(value) && value.every(isString);
 
 export const serializeCodeTabLabels = (labels: readonly string[]): string =>
   JSON.stringify(labels);

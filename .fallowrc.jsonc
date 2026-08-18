@@ -19,11 +19,16 @@
     "react-dom",
     "shadcn",
     "tailwindcss",
-    "typescript",
   ],
   "ignoreDependencyOverrides": [
     {
       "package": "vite",
+      "source": "pnpm-workspace.yaml",
+    },
+    {
+      // Pins the Vite+-bundled Vitest so no dependency can split the runner
+      // internals; resolved transitively, so fallow sees no direct declarer.
+      "package": "vitest",
       "source": "pnpm-workspace.yaml",
     },
   ],
@@ -49,7 +54,15 @@
     "zones": [
       {
         "name": "app",
-        "patterns": ["src/app/**", "src/mdx-components.tsx", "src/mdx.d.ts", "e2e/**", "next.config.ts", "playwright.config.ts", "vite.config.ts"],
+        "patterns": [
+          "src/app/**",
+          "src/mdx-components.tsx",
+          "src/mdx.d.ts",
+          "e2e/**",
+          "next.config.ts",
+          "playwright.config.ts",
+          "vite.config.ts",
+        ],
       },
       {
         "name": "features/blog",

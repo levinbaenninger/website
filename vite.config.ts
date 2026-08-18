@@ -137,24 +137,42 @@ export default defineConfig({
         },
       },
       {
-        // The blog parsing layer narrows untyped MDX/hast/frontmatter input;
-        // typeof-driven discrimination over unknown values is its domain.
+        // The rendering contract parses untyped MDX/hast nodes; typeof-driven
+        // discrimination and boundary assertions are its domain.
+        files: ["src/features/blog/rendering/contract.ts"],
+        rules: {
+          "anti-slop/no-runtime-typeof": "off",
+          "anti-slop/require-safety-comment-for-type-assertion": "off",
+        },
+      },
+      {
+        // Boundary parsers and type guards take `unknown` by definition; the
+        // rule has no carve-out for type predicates.
         files: [
           "src/features/blog/articles/metadata.ts",
           "src/features/blog/rendering/contract.ts",
           "src/features/blog/rendering/panel-contract.ts",
-          "src/features/blog/rendering/code/**",
+          "src/features/blog/rendering/code/code-tabs-contract.ts",
           "src/features/blog/search/contract.ts",
           "src/features/blog/tooling/**",
         ],
         rules: {
-          // Reflect.apply bridges unified's callback-style Transformer type
-          // without a fabricated VFile or an unsafe assertion.
-          "anti-slop/no-reflect-apply": "off",
-          "anti-slop/no-runtime-typeof": "off",
           "anti-slop/no-unknown-parameters": "off",
+        },
+      },
+      {
+        // Serialized panel JSON narrows through Record<string, unknown>.
+        files: ["src/features/blog/rendering/panel-contract.ts"],
+        rules: {
           "anti-slop/no-unsafe-dictionary-type": "off",
-          "anti-slop/require-safety-comment-for-type-assertion": "off",
+        },
+      },
+      {
+        // Reflect.apply bridges unified's callback-style Transformer type
+        // without a fabricated VFile or an unsafe assertion.
+        files: ["src/features/blog/rendering/code/code.ts"],
+        rules: {
+          "anti-slop/no-reflect-apply": "off",
         },
       },
       {

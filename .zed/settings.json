@@ -89,13 +89,7 @@
           }
         }
       ],
-      "code_action": "source.fixAll.oxc",
-      "language_servers": [
-        "tsgo",
-        "!vtsls",
-        "!typescript-language-server",
-        "..."
-      ]
+      "code_action": "source.fixAll.oxc"
     },
     "JSX": {
       "format_on_save": "on",
@@ -108,12 +102,6 @@
             "name": "oxfmt"
           }
         }
-      ],
-      "language_servers": [
-        "tsgo",
-        "!vtsls",
-        "!typescript-language-server",
-        "..."
       ]
     },
     "JSON": {
@@ -218,12 +206,6 @@
             "name": "oxfmt"
           }
         }
-      ],
-      "language_servers": [
-        "tsgo",
-        "!vtsls",
-        "!typescript-language-server",
-        "..."
       ]
     },
     "TSX": {
@@ -237,12 +219,6 @@
             "name": "oxfmt"
           }
         }
-      ],
-      "language_servers": [
-        "tsgo",
-        "!vtsls",
-        "!typescript-language-server",
-        "..."
       ]
     },
     "Vue.js": {
