@@ -28,10 +28,57 @@ const toZurichMidnight = (date: string): string =>
     .toZonedDateTime("Europe/Zurich")
     .toString({ timeZoneName: "never" });
 
+const DRAFT_ROBOTS = {
+  follow: false,
+  index: false,
+  noarchive: true,
+  noimageindex: true,
+};
+
+interface SocialImage {
+  alt: string;
+  height: number;
+  type?: string;
+  url: string;
+  width: number;
+}
+
+// Mutable build types: optional fields are added as statements so absent
+// stays absent — consumers assert on property absence, not undefined values.
+interface ArticleOpenGraphDraft {
+  type: "article";
+  title: string;
+  description: string;
+  url: string;
+  siteName: string;
+  authors: string[];
+  tags: string[];
+  images: SocialImage[];
+  publishedTime?: string;
+  modifiedTime?: string;
+}
+
+interface ArticleMetadataDraft {
+  title: { absolute: string };
+  description: string;
+  authors: { name: string; url: string }[];
+  alternates: { canonical: string; types: { "application/rss+xml": string } };
+  robots?: typeof DRAFT_ROBOTS;
+  openGraph: ArticleOpenGraphDraft;
+  twitter: {
+    card: "summary_large_image";
+    creator: string;
+    site: string;
+    title: string;
+    description: string;
+    images: SocialImage[];
+  };
+}
+
 export const createArticleMetadataValues = (
   article: ArticleDetail,
   identity: ArticleDeliveryIdentity
-) => {
+): ArticleMetadataDraft => {
   const canonicalUrl = toCanonicalUrl(article.href, identity);
   const authorUrl = toCanonicalUrl("/", identity);
   const title = `${article.title} | ${identity.siteName}`;
@@ -53,7 +100,32 @@ export const createArticleMetadataValues = (
       ? undefined
       : toZurichMidnight(article.updatedAt);
 
-  return {
+  const openGraph: ArticleOpenGraphDraft = {
+    type: "article",
+    title,
+    description: article.description,
+    url: canonicalUrl,
+    siteName: identity.siteName,
+    authors: [authorUrl],
+    tags: article.tags.map(({ label }) => label),
+    images: [
+      {
+        alt: socialImageAlt,
+        height: SOCIAL_IMAGE_SIZE.height,
+        type: SOCIAL_IMAGE_CONTENT_TYPE,
+        url: openGraphImageUrl,
+        width: SOCIAL_IMAGE_SIZE.width,
+      },
+    ],
+  };
+  if (publishedTime !== undefined) {
+    openGraph.publishedTime = publishedTime;
+  }
+  if (modifiedTime !== undefined) {
+    openGraph.modifiedTime = modifiedTime;
+  }
+
+  const metadata: ArticleMetadataDraft = {
     title: { absolute: title },
     description: article.description,
     authors: [{ name: identity.authorName, url: authorUrl }],
@@ -63,36 +135,7 @@ export const createArticleMetadataValues = (
         "application/rss+xml": toCanonicalUrl("/blog/rss.xml", identity),
       },
     },
-    ...(article.status === "draft"
-      ? {
-          robots: {
-            follow: false,
-            index: false,
-            noarchive: true,
-            noimageindex: true,
-          },
-        }
-      : {}),
-    openGraph: {
-      type: "article" as const,
-      title,
-      description: article.description,
-      url: canonicalUrl,
-      siteName: identity.siteName,
-      authors: [authorUrl],
-      tags: article.tags.map(({ label }) => label),
-      images: [
-        {
-          alt: socialImageAlt,
-          height: SOCIAL_IMAGE_SIZE.height,
-          type: SOCIAL_IMAGE_CONTENT_TYPE,
-          url: openGraphImageUrl,
-          width: SOCIAL_IMAGE_SIZE.width,
-        },
-      ],
-      ...(publishedTime === undefined ? {} : { publishedTime }),
-      ...(modifiedTime === undefined ? {} : { modifiedTime }),
-    },
+    openGraph,
     twitter: {
       card: "summary_large_image" as const,
       creator: identity.twitterHandle,
@@ -109,6 +152,10 @@ export const createArticleMetadataValues = (
       ],
     },
   };
+  if (article.status === "draft") {
+    metadata.robots = DRAFT_ROBOTS;
+  }
+  return metadata;
 };
 
 export interface PublishedArticleStructuredData {
@@ -149,9 +196,12 @@ export const createPublishedArticleStructuredData = (
     description: article.description,
     image: new URL(article.cover.src, identity.origin).href,
     datePublished: toZurichMidnight(article.publishedAt),
-    ...(article.updatedAt === null
-      ? {}
-      : { dateModified: toZurichMidnight(article.updatedAt) }),
+    // JSON.stringify drops undefined-valued properties, so the serialized
+    // JSON-LD omits dateModified for never-updated articles.
+    dateModified:
+      article.updatedAt === null
+        ? undefined
+        : toZurichMidnight(article.updatedAt),
     author: {
       "@id": `${authorUrl}#person`,
       "@type": "Person",

@@ -52,7 +52,7 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
-    expect(search.search(" \n\t ")).toEqual([]);
+    expect(search.search(" \n\t ")).toStrictEqual([]);
     expect(search.search("  Cafe\u0301   architecture ")).toHaveLength(1);
     expect(fetchArtifact).toHaveBeenCalledWith(ARTICLE_SEARCH_ARTIFACT_URL);
   });
@@ -90,11 +90,9 @@ describe("client-safe Article search", () => {
     }).load();
 
     // Body-only is last but present: it says the words, so it is an answer.
-    expect(search.search("cache components").map(({ id }) => id)).toEqual([
-      "a-title",
-      "z-title",
-      "body-only",
-    ]);
+    expect(search.search("cache components").map(({ id }) => id)).toStrictEqual(
+      ["a-title", "z-title", "body-only"]
+    );
     expect(search.search("cache component").map(({ id }) => id)).toContain(
       "a-title"
     );
@@ -140,7 +138,7 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
-    expect(search.search("quasar").map(({ id }) => id)).toEqual([
+    expect(search.search("quasar").map(({ id }) => id)).toStrictEqual([
       "tag-label",
       "description",
       "heading",
@@ -167,7 +165,7 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
-    expect(search.search("quasar")).toEqual([]);
+    expect(search.search("quasar")).toStrictEqual([]);
   });
 
   test("keeps a heading- or body-only match the title cannot explain", async () => {
@@ -196,12 +194,12 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
-    expect(search.search("spreadsheet").map(({ id }) => id)).toEqual([
+    expect(search.search("spreadsheet").map(({ id }) => id)).toStrictEqual([
       "body-only",
     ]);
-    expect(search.search("injecting a fetch").map(({ id }) => id)).toEqual([
-      "heading-only",
-    ]);
+    expect(
+      search.search("injecting a fetch").map(({ id }) => id)
+    ).toStrictEqual(["heading-only"]);
   });
 
   test("separates the candidate gate from the relevance gate", async () => {
@@ -232,8 +230,10 @@ describe("client-safe Article search", () => {
       loadFuse,
     }).load();
 
-    expect(search.search("caching").map(({ id }) => id)).toEqual(["exact"]);
-    expect(search.search("rust")).toEqual([]);
+    expect(search.search("caching").map(({ id }) => id)).toStrictEqual([
+      "exact",
+    ]);
+    expect(search.search("rust")).toStrictEqual([]);
   });
 
   test("returns plain strings with valid end-exclusive ranges and deterministic snippets", async () => {
@@ -261,8 +261,8 @@ describe("client-safe Article search", () => {
       throw new TypeError("Expected the matching Article search result.");
     }
     expect(result.title.text).toBe("Cache architecture");
-    expect(result.title.highlights).toEqual([{ end: 5, start: 0 }]);
-    expect(result.tags[0]).toEqual({
+    expect(result.title.highlights).toStrictEqual([{ end: 5, start: 0 }]);
+    expect(result.tags[0]).toStrictEqual({
       id: "cache",
       label: {
         highlights: [{ end: 5, start: 0 }],
@@ -336,7 +336,7 @@ describe("client-safe Article search", () => {
     const [firstSearch, secondSearch] = await Promise.all([first, second]);
 
     expect(firstSearch).toBe(secondSearch);
-    expect(await loader.load()).toBe(firstSearch);
+    await expect(loader.load()).resolves.toBe(firstSearch);
     expect(fetchArtifact).toHaveBeenCalledOnce();
   });
 
@@ -364,9 +364,9 @@ describe("client-safe Article search", () => {
         );
       const loader = createArticleSearchLoader({ fetchArtifact, loadFuse });
 
-      await expect(loader.load()).rejects.toThrow();
+      await expect(loader.load()).rejects.toThrow(Error);
       const recovered = await loader.load();
-      expect(recovered.search("recovered").map(({ id }) => id)).toEqual([
+      expect(recovered.search("recovered").map(({ id }) => id)).toStrictEqual([
         "recovered",
       ]);
       expect(fetchArtifact).toHaveBeenCalledTimes(2);
@@ -390,7 +390,7 @@ describe("client-safe Article search", () => {
     const recoveredAfterImportFailure = await constructorFailure.load();
     expect(
       recoveredAfterImportFailure.search("recovered").map(({ id }) => id)
-    ).toEqual(["recovered"]);
+    ).toStrictEqual(["recovered"]);
 
     const constructError = new Error("index construction failed");
     const loadBrokenFuse = async () => {
@@ -418,6 +418,6 @@ describe("client-safe Article search", () => {
     const recoveredAfterConstructionFailure = await constructionFailure.load();
     expect(
       recoveredAfterConstructionFailure.search("recovered").map(({ id }) => id)
-    ).toEqual(["recovered"]);
+    ).toStrictEqual(["recovered"]);
   });
 });

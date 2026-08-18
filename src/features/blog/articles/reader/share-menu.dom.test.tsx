@@ -121,7 +121,7 @@ describe("Article Share menu", () => {
 
     const copied = await screen.findByRole("menuitem", { name: "Copied" });
 
-    expect(menu.isConnected).toBe(true);
+    expect(menu.isConnected).toBeTruthy();
     expect(copied).toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("Copied");
   });
@@ -137,16 +137,16 @@ describe("Article Share menu", () => {
     await openMenu(user);
     await user.click(screen.getByRole("menuitem", { name: "Copy link" }));
 
-    expect(
-      await screen.findByRole("menuitem", { name: "Copy failed" })
-    ).toBeTruthy();
+    await expect(
+      screen.findByRole("menuitem", { name: "Copy failed" })
+    ).resolves.toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("Copy failed");
 
     await vi.advanceTimersByTimeAsync(1500);
 
-    expect(
-      await screen.findByRole("menuitem", { name: "Copy link" })
-    ).toBeTruthy();
+    await expect(
+      screen.findByRole("menuitem", { name: "Copy link" })
+    ).resolves.toBeTruthy();
   });
 
   test("offers native sharing only where the platform has it", async () => {
@@ -223,9 +223,9 @@ describe("Article Share menu", () => {
       screen.getByRole("menuitem", { name: "More sharing options…" })
     );
 
-    expect(
-      await screen.findByRole("menuitem", { name: "Sharing failed" })
-    ).toBeTruthy();
+    await expect(
+      screen.findByRole("menuitem", { name: "Sharing failed" })
+    ).resolves.toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("Sharing failed");
   });
 

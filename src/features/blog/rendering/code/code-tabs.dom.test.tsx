@@ -41,9 +41,9 @@ describe("synchronized code tabs", () => {
           .getAttribute("aria-selected")
       ).toBe("true");
     });
-    expect(screen.getByRole("tabpanel", { name: "JavaScript" }).hidden).toBe(
-      false
-    );
+    expect(
+      screen.getByRole("tabpanel", { name: "JavaScript" }).hidden
+    ).toBeFalsy();
   });
 
   test("synchronizes matching groups and persists the selected label", async () => {
@@ -133,7 +133,7 @@ describe("synchronized code tabs", () => {
         .getByRole("tab", { name: "TypeScript" })
         .getAttribute("aria-selected")
     ).toBe("true");
-    expect(window.localStorage.length).toBe(0);
+    expect(window.localStorage).toHaveLength(0);
   });
 
   test("moves between tabs with the arrow keys", async () => {
@@ -154,9 +154,9 @@ describe("synchronized code tabs", () => {
           .getAttribute("aria-selected")
       ).toBe("true");
     });
-    expect(screen.getByRole("tabpanel", { name: "JavaScript" }).hidden).toBe(
-      false
-    );
+    expect(
+      screen.getByRole("tabpanel", { name: "JavaScript" }).hidden
+    ).toBeFalsy();
   });
 
   test("keeps working when storage is denied", async () => {
@@ -181,9 +181,9 @@ describe("synchronized code tabs", () => {
             .getAttribute("aria-selected")
         ).toBe("true");
       });
-      expect(screen.getByRole("tabpanel", { name: "JavaScript" }).hidden).toBe(
-        false
-      );
+      expect(
+        screen.getByRole("tabpanel", { name: "JavaScript" }).hidden
+      ).toBeFalsy();
     } finally {
       Object.defineProperty(window, "localStorage", original);
     }

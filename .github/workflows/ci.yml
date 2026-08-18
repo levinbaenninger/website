@@ -56,29 +56,15 @@ jobs:
           cache: true
       - name: Enforce architecture boundaries
         run: vp run architecture
-      - name: Enforce dead-code regression baseline
+      - name: Enforce zero dead code
         uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
         with:
           command: dead-code
           format: compact
-          fail-on-issues: false
-          fail-on-regression: true
-          regression-baseline: fallow-baselines/regression.json
+          fail-on-issues: true
           auto-changed-since: false
           annotations: false
           comment: false
-      - name: Enforce duplication baseline
-        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
-        with:
-          command: dupes
-          format: compact
-          baseline: fallow-baselines/dupes.json
-          auto-changed-since: false
-          annotations: false
-          comment: false
-      - name: Enforce complexity baseline
-        run: >-
-          fallow health --complexity --baseline fallow-baselines/health.json --baseline-mode identity --format compact
       - name: Audit changed code with fallow
         if: ${{ github.event_name == 'pull_request' }}
         uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
@@ -88,8 +74,6 @@ jobs:
           comment: true
           review-comments: true
           review-guidance: true
-          health-baseline: fallow-baselines/health.json
-          dupes-baseline: fallow-baselines/dupes.json
 
   tests:
     name: Tests

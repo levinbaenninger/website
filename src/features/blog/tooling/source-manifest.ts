@@ -236,10 +236,7 @@ const walkAssets = async (
   return { files, diagnostics };
 };
 
-const findLineAndColumn = (
-  source: string,
-  offset: number
-): { readonly line: number; readonly column: number } => {
+const findLineAndColumn = (source: string, offset: number) => {
   const before = source.slice(0, offset);
   const lines = before.split("\n");
   return { line: lines.length, column: (lines.at(-1)?.length ?? 0) + 1 };

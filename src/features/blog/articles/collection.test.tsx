@@ -126,7 +126,7 @@ describe("Article operations", () => {
 
     const listedArticles = await articles.listArticles();
 
-    expect(listedArticles.map(({ slug }) => slug)).toEqual([
+    expect(listedArticles.map(({ slug }) => slug)).toStrictEqual([
       "alpha",
       "zebra",
       "same-day-a",
@@ -160,10 +160,10 @@ describe("Article operations", () => {
       today: TODAY,
     });
 
-    expect(await articles.findArticle("hidden")).toBeNull();
+    await expect(articles.findArticle("hidden")).resolves.toBeNull();
     const listedArticles = await articles.listArticles();
 
-    expect(listedArticles.map(({ slug }) => slug)).toEqual(["visible"]);
+    expect(listedArticles.map(({ slug }) => slug)).toStrictEqual(["visible"]);
   });
 
   test("loads the Draft canary but excludes its sentinel from every production projection", async () => {
@@ -277,7 +277,7 @@ describe("Article operations", () => {
 
     await expect(
       Promise.all(callEveryArticleOperation(draftOnly, operationArguments))
-    ).resolves.toEqual(
+    ).resolves.toStrictEqual(
       await Promise.all(callEveryArticleOperation(empty, operationArguments))
     );
   });
@@ -305,7 +305,7 @@ describe("Article operations", () => {
       today: TODAY,
     });
 
-    await expect(articles.listArticleSocialImages()).resolves.toEqual([
+    await expect(articles.listArticleSocialImages()).resolves.toStrictEqual([
       {
         alt: "Visible Article — Levin Bänninger",
         label: "Article",
@@ -315,7 +315,7 @@ describe("Article operations", () => {
     ]);
     await expect(
       articles.findArticleSocialImage("published-article")
-    ).resolves.toEqual({
+    ).resolves.toStrictEqual({
       alt: "Visible Article — Levin Bänninger",
       label: "Article",
       slug: "published-article",
@@ -407,7 +407,7 @@ describe("Article operations", () => {
       })
     );
 
-    expect(results.every(({ status }) => status === "rejected")).toBe(true);
+    expect(results.every(({ status }) => status === "rejected")).toBeTruthy();
   });
 
   test("looks up the current slug without exposing compiled module metadata", async () => {
@@ -474,7 +474,7 @@ describe("Article operations", () => {
       today: TODAY,
     });
 
-    expect(Object.keys(articles).toSorted()).toEqual([
+    expect(Object.keys(articles).toSorted()).toStrictEqual([
       "findArticle",
       "findArticleRedirect",
       "findArticleSocialImage",
@@ -569,7 +569,7 @@ describe("Article operations", () => {
 
     const detail = await articles.findArticle("outlined-article");
 
-    expect(detail?.outline).toEqual(headings);
+    expect(detail?.outline).toStrictEqual(headings);
     expect(JSON.stringify(detail?.outline)).not.toContain("Body text");
   });
 
@@ -585,14 +585,14 @@ describe("Article operations", () => {
 
     const nextjsArticles = await articles.listArticles({ tag: "nextjs" });
 
-    expect(nextjsArticles.map(({ slug }) => slug)).toEqual([
+    expect(nextjsArticles.map(({ slug }) => slug)).toStrictEqual([
       "draft-nextjs",
       "published-both",
     ]);
-    await expect(articles.listArticles({ tag: "unknown" })).resolves.toEqual(
-      []
-    );
-    await expect(articles.listArticleTags()).resolves.toEqual([
+    await expect(
+      articles.listArticles({ tag: "unknown" })
+    ).resolves.toStrictEqual([]);
+    await expect(articles.listArticleTags()).resolves.toStrictEqual([
       { articleCount: 2, id: "nextjs", label: "Next.js" },
       { articleCount: 1, id: "web-performance", label: "Web performance" },
     ]);
@@ -630,8 +630,8 @@ describe("Article operations", () => {
           async (slug) => await articles.findArticleRedirect(slug)
         )
       )
-    ).resolves.toEqual([null, null, null, null]);
-    await expect(articles.listArticleRedirects()).resolves.toEqual([
+    ).resolves.toStrictEqual([null, null, null, null]);
+    await expect(articles.listArticleRedirects()).resolves.toStrictEqual([
       { href: "/blog/visible", slug: "a-former" },
       { href: "/blog/visible", slug: "z-former" },
     ]);
@@ -683,7 +683,7 @@ describe("Article operations", () => {
         updatedAt: null,
       },
     ]);
-    await expect(articles.listArticleSearchDocuments()).resolves.toEqual([
+    await expect(articles.listArticleSearchDocuments()).resolves.toStrictEqual([
       {
         body: "Published body",
         description: "A discoverable Published Article.",
@@ -884,15 +884,15 @@ describe("Article operations", () => {
       articles.findArticle("older"),
     ]);
 
-    expect(first?.navigation).toEqual({
+    expect(first?.navigation).toStrictEqual({
       previous: null,
       next: { href: "/blog/zebra", title: "Draft zebra" },
     });
-    expect(middle?.navigation).toEqual({
+    expect(middle?.navigation).toStrictEqual({
       previous: { href: "/blog/alpha", title: "Draft alpha" },
       next: { href: "/blog/newer", title: "Published newer" },
     });
-    expect(last?.navigation).toEqual({
+    expect(last?.navigation).toStrictEqual({
       previous: { href: "/blog/newer", title: "Published newer" },
       next: null,
     });
@@ -907,7 +907,7 @@ describe("Article operations", () => {
 
     const article = await articles.findArticle("only");
 
-    expect(article?.navigation).toEqual({ previous: null, next: null });
+    expect(article?.navigation).toStrictEqual({ previous: null, next: null });
   });
 
   test("never offers a Draft neighbour in production", async () => {
@@ -923,7 +923,7 @@ describe("Article operations", () => {
 
     const article = await articles.findArticle("newer");
 
-    expect(article?.navigation).toEqual({
+    expect(article?.navigation).toStrictEqual({
       previous: null,
       next: { href: "/blog/older", title: "Published older" },
     });
@@ -946,7 +946,7 @@ describe("Article operations", () => {
     const detail = await articles.findArticle("newer");
 
     expect(summary).not.toHaveProperty("navigation");
-    expect(detail?.navigation.next).toEqual({
+    expect(detail?.navigation.next).toStrictEqual({
       href: "/blog/older",
       title: "Published older",
     });

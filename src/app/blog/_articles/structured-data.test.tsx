@@ -5,6 +5,7 @@ import {
   ArticleStructuredData,
   serializeJsonLd,
 } from "@/app/blog/_articles/structured-data";
+import type { PublishedArticleStructuredData } from "@/features/blog/articles/delivery-metadata";
 import type { ArticleDetail } from "@/features/blog/articles/types";
 
 const Content = () => null;
@@ -40,14 +41,14 @@ describe("Article structured-data adapter", () => {
     );
     const prefix = '<script type="application/ld+json">';
     const suffix = "</script>";
-    expect(markup.startsWith(prefix)).toBe(true);
-    expect(markup.endsWith(suffix)).toBe(true);
+    expect(markup.startsWith(prefix)).toBeTruthy();
+    expect(markup.endsWith(suffix)).toBeTruthy();
     const serialized = markup.slice(prefix.length, -suffix.length);
 
     expect(serialized).not.toContain("</script>");
 
     const parsed: unknown = JSON.parse(serialized);
-    expect(parsed).toEqual({
+    expect(parsed).toStrictEqual({
       "@context": "https://schema.org",
       "@id": "https://levin.baenninger.me/blog/canonical-article#article",
       "@type": "BlogPosting",
@@ -86,8 +87,28 @@ describe("Article structured-data adapter", () => {
   });
 
   test("escapes HTML-significant less-than characters", () => {
-    expect(serializeJsonLd({ value: "</script>" })).toBe(
-      '{"value":"\\u003c/script>"}'
+    const structuredData: PublishedArticleStructuredData = {
+      "@context": "https://schema.org",
+      "@id": "https://levin.baenninger.me/blog/canonical-article#article",
+      "@type": "BlogPosting",
+      author: {
+        "@id": "https://levin.baenninger.me/#person",
+        "@type": "Person",
+        name: "Levin Bänninger",
+        url: "https://levin.baenninger.me/",
+      },
+      datePublished: "2026-01-15T00:00:00+01:00",
+      description: "</script>",
+      headline: "Canonical Article",
+      image: "https://levin.baenninger.me/cover.png",
+      inLanguage: "en",
+      keywords: [],
+      mainEntityOfPage: "https://levin.baenninger.me/blog/canonical-article",
+      url: "https://levin.baenninger.me/blog/canonical-article",
+    };
+
+    expect(serializeJsonLd(structuredData)).toContain(
+      '"description":"\\u003c/script>"'
     );
   });
 });

@@ -1,13 +1,35 @@
 import { fileURLToPath } from "node:url";
 
 import ultracite from "ultracite/oxfmt";
+import antiSlop from "ultracite/oxlint/anti-slop";
 import core from "ultracite/oxlint/core";
 import next from "ultracite/oxlint/next";
 import react from "ultracite/oxlint/react";
+import vitest from "ultracite/oxlint/vitest";
 import { defineConfig } from "vite-plus";
 
 const blogTool = (subcommand: string): string =>
   `node src/features/blog/tooling/cli.ts ${subcommand}`;
+
+// Vitest unit tests use `.test.*`; `e2e/*.spec.ts` belongs to Playwright, so
+// the ultracite vitest preset must not lint spec files. The preset's own
+// override outranks local ones, so repo-convention relaxations live here:
+// tests assert whole behaviors in single cases and shape fixtures with
+// assertions, so describe wrappers, expect budgets, and typed mocks add no
+// signal.
+const vitestTestsOnly: typeof vitest = {
+  ...vitest,
+  overrides: (vitest.overrides ?? []).map((override) => ({
+    ...override,
+    files: ["**/*.test.{ts,tsx}", "**/__tests__/**/*.{ts,tsx}"],
+    rules: {
+      ...override.rules,
+      "vitest/max-expects": "off",
+      "vitest/require-mock-type-parameters": "off",
+      "vitest/require-top-level-describe": "off",
+    },
+  })),
+};
 
 export default defineConfig({
   resolve: {
@@ -38,8 +60,10 @@ export default defineConfig({
         cache: false,
       },
       fallow: {
+        // Advisory surfacing of duplication and complexity; the zero-tolerance
+        // gates live in `architecture` and the changed-code `fallow audit`.
         command:
-          "fallow dead-code --regression-baseline fallow-baselines/regression.json --fail-on-regression --format compact && fallow dupes --baseline fallow-baselines/dupes.json --format compact && fallow health --complexity --baseline fallow-baselines/health.json --baseline-mode identity --format compact",
+          "fallow dupes --format compact && fallow health --complexity --report-only --format compact",
         dependsOn: ["architecture"],
         cache: false,
       },
@@ -92,7 +116,7 @@ export default defineConfig({
     },
   },
   lint: {
-    extends: [core, next, react],
+    extends: [core, next, react, vitestTestsOnly, antiSlop],
     ignorePatterns: core.ignorePatterns,
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     overrides: [
@@ -113,11 +137,36 @@ export default defineConfig({
         },
       },
       {
-        files: [`**/*.{test,spec}.{ts,tsx}`],
+        // The blog parsing layer narrows untyped MDX/hast/frontmatter input;
+        // typeof-driven discrimination over unknown values is its domain.
+        files: [
+          "src/features/blog/articles/metadata.ts",
+          "src/features/blog/rendering/contract.ts",
+          "src/features/blog/rendering/panel-contract.ts",
+          "src/features/blog/rendering/code/**",
+          "src/features/blog/search/contract.ts",
+          "src/features/blog/tooling/**",
+        ],
+        rules: {
+          // Reflect.apply bridges unified's callback-style Transformer type
+          // without a fabricated VFile or an unsafe assertion.
+          "anti-slop/no-reflect-apply": "off",
+          "anti-slop/no-runtime-typeof": "off",
+          "anti-slop/no-unknown-parameters": "off",
+          "anti-slop/no-unsafe-dictionary-type": "off",
+          "anti-slop/require-safety-comment-for-type-assertion": "off",
+        },
+      },
+      {
+        files: [`**/*.{test,spec}.{ts,tsx}`, "**/__tests__/**/*.{ts,tsx}"],
         rules: {
           "promise/avoid-new": "off",
           "typescript/no-unsafe-assignment": "off",
           "typescript/no-unsafe-type-assertion": "off",
+          "anti-slop/no-chained-type-assertions": "off",
+          "anti-slop/no-unknown-parameters": "off",
+          "anti-slop/no-unsafe-dictionary-type": "off",
+          "anti-slop/require-safety-comment-for-type-assertion": "off",
         },
       },
     ],

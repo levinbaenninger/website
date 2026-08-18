@@ -271,13 +271,17 @@ describe("Article outline list", () => {
     const card = await openCard(user);
     const links = card.getAllByRole("link");
 
-    expect(links.map((link) => link.textContent)).toEqual([
+    expect(links.map((link) => link.textContent)).toStrictEqual([
       "Introduction",
       "The details",
       "Closing",
     ]);
-    expect(links.map((link) => link.dataset.depth)).toEqual(["2", "3", "2"]);
-    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+    expect(links.map((link) => link.dataset.depth)).toStrictEqual([
+      "2",
+      "3",
+      "2",
+    ]);
+    expect(links.map((link) => link.getAttribute("href"))).toStrictEqual([
       "#intro",
       "#details",
       "#closing",
@@ -440,13 +444,13 @@ describe("Article outline selection", () => {
     await user.click(card.getByRole("link", { name: "The details" }));
 
     await waitFor(() => {
-      expect(scrollIntoViewMock).toHaveBeenCalled();
+      expect(scrollIntoViewMock).toHaveBeenCalledWith();
     });
     expect(
       container.querySelector<HTMLElement>(
         "[data-article-panel='accordion']:has(#details)"
       )?.hidden
-    ).toBe(false);
+    ).toBeFalsy();
     expect(window.location.hash).toBe("#details");
     // eslint-disable-next-line unicorn/prefer-query-selector
     expect(document.activeElement).toBe(document.getElementById("details"));
@@ -492,7 +496,7 @@ describe("Article fragment navigation", () => {
         container.querySelector<HTMLElement>(
           "[data-article-panel='accordion']:has(#details)"
         )?.hidden
-      ).toBe(false);
+      ).toBeFalsy();
       // eslint-disable-next-line unicorn/prefer-query-selector
       expect(document.activeElement).toBe(document.getElementById("details"));
     });
@@ -505,7 +509,7 @@ describe("Article fragment navigation", () => {
         "[data-article-panel='accordion']:has(#details)"
       );
 
-    expect(panel()?.hidden).toBe(true);
+    expect(panel()?.hidden).toBeTruthy();
 
     await act(async () => {
       window.history.pushState(
@@ -518,7 +522,7 @@ describe("Article fragment navigation", () => {
     });
 
     await waitFor(() => {
-      expect(panel()?.hidden).toBe(false);
+      expect(panel()?.hidden).toBeFalsy();
     });
 
     // Restored fragment should get the same reveal as a fresh one.
@@ -536,9 +540,9 @@ describe("Article fragment navigation", () => {
     });
 
     await waitFor(() => {
-      expect(scrollIntoViewMock).toHaveBeenCalled();
+      expect(scrollIntoViewMock).toHaveBeenCalledWith();
     });
-    expect(panel()?.hidden).toBe(false);
+    expect(panel()?.hidden).toBeFalsy();
   });
 
   test("leaves a malformed or unknown fragment intact and takes no focus", async () => {
@@ -643,7 +647,7 @@ describe("Article outline disclosure", () => {
     await user.click(card.getByRole("link", { name: "Closing" }));
 
     await waitFor(() => {
-      expect(scrollIntoViewMock).toHaveBeenCalled();
+      expect(scrollIntoViewMock).toHaveBeenCalledWith();
     });
     expect(card.getByRole("link", { name: "Introduction" }).textContent).toBe(
       "Introduction"
@@ -661,10 +665,10 @@ describe("Article outline disclosure", () => {
     });
 
     await user.click(cardTrigger);
-    expect(playOpen).toHaveBeenCalledTimes(1);
+    expect(playOpen).toHaveBeenCalledOnce();
 
     await user.click(cardTrigger);
-    expect(playOpen).toHaveBeenCalledTimes(1);
+    expect(playOpen).toHaveBeenCalledOnce();
 
     await user.click(minimapTrigger());
     expect(playOpen).toHaveBeenCalledTimes(2);

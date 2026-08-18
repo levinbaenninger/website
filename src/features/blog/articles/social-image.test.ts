@@ -33,7 +33,7 @@ describe("Article social-image delivery", () => {
   test("generates route params only for visible canonical Articles", async () => {
     const { delivery } = createContract();
 
-    await expect(delivery.generateStaticParams()).resolves.toEqual([
+    await expect(delivery.generateStaticParams()).resolves.toStrictEqual([
       { slug: INPUT.slug },
     ]);
   });
@@ -41,7 +41,7 @@ describe("Article social-image delivery", () => {
   test("resolves only valid, visible canonical Article slugs", async () => {
     const { delivery, findArticleSocialImage } = createContract();
 
-    await expect(delivery.findInput(INPUT.slug)).resolves.toEqual(INPUT);
+    await expect(delivery.findInput(INPUT.slug)).resolves.toStrictEqual(INPUT);
     await expect(delivery.findInput("unknown")).resolves.toBeNull();
     await expect(delivery.findInput("Bad/Slug")).resolves.toBeNull();
     expect(findArticleSocialImage).toHaveBeenCalledTimes(2);

@@ -43,13 +43,13 @@ describe("Not found recovery", () => {
   test("leads with Blog when the visitor came from an Article address", () => {
     render(<NotFoundPanel path="/blog/never-written" />);
 
-    expect(linkNames()).toEqual(["Blog", "Portfolio"]);
+    expect(linkNames()).toStrictEqual(["Blog", "Portfolio"]);
   });
 
   test("leads with Portfolio anywhere else", () => {
     render(<NotFoundPanel path="/nope" />);
 
-    expect(linkNames()).toEqual(["Portfolio", "Blog"]);
+    expect(linkNames()).toStrictEqual(["Portfolio", "Blog"]);
   });
 
   test("reports the visited address once it is known", () => {

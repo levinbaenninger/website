@@ -42,30 +42,32 @@ type ShareStatus = "copied" | "copy-failed" | "idle" | "share-failed";
 // Same window as CopyButton.
 const STATUS_RESET_MS = 1500;
 
-const STATUS_ANNOUNCEMENT: Record<ShareStatus, string> = {
+const STATUS_ANNOUNCEMENT = {
   copied: "Copied",
   "copy-failed": "Copy failed",
   idle: "",
   "share-failed": "Sharing failed",
-};
+} satisfies Record<ShareStatus, string>;
 
 // Feedback lands on the control the reader used, so the menu needs neither an extra row nor a toast.
 type CopyState = Extract<ShareStatus, "copied" | "copy-failed" | "idle">;
 type NativeState = Extract<ShareStatus, "idle" | "share-failed">;
 
-const COPY_ITEM: Record<CopyState, { icon: typeof LinkIcon; label: string }> = {
+interface ShareItemContent {
+  readonly icon: typeof LinkIcon;
+  readonly label: string;
+}
+
+const COPY_ITEM = {
   copied: { icon: CheckIcon, label: "Copied" },
   "copy-failed": { icon: CircleXIcon, label: "Copy failed" },
   idle: { icon: LinkIcon, label: "Copy link" },
-};
+} satisfies Record<CopyState, ShareItemContent>;
 
-const NATIVE_ITEM: Record<
-  NativeState,
-  { icon: typeof LinkIcon; label: string }
-> = {
+const NATIVE_ITEM = {
   idle: { icon: EllipsisIcon, label: "More sharing options…" },
   "share-failed": { icon: CircleXIcon, label: "Sharing failed" },
-};
+} satisfies Record<NativeState, ShareItemContent>;
 
 // LinkedIn's `share-offsite` endpoint only accepts a URL and opens an empty composer; the feed intent prefills title and URL.
 const SHARE_TARGETS = [
@@ -87,16 +89,20 @@ const subscribeToNothing = () => () => {
   // A platform does not grow a share sheet while the page is open.
 };
 
+// Older desktop browsers ship no `navigator.share`, so the capability is
+// feature-detected rather than assumed from the DOM types.
+const supportsNativeShare = (
+  nav: Navigator
+): nav is Navigator & { share: (data: ShareData) => Promise<void> } =>
+  typeof nav.share === "function";
+
 // `useSyncExternalStore` rather than an effect: the trigger is server-rendered, the server has no platform to ask, and the capability never changes for the document lifetime.
 const useNativeShare = (): boolean =>
   useSyncExternalStore(
     subscribeToNothing,
-    () => typeof navigator.share === "function",
+    () => supportsNativeShare(navigator),
     () => false
   );
-
-const isAbort = (error: unknown): boolean =>
-  error instanceof Error && error.name === "AbortError";
 
 // `key` makes the icon a swap rather than a mutation of one element.
 const ItemIcon = ({
@@ -186,7 +192,8 @@ export const ArticleShareMenu = ({
     try {
       await navigator.share({ title, url: canonicalUrl });
     } catch (error) {
-      if (isAbort(error)) {
+      // A cancelled share sheet is a decision, not a failure.
+      if (error instanceof Error && error.name === "AbortError") {
         return;
       }
 

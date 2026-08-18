@@ -41,7 +41,7 @@ describe("GitHub contributions", () => {
   test("returns validated contributions", async () => {
     fetchMock.mockResolvedValue(responseWith({ contributions: [activity] }));
 
-    await expect(getContributions("levinbaenninger")).resolves.toEqual({
+    await expect(getContributions("levinbaenninger")).resolves.toStrictEqual({
       contributions: [activity],
       status: "success",
     });
@@ -53,7 +53,7 @@ describe("GitHub contributions", () => {
   test("reports an unsuccessful response as unavailable", async () => {
     fetchMock.mockResolvedValue(responseWith({ message: "Unavailable" }, 503));
 
-    await expect(getContributions("levinbaenninger")).resolves.toEqual({
+    await expect(getContributions("levinbaenninger")).resolves.toStrictEqual({
       status: "unavailable",
     });
   });
@@ -61,7 +61,7 @@ describe("GitHub contributions", () => {
   test("reports a rejected request as unavailable", async () => {
     fetchMock.mockRejectedValue(new TypeError("Network unavailable"));
 
-    await expect(getContributions("levinbaenninger")).resolves.toEqual({
+    await expect(getContributions("levinbaenninger")).resolves.toStrictEqual({
       status: "unavailable",
     });
   });
@@ -76,7 +76,7 @@ describe("GitHub contributions", () => {
       responseWith({ contributions: [invalidActivity] })
     );
 
-    await expect(getContributions("levinbaenninger")).resolves.toEqual({
+    await expect(getContributions("levinbaenninger")).resolves.toStrictEqual({
       status: "unavailable",
     });
   });
@@ -90,7 +90,7 @@ describe("GitHub contributions", () => {
       responseWith({ contributions: boundaryActivities })
     );
 
-    await expect(getContributions("levinbaenninger")).resolves.toEqual({
+    await expect(getContributions("levinbaenninger")).resolves.toStrictEqual({
       contributions: boundaryActivities,
       status: "success",
     });
@@ -99,7 +99,7 @@ describe("GitHub contributions", () => {
   test("accepts an empty contribution history", async () => {
     fetchMock.mockResolvedValue(responseWith({ contributions: [] }));
 
-    await expect(getContributions("levinbaenninger")).resolves.toEqual({
+    await expect(getContributions("levinbaenninger")).resolves.toStrictEqual({
       contributions: [],
       status: "success",
     });
@@ -108,7 +108,7 @@ describe("GitHub contributions", () => {
   test("rejects a malformed response", async () => {
     fetchMock.mockResolvedValue(responseWith({ activity: [activity] }));
 
-    await expect(getContributions("levinbaenninger")).resolves.toEqual({
+    await expect(getContributions("levinbaenninger")).resolves.toStrictEqual({
       status: "unavailable",
     });
   });

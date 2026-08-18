@@ -116,13 +116,16 @@ describe("Article source-manifest tooling", () => {
       const second = await generateArticleManifest(paths);
       const secondBytes = await readFile(paths.manifestPath, "utf-8");
 
-      expect(first.changed).toBe(true);
-      expect(second.changed).toBe(false);
+      expect(first.changed).toBeTruthy();
+      expect(second.changed).toBeFalsy();
       expect(secondBytes).toBe(firstBytes);
-      expect(new TextEncoder().encode(secondBytes)).toEqual(
+      expect(new TextEncoder().encode(secondBytes)).toStrictEqual(
         new TextEncoder().encode(firstBytes)
       );
-      expect(first.bundles.map(({ slug }) => slug)).toEqual(["alpha", "zebra"]);
+      expect(first.bundles.map(({ slug }) => slug)).toStrictEqual([
+        "alpha",
+        "zebra",
+      ]);
       expect(firstBytes.indexOf('"alpha"')).toBeLessThan(
         firstBytes.indexOf('"zebra"')
       );
@@ -245,7 +248,7 @@ export const ARTICLE_MANIFEST = [
 
     expect(failure).toBeInstanceOf(BlogValidationError);
     const diagnostics = (failure as BlogValidationError).diagnostics;
-    expect(diagnostics).toEqual(
+    expect(diagnostics).toStrictEqual(
       expect.arrayContaining([
         expect.objectContaining({
           explanation: expect.any(String),
@@ -255,7 +258,7 @@ export const ARTICLE_MANIFEST = [
         }),
       ])
     );
-    expect(diagnostics.map(({ ruleId }) => ruleId)).toEqual(
+    expect(diagnostics.map(({ ruleId }) => ruleId)).toStrictEqual(
       expect.arrayContaining([
         "blog/bundle-assets",
         "blog/bundle-mdx",
@@ -263,7 +266,7 @@ export const ARTICLE_MANIFEST = [
         "blog/bundle-slug",
       ])
     );
-    expect(diagnostics).toEqual(sortBlogDiagnostics(diagnostics));
+    expect(diagnostics).toStrictEqual(sortBlogDiagnostics(diagnostics));
   });
 
   test("rejects traversal, absolute, cross-Article, and suffixed asset paths", async () => {
@@ -287,7 +290,7 @@ export const frontmatter = {};
     expect(failure).toBeInstanceOf(BlogValidationError);
     expect(
       (failure as BlogValidationError).diagnostics.map(({ ruleId }) => ruleId)
-    ).toEqual(
+    ).toStrictEqual(
       expect.arrayContaining([
         "blog/import-absolute",
         "blog/import-cross-article",
@@ -348,7 +351,7 @@ import Duplicate from "./assets/diagram.png"
       ({ ruleId }) => ruleId
     );
 
-    expect(ruleIds).toEqual(
+    expect(ruleIds).toStrictEqual(
       expect.arrayContaining([
         "blog/path-extension",
         "blog/path-hidden",
@@ -571,7 +574,7 @@ export const frontmatter = {};
     const ruleIds = (failure as BlogValidationError).diagnostics.map(
       ({ ruleId }) => ruleId
     );
-    expect(ruleIds).toEqual(
+    expect(ruleIds).toStrictEqual(
       expect.arrayContaining([
         "blog/media-svg-attribute",
         "blog/media-svg-duplicate-id",

@@ -57,10 +57,10 @@ describe("production Draft Article delivery", () => {
       socialImageParams: await socialImages.generateStaticParams(),
     };
 
-    expect(outputs.currentRoute).toEqual({ kind: "not-found" });
-    expect(outputs.formerRoute).toEqual({ kind: "not-found" });
-    expect(outputs.routeParams).toEqual([]);
-    expect(outputs.socialImageParams).toEqual([]);
+    expect(outputs.currentRoute).toStrictEqual({ kind: "not-found" });
+    expect(outputs.formerRoute).toStrictEqual({ kind: "not-found" });
+    expect(outputs.routeParams).toStrictEqual([]);
+    expect(outputs.socialImageParams).toStrictEqual([]);
     expect(JSON.stringify(outputs)).not.toContain(SENTINEL);
     expect(JSON.stringify(outputs)).not.toContain(FORMER_SLUG);
     expect(JSON.stringify(outputs)).not.toContain(ASSET);

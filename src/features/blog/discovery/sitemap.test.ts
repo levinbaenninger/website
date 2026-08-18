@@ -27,7 +27,7 @@ describe("Blog sitemap discovery", () => {
       article("newer", "2026-03-20"),
     ];
 
-    expect(createBlogSitemapEntries(entries)).toEqual([
+    expect(createBlogSitemapEntries(entries)).toStrictEqual([
       {
         href: "/blog",
         lastModified: "2026-03-20",
@@ -44,7 +44,7 @@ describe("Blog sitemap discovery", () => {
   });
 
   test("omits ungrounded dates for an empty Published corpus", () => {
-    expect(createBlogSitemapEntries([])).toEqual([{ href: "/blog" }]);
+    expect(createBlogSitemapEntries([])).toStrictEqual([{ href: "/blog" }]);
   });
 
   test("uses updates only when they are explicitly authored", () => {

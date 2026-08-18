@@ -42,8 +42,8 @@ describe("semantic Article components", () => {
   test("owns every approved semantic Markdown mapping", () => {
     const registry = getArticleMdxComponents();
 
-    expect(Object.isFrozen(registry)).toBe(true);
-    expect(Object.keys(registry).toSorted()).toEqual([
+    expect(Object.isFrozen(registry)).toBeTruthy();
+    expect(Object.keys(registry).toSorted()).toStrictEqual([
       "Accordion",
       "AccordionItem",
       "Callout",

@@ -3,7 +3,7 @@ import { expect, test } from "vite-plus/test";
 import { createRootMetadata } from "@/app/_config/site-metadata";
 
 test("maps the exact root identity", () => {
-  expect(createRootMetadata()).toEqual({
+  expect(createRootMetadata()).toStrictEqual({
     alternates: {
       canonical: "https://levin.baenninger.me/",
       types: {

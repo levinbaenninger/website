@@ -6,7 +6,7 @@ describe("Blog catalog metadata adapter", () => {
   test("maps the production site identity into exact Blog metadata", () => {
     const blog = createBlogMetadata();
 
-    expect(blog).toEqual({
+    expect(blog).toStrictEqual({
       alternates: {
         canonical: "https://levin.baenninger.me/blog",
         types: {

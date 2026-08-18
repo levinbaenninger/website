@@ -67,13 +67,13 @@ describe("Article interactions", () => {
 
     expect(screen.getAllByRole("button")).toHaveLength(2);
     expect(panels).toHaveLength(2);
-    expect(panels[0]?.hidden).toBe(false);
-    expect(panels[1]?.hidden).toBe(true);
+    expect(panels[0]?.hidden).toBeFalsy();
+    expect(panels[1]?.hidden).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Closed" }));
 
-    expect(panels[0]?.hidden).toBe(false);
-    expect(panels[1]?.hidden).toBe(false);
+    expect(panels[0]?.hidden).toBeFalsy();
+    expect(panels[1]?.hidden).toBeFalsy();
   });
 
   test("keeps Accordion labels out of the Article outline", () => {
@@ -149,8 +149,8 @@ describe("Article interactions", () => {
     );
 
     expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
-    expect(panels[0]?.hidden).toBe(false);
-    expect(panels[1]?.hidden).toBe(true);
+    expect(panels[0]?.hidden).toBeFalsy();
+    expect(panels[1]?.hidden).toBeTruthy();
 
     const [firstTablist] = screen.getAllByRole("tablist");
     await user.click(within(firstTablist).getByRole("tab", { name: "Second" }));
@@ -205,9 +205,9 @@ describe("Article interactions", () => {
     panels[1]?.dispatchEvent(new Event("beforematch"));
 
     await waitFor(() => {
-      expect(panels[1]?.hidden).toBe(false);
+      expect(panels[1]?.hidden).toBeFalsy();
     });
-    expect(panels[0]?.hidden).toBe(false);
+    expect(panels[0]?.hidden).toBeFalsy();
 
     const tabPanels = document.querySelectorAll<HTMLElement>(
       "[data-article-panel='tab']"
@@ -216,9 +216,9 @@ describe("Article interactions", () => {
     tabPanels[1]?.dispatchEvent(new Event("beforematch"));
 
     await waitFor(() => {
-      expect(tabPanels[1]?.hidden).toBe(false);
+      expect(tabPanels[1]?.hidden).toBeFalsy();
     });
-    expect(tabPanels[0]?.hidden).toBe(true);
+    expect(tabPanels[0]?.hidden).toBeTruthy();
   });
 
   test("reveals a hash target during initial navigation", async () => {
@@ -238,8 +238,8 @@ describe("Article interactions", () => {
         container.querySelector<HTMLElement>(
           "[data-article-panel='tab']:has(#initial-heading)"
         )?.hidden
-      ).toBe(false);
-      expect(scrollIntoViewMock).toHaveBeenCalled();
+      ).toBeFalsy();
+      expect(scrollIntoViewMock).toHaveBeenCalledWith();
     });
   });
 
@@ -272,32 +272,32 @@ describe("Article interactions", () => {
         container.querySelector<HTMLElement>(
           "[data-article-panel='tab']:has(#deep-heading)"
         )?.hidden
-      ).toBe(false);
+      ).toBeFalsy();
       const accordionPanels = container.querySelectorAll<HTMLElement>(
         "[data-article-panel='accordion']"
       );
-      expect(accordionPanels[0]?.hidden).toBe(false);
-      expect(accordionPanels[1]?.hidden).toBe(false);
+      expect(accordionPanels[0]?.hidden).toBeFalsy();
+      expect(accordionPanels[1]?.hidden).toBeFalsy();
     });
 
     window.history.replaceState(null, "", "#deep-heading");
     window.dispatchEvent(new HashChangeEvent("hashchange"));
 
     await waitFor(() => {
-      expect(scrollIntoViewMock).toHaveBeenCalled();
+      expect(scrollIntoViewMock).toHaveBeenCalledWith();
     });
     document.removeEventListener("click", recordReveal);
     expect(
       container.querySelector<HTMLElement>(
         "[data-article-panel='tab']:has(#deep-heading)"
       )?.hidden
-    ).toBe(false);
+    ).toBeFalsy();
     const accordionPanels = container.querySelectorAll<HTMLElement>(
       "[data-article-panel='accordion']"
     );
-    expect(accordionPanels[0]?.hidden).toBe(false);
-    expect(accordionPanels[1]?.hidden).toBe(false);
-    expect(revealedControls).toEqual(["Hidden", "Closed"]);
-    expect(scrollIntoViewMock).toHaveBeenCalled();
+    expect(accordionPanels[0]?.hidden).toBeFalsy();
+    expect(accordionPanels[1]?.hidden).toBeFalsy();
+    expect(revealedControls).toStrictEqual(["Hidden", "Closed"]);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith();
   });
 });

@@ -21,11 +21,14 @@ export type CopyButtonProps = Omit<
   idleIcon?: ReactNode;
 };
 
-const stateLabel: Record<CopyState, string> = {
+const stateLabel = {
   idle: "",
   done: "Copied",
   error: "Copy failed",
-};
+} satisfies Record<CopyState, string>;
+
+const isTextResolver = (text: string | (() => string)): text is () => string =>
+  typeof text === "function";
 
 export const CopyButton = ({
   className,
@@ -61,7 +64,7 @@ export const CopyButton = ({
     playFeedback();
 
     try {
-      const copiedText = typeof text === "function" ? text() : text;
+      const copiedText = isTextResolver(text) ? text() : text;
       await navigator.clipboard.writeText(copiedText);
 
       setState("done");

@@ -8,7 +8,7 @@ interface NotFoundCopy {
   description: string;
 }
 
-export const NOT_FOUND_COPY: Record<NotFoundVariant, NotFoundCopy> = {
+export const NOT_FOUND_COPY = {
   generic: {
     title: "Page not found",
     description: "The plotter went looking. There's nothing at this address.",
@@ -17,17 +17,17 @@ export const NOT_FOUND_COPY: Record<NotFoundVariant, NotFoundCopy> = {
     title: "Article not found",
     description: "That Article isn't published, or it never existed.",
   },
-};
+} satisfies Record<NotFoundVariant, NotFoundCopy>;
 
 const ARTICLE_PATH_PREFIX = "/blog/";
 
 export const selectNotFoundVariant = (pathname: string): NotFoundVariant =>
   pathname.startsWith(ARTICLE_PATH_PREFIX) ? "article" : "generic";
 
-const RECOVERY_HREF_ORDER: Record<NotFoundVariant, readonly string[]> = {
+const RECOVERY_HREF_ORDER = {
   generic: ["/", "/blog"],
   article: ["/blog", "/"],
-};
+} satisfies Record<NotFoundVariant, readonly string[]>;
 
 export const orderRecoveryDestinations = (
   variant: NotFoundVariant

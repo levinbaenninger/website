@@ -14,8 +14,8 @@ Project tasks live in the `run.tasks` block of `vite.config.ts`. `package.json#s
 | `vp run build` | Runs `blog:check`, then `next build`. |
 | `vp run e2e` | Runs `build` once, starts the production site with `next start`, then runs the visitor journeys in desktop Chromium, desktop Firefox, and mobile WebKit. |
 | `vp run architecture` | Rejects Fallow architecture violations, unmatched source zones, and dependency cycles. |
-| `vp run fallow` | Runs the reviewed Fallow regression baselines in `fallow-baselines/` after the zero-tolerance architecture gate. |
-| `vp run verify` | Runs `build`, all Playwright projects, Fallow architecture and regression checks, `vp check`, and `vp test`. |
+| `vp run fallow` | Surfaces Fallow duplication and complexity findings (advisory) after the zero-tolerance architecture gate. New-code regressions are gated by `fallow audit --gate new-only` in the hook and CI. |
+| `vp run verify` | Runs `build`, all Playwright projects, Fallow architecture and advisory checks, `vp check`, and `vp test`. |
 | `vp run blog:generate` | Regenerates the committed Article manifest from source files. |
 | `vp run blog:check` | Validates Article source bundles and manifest drift. |
 | `vp run blog:watch` | Keeps the Article manifest in sync while you edit source files. Started automatically by `dev`; run alone only if needed. |

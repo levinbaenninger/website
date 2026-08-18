@@ -45,9 +45,9 @@ describe("Article search query normalization", () => {
   });
 
   test("treats a whitespace-only query as nothing to search for", () => {
-    expect(isEffectiveArticleSearchQuery("   ")).toBe(false);
-    expect(isEffectiveArticleSearchQuery("")).toBe(false);
-    expect(isEffectiveArticleSearchQuery("c")).toBe(true);
-    expect(isEffectiveArticleSearchQuery("cache ")).toBe(true);
+    expect(isEffectiveArticleSearchQuery("   ")).toBeFalsy();
+    expect(isEffectiveArticleSearchQuery("")).toBeFalsy();
+    expect(isEffectiveArticleSearchQuery("c")).toBeTruthy();
+    expect(isEffectiveArticleSearchQuery("cache ")).toBeTruthy();
   });
 });

@@ -4,7 +4,7 @@ import { truncatePath } from "@/app/_components/not-found/truncate-path";
 
 const DISPLAY_LIMIT = 34;
 
-describe("truncatePath", () => {
+describe(truncatePath, () => {
   test("keeps a short path verbatim", () => {
     expect(truncatePath("/blog/does-not-exist")).toBe("/blog/does-not-exist");
   });
@@ -28,7 +28,7 @@ describe("truncatePath", () => {
     const truncated = truncatePath(`/blog/${"a".repeat(60)}/final-segment`);
 
     expect(truncated).toHaveLength(DISPLAY_LIMIT);
-    expect(truncated.startsWith("…")).toBe(true);
-    expect(truncated.endsWith("/final-segment")).toBe(true);
+    expect(truncated.startsWith("…")).toBeTruthy();
+    expect(truncated.endsWith("/final-segment")).toBeTruthy();
   });
 });

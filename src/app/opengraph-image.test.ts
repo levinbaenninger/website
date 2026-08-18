@@ -14,7 +14,7 @@ const responseBytes = async (response: Response): Promise<Buffer> =>
 
 describe("Portfolio social-image adapters", () => {
   test("exposes exact metadata and identical OG/Twitter pixels", async () => {
-    expect({ alt, contentType, size }).toEqual({
+    expect({ alt, contentType, size }).toStrictEqual({
       alt: "Levin Bänninger — Portfolio",
       contentType: "image/png",
       size: { height: 630, width: 1200 },
@@ -26,10 +26,10 @@ describe("Portfolio social-image adapters", () => {
         import.meta.url
       )
     );
-    await expect(responseBytes(PortfolioOpenGraphImage())).resolves.toEqual(
-      golden
-    );
-    await expect(responseBytes(PortfolioTwitterImage())).resolves.toEqual(
+    await expect(
+      responseBytes(PortfolioOpenGraphImage())
+    ).resolves.toStrictEqual(golden);
+    await expect(responseBytes(PortfolioTwitterImage())).resolves.toStrictEqual(
       golden
     );
   });

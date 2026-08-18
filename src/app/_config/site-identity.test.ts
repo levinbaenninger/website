@@ -9,13 +9,13 @@ import {
 
 describe("canonical app identity", () => {
   test("uses the immutable production identity without deployment inputs", () => {
-    expect(SITE_IDENTITY).toEqual({
+    expect(SITE_IDENTITY).toStrictEqual({
       alternateName: "levin.baenninger.me",
       name: "Levin Bänninger",
       origin: "https://levin.baenninger.me",
       twitterHandle: "@levinbaenninger",
     });
-    expect(PORTFOLIO_IDENTITY).toEqual({
+    expect(PORTFOLIO_IDENTITY).toStrictEqual({
       email: "levin@baenninger.me",
       handle: "levinbaenninger",
       image: "/images/profile.png",
@@ -28,7 +28,7 @@ describe("canonical app identity", () => {
       tagline:
         "Wrangling components by day, tinkering with side projects by night.",
     });
-    expect(AUTHOR_IDENTITY).toEqual({
+    expect(AUTHOR_IDENTITY).toStrictEqual({
       email: "levin@baenninger.me",
       handle: "levinbaenninger",
       image: "/images/profile.png",

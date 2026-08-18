@@ -252,7 +252,7 @@ describe("Article header", () => {
       within(container)
         .getAllByRole("link")
         .some((link) => link.textContent?.includes("Next.js"))
-    ).toBe(false);
+    ).toBeFalsy();
     expect(within(container).queryAllByRole("img")).toHaveLength(0);
   });
 });
@@ -287,7 +287,7 @@ describe("Article reader navigation", () => {
     });
     const links = within(pager).getAllByRole("link");
 
-    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+    expect(links.map((link) => link.getAttribute("href"))).toStrictEqual([
       "/blog/newer",
       "/blog/older",
     ]);
@@ -336,13 +336,13 @@ describe("Article reader navigation", () => {
 
     await user.keyboard("h");
 
-    expect(previous).toHaveBeenCalledTimes(1);
+    expect(previous).toHaveBeenCalledOnce();
     expect(next).not.toHaveBeenCalled();
 
     await user.keyboard("l");
 
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(previous).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledOnce();
+    expect(previous).toHaveBeenCalledOnce();
   });
 
   test("holds the Vim keys at a collection boundary", async () => {
@@ -395,7 +395,7 @@ describe("Article reader navigation", () => {
 
     await user.keyboard("l");
 
-    expect(next).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledOnce();
   });
 
   test("names the key on the control it belongs to", async () => {
@@ -460,7 +460,7 @@ describe("Article sharing", () => {
           '[aria-label="Share"], [aria-label="Next Article"]'
         ),
       ].map((control) => control.getAttribute("aria-label"))
-    ).toEqual(["Share", "Next Article"]);
+    ).toStrictEqual(["Share", "Next Article"]);
   });
 
   test("withholds complete-Article sharing from a local Draft", () => {

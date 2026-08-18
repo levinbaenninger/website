@@ -12,12 +12,11 @@ import { HighlightedText } from "./highlighted-text";
 // Unmatched descriptions stay unmarked — a mark would claim a match the query
 // never made. Heading and body prefixes exist because a cropped excerpt is
 // otherwise unidentifiable to a screen reader.
-const SNIPPET_PREFIX: Readonly<Record<ArticleSearchSnippet["source"], string>> =
-  {
-    body: "Matching excerpt:",
-    description: "",
-    heading: "Matching section:",
-  };
+const SNIPPET_PREFIX = {
+  body: "Matching excerpt:",
+  description: "",
+  heading: "Matching section:",
+} satisfies Readonly<Record<ArticleSearchSnippet["source"], string>>;
 
 const CardProse = ({
   description,

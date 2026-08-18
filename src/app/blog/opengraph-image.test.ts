@@ -10,7 +10,7 @@ const responseBytes = async (response: Response): Promise<Buffer> =>
 
 describe("Blog social-image adapters", () => {
   test("exposes exact metadata and identical OG/Twitter pixels", async () => {
-    expect({ alt, contentType, size }).toEqual({
+    expect({ alt, contentType, size }).toStrictEqual({
       alt: "Levin Bänninger — Blog",
       contentType: "image/png",
       size: { height: 630, width: 1200 },
@@ -22,7 +22,11 @@ describe("Blog social-image adapters", () => {
         import.meta.url
       )
     );
-    await expect(responseBytes(BlogOpenGraphImage())).resolves.toEqual(golden);
-    await expect(responseBytes(BlogTwitterImage())).resolves.toEqual(golden);
+    await expect(responseBytes(BlogOpenGraphImage())).resolves.toStrictEqual(
+      golden
+    );
+    await expect(responseBytes(BlogTwitterImage())).resolves.toStrictEqual(
+      golden
+    );
   });
 });

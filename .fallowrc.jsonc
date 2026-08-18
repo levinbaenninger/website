@@ -49,15 +49,7 @@
     "zones": [
       {
         "name": "app",
-        "patterns": [
-          "src/app/**",
-          "src/mdx-components.tsx",
-          "src/mdx.d.ts",
-          "e2e/**",
-          "next.config.ts",
-          "playwright.config.ts",
-          "vite.config.ts",
-        ],
+        "patterns": ["src/app/**", "src/mdx-components.tsx", "src/mdx.d.ts", "e2e/**", "next.config.ts", "playwright.config.ts", "vite.config.ts"],
       },
       {
         "name": "features/blog",

@@ -4,7 +4,8 @@ export const flattenChildren = (children: ReactNode): ReactNode[] => {
   if (
     children === null ||
     children === undefined ||
-    typeof children === "boolean"
+    children === true ||
+    children === false
   ) {
     return [];
   }

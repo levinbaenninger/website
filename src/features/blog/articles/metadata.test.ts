@@ -19,7 +19,7 @@ describe("Article metadata", () => {
         slug: "understanding-cache-components",
         today: TODAY,
       })
-    ).toEqual({
+    ).toStrictEqual({
       ...VALID_DRAFT,
       redirectFrom: [],
       tags: [{ id: "nextjs", label: "Next.js" }],
@@ -70,7 +70,7 @@ describe("Article metadata", () => {
         slug: "understanding-cache-components",
         today: TODAY,
       })
-    ).toThrow();
+    ).toThrow(Error);
   });
 
   test("rejects a malformed filename-derived slug", () => {

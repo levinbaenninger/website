@@ -17,12 +17,12 @@ import type { Project } from "./content";
 
 const ProjectLinks = ({ links }: { links: NonNullable<Project["links"]> }) => (
   <>
-    {typeof links.liveSite === "string" ? (
+    {links.liveSite !== undefined ? (
       <TimelineExternalAction href={links.liveSite} label="Open live site">
         <GlobeIcon aria-hidden />
       </TimelineExternalAction>
     ) : null}
-    {typeof links.githubRepository === "string" ? (
+    {links.githubRepository !== undefined ? (
       <TimelineExternalAction
         href={links.githubRepository}
         label="View GitHub repository"

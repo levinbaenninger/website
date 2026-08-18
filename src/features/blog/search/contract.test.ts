@@ -32,7 +32,7 @@ describe("Article search artifact contract", () => {
   test("creates a versioned, slug-sorted, engine-neutral envelope", () => {
     expect(
       createArticleSearchArtifact([document("zebra"), document("alpha")])
-    ).toEqual({
+    ).toStrictEqual({
       documents: [document("alpha"), document("zebra")],
       schemaVersion: ARTICLE_SEARCH_SCHEMA_VERSION,
     });
@@ -57,8 +57,8 @@ describe("Article search artifact contract", () => {
       })}\n`
     );
     const bytes = new TextEncoder().encode(first);
-    expect(bytes).toEqual(new TextEncoder().encode(second));
-    expect([...bytes]).toEqual(
+    expect(bytes).toStrictEqual(new TextEncoder().encode(second));
+    expect([...bytes]).toStrictEqual(
       expect.arrayContaining([0xc3, 0xa9, 0xe2, 0x98, 0x95])
     );
     expect(first).not.toContain("\r");

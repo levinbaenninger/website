@@ -27,12 +27,15 @@ interface TagFilterOption {
 
 const NO_HIGHLIGHTS: readonly HighlightRange[] = [];
 
-const STEP_BY_KEY: Readonly<Record<string, number>> = {
+const STEP_BY_KEY = {
   ArrowDown: 1,
   ArrowLeft: -1,
   ArrowRight: 1,
   ArrowUp: -1,
-};
+} satisfies Record<string, number>;
+
+const isStepKey = (key: string): key is keyof typeof STEP_BY_KEY =>
+  key in STEP_BY_KEY;
 
 const TagOption = ({
   count,
@@ -155,11 +158,10 @@ export const TagFilter = ({
       return;
     }
 
-    const step = STEP_BY_KEY[event.key];
-
-    if (step === undefined) {
+    if (!isStepKey(event.key)) {
       return;
     }
+    const step = STEP_BY_KEY[event.key];
 
     event.preventDefault();
     const current = reachable.findIndex((option) => option.value === selected);

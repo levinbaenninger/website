@@ -10,6 +10,15 @@ export interface ArticleTabPanel {
   readonly value: string;
 }
 
+// Mutable build type: the optional icon slot is added as a statement so an
+// absent icon stays absent in the serialized panel JSON instead of becoming
+// an undefined-valued key.
+interface ArticleTabPanelDraft {
+  iconSlot?: string;
+  label: string;
+  value: string;
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -43,11 +52,16 @@ export const createArticleTabPanels = (
     readonly label: string;
   }[]
 ): readonly ArticleTabPanel[] =>
-  tabs.map(({ iconSlot, label }, index) => ({
-    ...(iconSlot === undefined ? {} : { iconSlot }),
-    label,
-    value: `tab-${index}`,
-  }));
+  tabs.map(({ iconSlot, label }, index) => {
+    const panel: ArticleTabPanelDraft = {
+      label,
+      value: `tab-${index}`,
+    };
+    if (iconSlot !== undefined) {
+      panel.iconSlot = iconSlot;
+    }
+    return panel;
+  });
 
 export const serializeArticlePanels = (
   panels: readonly (ArticleAccordionPanel | ArticleTabPanel)[]

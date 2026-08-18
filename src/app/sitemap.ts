@@ -11,9 +11,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     { url: toCanonicalUrl("/") },
-    ...blogEntries.map(({ href, lastModified }) => ({
-      url: toCanonicalUrl(href),
-      ...(lastModified === undefined ? {} : { lastModified }),
-    })),
+    ...blogEntries.map(({ href, lastModified }) => {
+      const entry: MetadataRoute.Sitemap[number] = {
+        url: toCanonicalUrl(href),
+      };
+      if (lastModified !== undefined) {
+        entry.lastModified = lastModified;
+      }
+      return entry;
+    }),
   ];
 }

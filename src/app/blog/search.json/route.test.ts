@@ -38,7 +38,7 @@ test("directly serves controlled Blog documents from a force-static handler", as
   expect(response.headers.get("X-Robots-Tag")).toBe(
     "noindex, nofollow, nosnippet"
   );
-  await expect(response.json()).resolves.toEqual({
+  await expect(response.json()).resolves.toStrictEqual({
     schemaVersion: 1,
     documents,
   });

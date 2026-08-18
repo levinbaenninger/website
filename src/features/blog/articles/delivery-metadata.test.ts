@@ -53,7 +53,9 @@ const publishedArticle = {
 
 describe("Article delivery metadata", () => {
   test("maps Published Article facts, author, Tags, and Zurich dates", () => {
-    expect(createArticleMetadataValues(publishedArticle, identity)).toEqual({
+    expect(
+      createArticleMetadataValues(publishedArticle, identity)
+    ).toStrictEqual({
       alternates: {
         canonical: "https://levin.baenninger.me/blog/canonical-article",
         types: {
@@ -145,7 +147,7 @@ describe("Article delivery metadata", () => {
   test("keeps Published structured-data inputs grounded and Cover-specific", () => {
     expect(
       createPublishedArticleStructuredData(publishedArticle, identity)
-    ).toEqual({
+    ).toStrictEqual({
       "@context": "https://schema.org",
       "@id": "https://levin.baenninger.me/blog/canonical-article#article",
       "@type": "BlogPosting",

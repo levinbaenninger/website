@@ -270,6 +270,13 @@ const TWOSLASH_COPY_DIRECTIVE_PATTERN = new RegExp(
   "u"
 );
 
+// Mutable build type: the optional icon slot is added as a statement so an
+// absent icon stays absent instead of becoming an undefined-valued key.
+interface TabPanelInput {
+  iconSlot?: string;
+  label: string;
+}
+
 interface CodeFenceMetadata {
   readonly lineNumbers?: number;
   readonly tab?: string;
@@ -278,10 +285,7 @@ interface CodeFenceMetadata {
   readonly twoslash: boolean;
 }
 
-const readMetadataValue = (
-  metadata: string,
-  start: number
-): { readonly end: number; readonly value: string } => {
+const readMetadataValue = (metadata: string, start: number) => {
   if (metadata[start] === '"') {
     const end = metadata.indexOf('"', start + 1);
     if (end === -1) {
@@ -505,7 +509,7 @@ const validateTwoslashSource = (node: Code): void => {
 };
 
 // Spoken name vs fence keyword: "ts" is a fence, "TypeScript" is what a reader hears.
-const CODE_LANGUAGE_NAMES: Readonly<Record<string, string>> = {
+const CODE_LANGUAGE_NAMES = {
   bash: "Bash",
   css: "CSS",
   diff: "Diff",
@@ -519,10 +523,17 @@ const CODE_LANGUAGE_NAMES: Readonly<Record<string, string>> = {
   ts: "TypeScript",
   tsx: "TSX",
   yaml: "YAML",
-};
+} satisfies Record<string, string>;
+
+const hasSpokenName = (
+  language: string
+): language is keyof typeof CODE_LANGUAGE_NAMES =>
+  language in CODE_LANGUAGE_NAMES;
 
 const codeBlockName = (language: string, title: string | undefined): string => {
-  const spoken = CODE_LANGUAGE_NAMES[language] ?? language;
+  const spoken = hasSpokenName(language)
+    ? CODE_LANGUAGE_NAMES[language]
+    : language;
   return title === undefined
     ? `${spoken} code example`
     : `${title}, ${spoken} code example`;
@@ -1951,10 +1962,13 @@ const lowerInteractivePanels = (root: Root): void => {
       if (iconAttribute?.type === "mdxJsxAttribute" && iconSlot !== undefined) {
         iconSlots.push({ ...iconAttribute, name: iconSlot });
       }
-      return {
-        ...(iconSlot === undefined ? {} : { iconSlot }),
+      const panelInput: TabPanelInput = {
         label: findStringAttribute(tab, "title") ?? "",
       };
+      if (iconSlot !== undefined) {
+        panelInput.iconSlot = iconSlot;
+      }
+      return panelInput;
     });
     const panels = createArticleTabPanels(panelInputs);
 

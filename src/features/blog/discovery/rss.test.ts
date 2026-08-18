@@ -44,7 +44,7 @@ const parseXml = (xml: string) => {
     },
   }).parseFromString(xml, "application/xml");
 
-  expect(errors).toEqual([]);
+  expect(errors).toStrictEqual([]);
   return document;
 };
 
@@ -104,7 +104,7 @@ describe("RSS discovery", () => {
     expect(selfLink?.getAttribute("type")).toBe("application/rss+xml");
     expect(
       items.map((item) => getElements(item, "link")[0]?.textContent)
-    ).toEqual([
+    ).toStrictEqual([
       "https://levin.baenninger.me/blog/newer",
       "https://levin.baenninger.me/blog/older",
     ]);
@@ -189,7 +189,7 @@ describe("RSS discovery", () => {
     );
     expect(
       getElements(item, "category").map(({ textContent }) => textContent)
-    ).toEqual(["Next.js", "Web performance"]);
+    ).toStrictEqual(["Next.js", "Web performance"]);
     expect(xml).not.toContain("compiled");
     expect(xml).not.toContain("content:encoded");
   });

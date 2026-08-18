@@ -53,7 +53,7 @@ const redirectSlug = z
   .max(80)
   .regex(SLUG_PATTERN, "must be a lowercase kebab-case slug");
 
-const metadataShape = {
+const sharedMetadataFields = {
   title: authoredText(100),
   description: authoredText(240),
   updatedAt: date.optional(),
@@ -72,14 +72,14 @@ const metadataSchema = z
   .discriminatedUnion("status", [
     z
       .object({
-        ...metadataShape,
+        ...sharedMetadataFields,
         status: z.literal("Draft"),
         publishedAt: date.optional(),
       })
       .strict(),
     z
       .object({
-        ...metadataShape,
+        ...sharedMetadataFields,
         status: z.literal("Published"),
         publishedAt: date,
       })
@@ -187,25 +187,38 @@ export const validateArticleMetadata = (
     redirectFrom: metadata.redirectFrom ?? [],
   };
 
+  // Optional dates are added as statements so absent stays absent: an
+  // undefined-valued key would leak into serialized manifests and strict
+  // equality checks.
   if (metadata.status === "Published") {
-    return {
+    const published: ValidatedArticleMetadataBase & {
+      status: "Published";
+      publishedAt: string;
+      updatedAt?: string;
+    } = {
       ...shared,
       status: metadata.status,
       publishedAt: metadata.publishedAt,
-      ...(metadata.updatedAt === undefined
-        ? {}
-        : { updatedAt: metadata.updatedAt }),
     };
+    if (metadata.updatedAt !== undefined) {
+      published.updatedAt = metadata.updatedAt;
+    }
+    return published;
   }
 
-  return {
+  const draft: ValidatedArticleMetadataBase & {
+    status: "Draft";
+    publishedAt?: string;
+    updatedAt?: string;
+  } = {
     ...shared,
     status: metadata.status,
-    ...(metadata.publishedAt === undefined
-      ? {}
-      : { publishedAt: metadata.publishedAt }),
-    ...(metadata.updatedAt === undefined
-      ? {}
-      : { updatedAt: metadata.updatedAt }),
   };
+  if (metadata.publishedAt !== undefined) {
+    draft.publishedAt = metadata.publishedAt;
+  }
+  if (metadata.updatedAt !== undefined) {
+    draft.updatedAt = metadata.updatedAt;
+  }
+  return draft;
 };

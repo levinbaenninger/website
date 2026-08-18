@@ -23,14 +23,14 @@ describe("Portfolio timeline", () => {
       </TimelineList>
     );
 
-    expect(paragraphText()).toEqual(["First item", "Second item"]);
+    expect(paragraphText()).toStrictEqual(["First item", "Second item"]);
 
     const trigger = screen.getByRole("button", { name: /show more/iu });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
 
     await user.click(trigger);
 
-    expect(paragraphText()).toEqual([
+    expect(paragraphText()).toStrictEqual([
       "First item",
       "Second item",
       "Third item",
@@ -39,7 +39,7 @@ describe("Portfolio timeline", () => {
 
     await user.click(trigger);
 
-    expect(paragraphText()).toEqual(["First item", "Second item"]);
+    expect(paragraphText()).toStrictEqual(["First item", "Second item"]);
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
@@ -51,7 +51,7 @@ describe("Portfolio timeline", () => {
       </TimelineList>
     );
 
-    expect(paragraphText()).toEqual(["First item", "Second item"]);
+    expect(paragraphText()).toStrictEqual(["First item", "Second item"]);
     expect(screen.queryByRole("button")).toBeNull();
   });
 
@@ -71,11 +71,11 @@ describe("Portfolio timeline", () => {
       name: /portfolio project/iu,
     });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(paragraphText()).toEqual([]);
+    expect(paragraphText()).toStrictEqual([]);
 
     await user.click(trigger);
 
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    expect(paragraphText()).toEqual(["Built visitor-facing features."]);
+    expect(paragraphText()).toStrictEqual(["Built visitor-facing features."]);
   });
 });

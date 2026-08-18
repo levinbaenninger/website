@@ -48,7 +48,7 @@ describe("Twoslash type popovers", () => {
 
     await user.tab();
 
-    expect(await screen.findByText("greeting: string")).toBeDefined();
+    await expect(screen.findByText("greeting: string")).resolves.toBeDefined();
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     // Preview must not steal focus: Escape and tabbing still work from the token.
     expect(document.activeElement).toBe(trigger);
@@ -120,7 +120,7 @@ describe("Twoslash type popovers", () => {
       target: screen.getByRole("button", { name: "greeting" }),
     });
 
-    expect(await screen.findByText("greeting: string")).toBeDefined();
+    await expect(screen.findByText("greeting: string")).resolves.toBeDefined();
   });
 
   test("dismisses a pinned popup when the reader moves on", async () => {

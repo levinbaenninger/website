@@ -69,7 +69,7 @@ describe("Article route contract", () => {
     });
     const route = createArticleDeliveryOperations(operations);
 
-    await expect(route.generateStaticParams()).resolves.toEqual([
+    await expect(route.generateStaticParams()).resolves.toStrictEqual([
       { slug: "a-former" },
       { slug: "current-article" },
       { slug: "z-former" },
@@ -81,21 +81,21 @@ describe("Article route contract", () => {
       createOperations({ articles: [], redirects: [] })
     );
 
-    await expect(route.generateStaticParams()).resolves.toEqual([]);
+    await expect(route.generateStaticParams()).resolves.toStrictEqual([]);
   });
 
   test("distinguishes current, direct redirect, and unknown outcomes", async () => {
     const route = createArticleDeliveryOperations(createOperations());
 
-    await expect(route.resolve("current-article")).resolves.toEqual({
+    await expect(route.resolve("current-article")).resolves.toStrictEqual({
       article: currentArticle,
       kind: "current",
     });
-    await expect(route.resolve("former-article")).resolves.toEqual({
+    await expect(route.resolve("former-article")).resolves.toStrictEqual({
       destination: "/blog/current-article",
       kind: "redirect",
     });
-    await expect(route.resolve("unknown")).resolves.toEqual({
+    await expect(route.resolve("unknown")).resolves.toStrictEqual({
       kind: "not-found",
     });
   });
@@ -104,7 +104,7 @@ describe("Article route contract", () => {
     const operations = createOperations();
     const route = createArticleDeliveryOperations(operations);
 
-    await expect(route.resolve("Bad/Slug")).resolves.toEqual({
+    await expect(route.resolve("Bad/Slug")).resolves.toStrictEqual({
       kind: "not-found",
     });
     expect(operations.findArticle).not.toHaveBeenCalled();
@@ -117,11 +117,13 @@ describe("Article route contract", () => {
     operations.findArticleRedirect.mockResolvedValue(null);
     const route = createArticleDeliveryOperations(operations);
 
-    await expect(route.resolve("draft-sentinel")).resolves.toEqual({
+    await expect(route.resolve("draft-sentinel")).resolves.toStrictEqual({
       kind: "not-found",
     });
-    await expect(route.resolve("draft-sentinel-former")).resolves.toEqual({
-      kind: "not-found",
-    });
+    await expect(route.resolve("draft-sentinel-former")).resolves.toStrictEqual(
+      {
+        kind: "not-found",
+      }
+    );
   });
 });

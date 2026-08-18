@@ -194,7 +194,7 @@ describe("server-rendered Blog catalog", () => {
     const { container } = renderServer(threeArticles);
     const links = within(container).getAllByRole("link");
 
-    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+    expect(links.map((link) => link.getAttribute("href"))).toStrictEqual([
       "/blog/cache",
       "/blog/budgets",
       "/blog/seams",
@@ -210,9 +210,9 @@ describe("server-rendered Blog catalog", () => {
 
     expect(search).toHaveProperty("disabled", true);
     expect(radios).toHaveLength(TAG_FACETS.length + 1);
-    expect(radios.every((option) => option.hasAttribute("disabled"))).toBe(
-      true
-    );
+    expect(
+      radios.every((option) => option.hasAttribute("disabled"))
+    ).toBeTruthy();
     expect(
       within(container).getByRole("radio", { name: "All 3 Articles" })
     ).toHaveProperty("checked", true);
@@ -305,7 +305,7 @@ describe("hydrated discovery controls", () => {
       screen
         .getAllByRole("radio")
         .every((option) => !option.hasAttribute("disabled"))
-    ).toBe(true);
+    ).toBeTruthy();
   });
 
   test("counts Articles in words, not as a bare number", () => {
@@ -361,11 +361,9 @@ describe("Tag filter", () => {
     });
     const options = within(group).getAllByRole("radio");
 
-    expect(options.map((option) => option.getAttribute("value"))).toEqual([
-      "all",
-      "nextjs",
-      "web-performance",
-    ]);
+    expect(options.map((option) => option.getAttribute("value"))).toStrictEqual(
+      ["all", "nextjs", "web-performance"]
+    );
     expect(
       options.filter((option) => (option as HTMLInputElement).checked)
     ).toHaveLength(1);
@@ -385,11 +383,15 @@ describe("Tag filter", () => {
 
     renderHydrated(taggedArticles);
 
-    expect(hrefsOf()).toEqual(["/blog/cache", "/blog/budgets", "/blog/seams"]);
+    expect(hrefsOf()).toStrictEqual([
+      "/blog/cache",
+      "/blog/budgets",
+      "/blog/seams",
+    ]);
 
     await user.click(radio("Next.js 2 Articles"));
 
-    expect(hrefsOf()).toEqual(["/blog/cache", "/blog/budgets"]);
+    expect(hrefsOf()).toStrictEqual(["/blog/cache", "/blog/budgets"]);
     expect(radio("Next.js 2 Articles")).toHaveProperty("checked", true);
   });
 
@@ -415,7 +417,7 @@ describe("Tag filter", () => {
 
     await user.click(radio("Next.js 2 Articles"));
 
-    expect(hrefsOf()).toEqual(["/blog/wip", "/blog/budgets"]);
+    expect(hrefsOf()).toStrictEqual(["/blog/wip", "/blog/budgets"]);
     expect(screen.getByText("Draft")).toBeTruthy();
     expect(screen.getByText("Not published")).toBeTruthy();
   });
@@ -432,14 +434,10 @@ describe("Tag filter", () => {
     await user.click(radio("All 3 Articles"));
 
     await waitFor(() => {
-      expect(onUrlUpdate).toHaveBeenCalled();
+      expect(onUrlUpdate.mock.calls.at(-1)?.[0].queryString).toBe("?q=cache");
     });
-
-    const { queryString } = onUrlUpdate.mock.calls.at(-1)?.[0] ?? {};
-
-    expect(queryString).toBe("?q=cache");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
   });
 
@@ -452,14 +450,15 @@ describe("Tag filter", () => {
     await user.click(radio("Next.js 2 Articles"));
 
     await waitFor(() => {
-      expect(onUrlUpdate).toHaveBeenCalled();
+      expect(onUrlUpdate.mock.calls.at(-1)?.[0].queryString).toBe(
+        "?tag=nextjs"
+      );
     });
 
     const update = onUrlUpdate.mock.calls.at(-1)?.[0];
 
-    expect(update?.queryString).toBe("?tag=nextjs");
     expect(update?.options.history).toBe("replace");
-    expect(update?.options.shallow).toBe(true);
+    expect(update?.options.shallow).toBeTruthy();
   });
 
   test("degrades an unknown Tag to All and drops it from the URL", async () => {
@@ -477,17 +476,15 @@ describe("Tag filter", () => {
     expect(radio("All 3 Articles")).toHaveProperty("checked", true);
 
     await waitFor(() => {
-      expect(onUrlUpdate).toHaveBeenCalled();
+      expect(onUrlUpdate.mock.calls.at(-1)?.[0].queryString).toBe("?q=cache");
     });
-
-    expect(onUrlUpdate.mock.calls.at(-1)?.[0].queryString).toBe("?q=cache");
   });
 
   test("restores a Tag the URL already carries", () => {
     renderHydrated(taggedArticles, { searchParams: "?tag=nextjs" });
 
     expect(radio("Next.js 2 Articles")).toHaveProperty("checked", true);
-    expect(hrefsOf()).toEqual(["/blog/cache", "/blog/budgets"]);
+    expect(hrefsOf()).toStrictEqual(["/blog/cache", "/blog/budgets"]);
   });
 });
 
@@ -545,7 +542,7 @@ describe("Tag filter keyboard behaviour", () => {
         .getAllByRole("radio")
         .filter((option) => option.getAttribute("tabindex") === "0")
         .map((option) => option.getAttribute("value"))
-    ).toEqual(["nextjs"]);
+    ).toStrictEqual(["nextjs"]);
   });
 
   test("keeps focus on the chosen Tag rather than moving it to the results", async () => {
@@ -565,13 +562,13 @@ describe("Tag filter keyboard behaviour", () => {
 
     await user.click(radio("Next.js 2 Articles"));
 
-    expect(
-      await screen.findByText("2 Articles found in Next.js.")
-    ).toBeTruthy();
+    await expect(
+      screen.findByText("2 Articles found in Next.js.")
+    ).resolves.toBeTruthy();
 
     await user.click(radio("All 3 Articles"));
 
-    expect(await screen.findByText("3 Articles found.")).toBeTruthy();
+    await expect(screen.findByText("3 Articles found.")).resolves.toBeTruthy();
   });
 });
 
@@ -643,7 +640,7 @@ describe("lazy Article search", () => {
 
     await user.type(search, "cache");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
     expect(loadArticleSearch).toHaveBeenCalledOnce();
   });
@@ -655,14 +652,14 @@ describe("lazy Article search", () => {
 
     await user.type(searchBox(), "cache");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
 
     await user.clear(searchBox());
     await user.type(searchBox(), "spreadsheet");
 
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/budgets"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/budgets"]);
     });
     expect(loadArticleSearch).toHaveBeenCalledOnce();
   });
@@ -672,7 +669,7 @@ describe("lazy Article search", () => {
 
     expect(searchBox()).toHaveProperty("value", "spreadsheet");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/budgets"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/budgets"]);
     });
   });
 
@@ -683,12 +680,12 @@ describe("lazy Article search", () => {
 
     await user.type(searchBox(), "next.js");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/budgets", "/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/budgets", "/blog/cache"]);
     });
 
     await user.click(radio("Next.js 2 Articles"));
 
-    expect(hrefsOf()).toEqual(["/blog/budgets", "/blog/cache"]);
+    expect(hrefsOf()).toStrictEqual(["/blog/budgets", "/blog/cache"]);
   });
 
   test("combines the query and the Tag with AND semantics", async () => {
@@ -699,7 +696,7 @@ describe("lazy Article search", () => {
     await user.type(searchBox(), "next.js");
 
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
   });
 
@@ -721,7 +718,7 @@ describe("lazy Article search", () => {
     await user.type(searchBox(), "cache");
 
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
     expect(screen.queryByText("Understanding cache internals")).toBeNull();
   });
@@ -749,7 +746,7 @@ describe("lazy Article search", () => {
 
     await user.type(searchBox(), "cache");
 
-    expect(await screen.findByText("Draft")).toBeTruthy();
+    await expect(screen.findByText("Draft")).resolves.toBeTruthy();
     expect(screen.getByText("Not published")).toBeTruthy();
     expect(screen.queryByText("01.01.2027")).toBeNull();
   });
@@ -763,14 +760,14 @@ describe("explained Article search results", () => {
 
     await user.type(searchBox(), "cache");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
 
     const heading = screen.getByRole("heading", {
       name: "Understanding cache components",
     });
 
-    expect(marksIn(heading)).toEqual(["cache"]);
+    expect(marksIn(heading)).toStrictEqual(["cache"]);
   });
 
   test("explains a heading-only match with the matching section", async () => {
@@ -780,7 +777,7 @@ describe("explained Article search results", () => {
 
     await user.type(searchBox(), "injecting");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/seams"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/seams"]);
     });
 
     const excerpt = screen.getByText("Matching section:").parentElement;
@@ -796,7 +793,7 @@ describe("explained Article search results", () => {
 
     await user.type(searchBox(), "spreadsheet");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/budgets"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/budgets"]);
     });
 
     const excerpt = screen.getByText("Matching excerpt:").parentElement;
@@ -804,7 +801,7 @@ describe("explained Article search results", () => {
     expect(excerpt?.textContent).toContain(
       "Every image budget dies in a spreadsheet."
     );
-    expect(marksIn(excerpt as Element)).toEqual(["spreadsheet"]);
+    expect(marksIn(excerpt as Element)).toStrictEqual(["spreadsheet"]);
   });
 
   test("leaves an unmatched description unmarked", async () => {
@@ -814,12 +811,12 @@ describe("explained Article search results", () => {
 
     await user.type(searchBox(), "web performance");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
 
     const description = screen.getByText("A representative Article.");
 
-    expect(marksIn(description)).toEqual([]);
+    expect(marksIn(description)).toStrictEqual([]);
     expect(screen.queryByText("Matching excerpt:")).toBeNull();
   });
 
@@ -830,14 +827,14 @@ describe("explained Article search results", () => {
 
     await user.type(searchBox(), "web performance");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
 
     const group = screen.getByRole("radiogroup", {
       name: "Filter Articles by Tag",
     });
 
-    expect(marksIn(group)).toEqual(["Web", "performance"]);
+    expect(marksIn(group)).toStrictEqual(["Web", "performance"]);
   });
 });
 
@@ -858,7 +855,7 @@ describe("query-relative Tag counts", () => {
 
     await user.click(radio("Web performance 1 Article"));
 
-    expect(hrefsOf()).toEqual(["/blog/cache"]);
+    expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     expect(radio("All 2 Articles")).toBeTruthy();
     expect(radio("Next.js 2 Articles")).toBeTruthy();
   });
@@ -870,10 +867,10 @@ describe("query-relative Tag counts", () => {
 
     await user.type(searchBox(), "spreadsheet");
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/budgets"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/budgets"]);
     });
 
-    expect(tagValues()).toEqual(["all", "nextjs", "web-performance"]);
+    expect(tagValues()).toStrictEqual(["all", "nextjs", "web-performance"]);
     expect(radio("Web performance 0 Articles")).toHaveProperty(
       "disabled",
       true
@@ -910,7 +907,7 @@ describe("shareable query state", () => {
     const update = lastUpdate(onUrlUpdate);
 
     expect(update?.options.history).toBe("replace");
-    expect(update?.options.shallow).toBe(true);
+    expect(update?.options.shallow).toBeTruthy();
   });
 
   test("keeps one trailing space in the field and none in the URL", async () => {
@@ -978,7 +975,7 @@ describe("Article search loading and recovery", () => {
 
     expect(screen.queryByText("Leafing through the Blog…")).toBeNull();
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
     expect(screen.queryByText("Leafing through the Blog…")).toBeNull();
   });
@@ -1003,14 +1000,14 @@ describe("Article search loading and recovery", () => {
         .getAttribute("aria-busy")
     ).toBe("true");
 
-    expect(
-      await screen.findByText("Leafing through the Blog\u2026")
-    ).toBeTruthy();
+    await expect(
+      screen.findByText("Leafing through the Blog\u2026")
+    ).resolves.toBeTruthy();
 
     pending.resolve(ready);
 
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
   });
 
@@ -1025,7 +1022,9 @@ describe("Article search loading and recovery", () => {
 
     await user.type(field, "cache");
 
-    expect(await screen.findByText("Search lost the plot")).toBeTruthy();
+    await expect(
+      screen.findByText("Search lost the plot")
+    ).resolves.toBeTruthy();
     expect(loadArticleSearch).toHaveBeenCalledOnce();
 
     await user.type(field, "s");
@@ -1044,7 +1043,7 @@ describe("Article search loading and recovery", () => {
     expect(field).toHaveProperty("value", "");
     expect(document.activeElement).toBe(field);
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(hrefsOf()).toEqual(["/blog/cache", "/blog/budgets"]);
+    expect(hrefsOf()).toStrictEqual(["/blog/cache", "/blog/budgets"]);
   });
 
   test("recovers through Retry search and returns focus to the field", async () => {
@@ -1064,7 +1063,7 @@ describe("Article search loading and recovery", () => {
     );
 
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
     expect(loadArticleSearch).toHaveBeenCalledTimes(2);
     expect(document.activeElement).toBe(searchBox());
@@ -1077,9 +1076,9 @@ describe("Article search loading and recovery", () => {
 
     await user.type(searchBox(), "kubernetes");
 
-    expect(
-      await screen.findByText("No luck with ‘kubernetes’ in Next.js")
-    ).toBeTruthy();
+    await expect(
+      screen.findByText("No luck with ‘kubernetes’ in Next.js")
+    ).resolves.toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Show all Tags" }));
 
@@ -1104,15 +1103,15 @@ describe("result announcements", () => {
     await user.type(searchBox(), "cache");
 
     await waitFor(() => {
-      expect(hrefsOf()).toEqual(["/blog/cache"]);
+      expect(hrefsOf()).toStrictEqual(["/blog/cache"]);
     });
 
     expect(
       screen.queryByText("1 Article found for \u2018cache\u2019.")
     ).toBeNull();
-    expect(
-      await screen.findByText("1 Article found for \u2018cache\u2019.")
-    ).toBeTruthy();
+    await expect(
+      screen.findByText("1 Article found for \u2018cache\u2019.")
+    ).resolves.toBeTruthy();
   });
 
   test("names the query and the Tag together and counts zero", async () => {
@@ -1122,10 +1121,8 @@ describe("result announcements", () => {
 
     await user.type(searchBox(), "kubernetes");
 
-    expect(
-      await screen.findByText(
-        "0 Articles found for ‘kubernetes’ in Web performance."
-      )
-    ).toBeTruthy();
+    await expect(
+      screen.findByText("0 Articles found for ‘kubernetes’ in Web performance.")
+    ).resolves.toBeTruthy();
   });
 });

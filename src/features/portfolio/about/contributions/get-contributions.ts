@@ -1,57 +1,31 @@
-import type { Activity } from "./contribution-graph";
+import { z } from "zod";
 
-interface GitHubContributionsResponse {
-  contributions: Activity[];
-}
+import type { Activity } from "./contribution-graph";
 
 export type ContributionsResult =
   | { status: "success"; contributions: Activity[] }
   | { status: "unavailable" };
 
-const isActivity = (value: unknown): value is Activity => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
+const activitySchema = z.object({
+  count: z.number().int().min(0),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/u)
+    .refine((date) => {
+      // The pattern admits impossible dates like 2026-02-31; round-tripping
+      // through UTC proves the calendar day exists.
+      const parsed = new Date(`${date}T00:00:00.000Z`);
+      return (
+        !Number.isNaN(parsed.getTime()) &&
+        parsed.toISOString().slice(0, 10) === date
+      );
+    }),
+  level: z.number().int().min(0).max(4),
+});
 
-  if (!("date" in value) || !("count" in value) || !("level" in value)) {
-    return false;
-  }
-
-  const parsedDate =
-    typeof value.date === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(value.date)
-      ? new Date(`${value.date}T00:00:00.000Z`)
-      : null;
-  const hasValidDate =
-    parsedDate !== null &&
-    !Number.isNaN(parsedDate.getTime()) &&
-    parsedDate.toISOString().slice(0, 10) === value.date;
-
-  return (
-    hasValidDate &&
-    typeof value.count === "number" &&
-    Number.isInteger(value.count) &&
-    value.count >= 0 &&
-    typeof value.level === "number" &&
-    Number.isInteger(value.level) &&
-    value.level >= 0 &&
-    value.level <= 4
-  );
-};
-
-const isGitHubContributionsResponse = (
-  value: unknown
-): value is GitHubContributionsResponse => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  if (!("contributions" in value)) {
-    return false;
-  }
-
-  const { contributions } = value;
-  return Array.isArray(contributions) && contributions.every(isActivity);
-};
+const contributionsResponseSchema = z.object({
+  contributions: z.array(activitySchema),
+});
 
 export const getContributions = async (
   username: string
@@ -66,8 +40,9 @@ export const getContributions = async (
     }
 
     const data: unknown = await response.json();
-    return isGitHubContributionsResponse(data)
-      ? { status: "success", contributions: data.contributions }
+    const parsed = contributionsResponseSchema.safeParse(data);
+    return parsed.success
+      ? { status: "success", contributions: parsed.data.contributions }
       : { status: "unavailable" };
   } catch {
     return { status: "unavailable" };

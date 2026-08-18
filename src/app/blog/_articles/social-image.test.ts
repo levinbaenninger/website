@@ -42,7 +42,7 @@ describe("Article social-image adapter", () => {
   test("forwards Blog static parameters", async () => {
     const { adapter, generateStaticParams } = createAdapter();
 
-    await expect(adapter.generateStaticParams()).resolves.toEqual([
+    await expect(adapter.generateStaticParams()).resolves.toStrictEqual([
       { slug: INPUT.slug },
     ]);
     expect(generateStaticParams).toHaveBeenCalledOnce();

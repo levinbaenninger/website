@@ -29,7 +29,7 @@ test("maps Published Blog discovery into the production sitemap", async () => {
   ]);
   const { default: sitemap } = await import("./sitemap");
 
-  await expect(sitemap()).resolves.toEqual([
+  await expect(sitemap()).resolves.toStrictEqual([
     { url: "https://levin.baenninger.me/" },
     {
       lastModified: "2026-07-20",
@@ -47,7 +47,7 @@ test("keeps an empty Published corpus date-free", async () => {
   listPublishedArticleDiscoveryEntries.mockResolvedValue([]);
   const { default: sitemap } = await import("./sitemap");
 
-  await expect(sitemap()).resolves.toEqual([
+  await expect(sitemap()).resolves.toStrictEqual([
     { url: "https://levin.baenninger.me/" },
     { url: "https://levin.baenninger.me/blog" },
   ]);

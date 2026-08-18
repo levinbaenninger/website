@@ -107,16 +107,18 @@ describe("social-image renderer", () => {
     const second = await toBytes(ARTICLE_INPUT);
     const metadata = await sharp(first).metadata();
 
-    expect(first.subarray(0, PNG_SIGNATURE.length)).toEqual(PNG_SIGNATURE);
+    expect(first.subarray(0, PNG_SIGNATURE.length)).toStrictEqual(
+      PNG_SIGNATURE
+    );
     expect(metadata).toMatchObject({
       format: "png",
       height: SOCIAL_IMAGE_SIZE.height,
       width: SOCIAL_IMAGE_SIZE.width,
     });
-    expect(second).toEqual(first);
+    expect(second).toStrictEqual(first);
     expect(
       fetch.mock.calls.every(([input]) => toFetchUrl(input).startsWith("data:"))
-    ).toBe(true);
+    ).toBeTruthy();
   });
 
   test("keeps a maximum-length unbroken Article title inside fixed output bounds", async () => {
@@ -150,6 +152,6 @@ describe("social-image renderer", () => {
       await writeFile(goldenUrl, rendered);
     }
 
-    await expect(readFile(goldenUrl)).resolves.toEqual(rendered);
+    await expect(readFile(goldenUrl)).resolves.toStrictEqual(rendered);
   });
 });

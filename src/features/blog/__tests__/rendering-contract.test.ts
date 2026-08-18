@@ -118,11 +118,11 @@ describe("Article compilation contract", () => {
       { Accordion: RecordingAccordion, Tabs: RecordingTabs }
     );
 
-    expect(JSON.parse(accordionProps?.panels ?? "null")).toEqual([
+    expect(JSON.parse(accordionProps?.panels ?? "null")).toStrictEqual([
       { defaultOpen: true, label: "First", value: "accordion-item-0" },
       { defaultOpen: false, label: "Second", value: "accordion-item-1" },
     ]);
-    expect(JSON.parse(tabsProps?.panels ?? "null")).toEqual([
+    expect(JSON.parse(tabsProps?.panels ?? "null")).toStrictEqual([
       { iconSlot: "tabIcon0", label: "Alpha", value: "tab-0" },
       { label: "Beta", value: "tab-1" },
     ]);
@@ -142,7 +142,7 @@ Plain **strong** prose with \`inline code\`.
 ## Intro
 `);
 
-    expect(article.facts).toEqual({
+    expect(article.facts).toStrictEqual({
       headings: [
         { depth: 2, id: "intro", text: "Intro" },
         { depth: 2, id: "intro-1", text: "Intro" },
@@ -170,7 +170,7 @@ Plain **strong** prose with \`inline code\`.
   test("keeps the Article outline at depth two through four", async () => {
     const outline = await compileArticle("## Two\n\n### Three\n\n#### Four");
 
-    expect(outline.facts.headings).toEqual([
+    expect(outline.facts.headings).toStrictEqual([
       { depth: 2, id: "two", text: "Two" },
       { depth: 3, id: "three", text: "Three" },
       { depth: 4, id: "four", text: "Four" },
@@ -230,7 +230,7 @@ Plain **strong** prose with \`inline code\`.
 [guide]: /blog/another#intro
 `);
 
-    expect(facts.links).toEqual([
+    expect(facts.links).toStrictEqual([
       { href: "#section" },
       { href: "/blog/another#intro" },
       { href: "/" },
@@ -266,7 +266,7 @@ Plain **strong** prose with \`inline code\`.
 </Figure>
 `);
 
-    expect(facts).toEqual({
+    expect(facts).toStrictEqual({
       headings: [{ depth: 2, id: "diagram", text: "Diagram" }],
       links: [{ href: "https://example.com/details" }],
       searchText: "Diagram A caption with details.",
@@ -332,7 +332,7 @@ Plain **strong** prose with \`inline code\`.
 </Tabs>
 `);
 
-    expect(article.facts).toEqual({
+    expect(article.facts).toStrictEqual({
       headings: [
         { depth: 2, id: "overview-heading", text: "Overview heading" },
         { depth: 3, id: "nested-heading", text: "Nested heading" },
@@ -520,7 +520,7 @@ const secretCodeBody = true
 \`\`\`
 `);
 
-    expect(article.facts).toEqual({
+    expect(article.facts).toStrictEqual({
       headings: [{ depth: 2, id: "über--cache", text: "Über & Cache" }],
       links: [{ href: "https://example.com/docs" }],
       searchText:
@@ -851,7 +851,7 @@ const answer: number = 42
 
     const first = await renderArticle(source);
     const second = await renderArticle(source);
-    expect(second.facts).toEqual(first.facts);
+    expect(second.facts).toStrictEqual(first.facts);
     expect(second.markup).toBe(first.markup);
     expect(second.codeBlocks[0]?.["data-copy-source"]).toBe(
       first.codeBlocks[0]?.["data-copy-source"]
@@ -867,7 +867,7 @@ const answer: number = 42
 
     await expect(
       compileArticle("```ts twoslash\nconst value: string = 42\n```")
-    ).rejects.toThrow();
+    ).rejects.toThrow(Error);
     await expect(
       compileArticle(
         "```ts twoslash\n// @noErrors\nconst value: string = 42\n```"
@@ -902,6 +902,7 @@ const view = <div>Hello</div>
       "-old\n+new\n"
     );
   });
+
   test("groups tabbed fences nested inside approved compositions", async () => {
     const { markup } = await renderArticle(`<Steps>
   <Step title="Install">

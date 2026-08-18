@@ -17,7 +17,7 @@ export const EXPERIENCES = [
 - Engineered custom Azure Container Jobs to optimize Azure DevOps pipelines – reduced build times, increased scalability, and lowered infrastructure overhead, accelerating delivery cycles.
 - Developed our internal component library used across products – consistent UI, reusable components, faster shipping.`,
         employmentType: "Full-time",
-        endDate: null as string | null,
+        endDate: null,
         skills: ["Angular", "TypeScript", ".NET", "AI", "Azure", "DevOps"],
         startDate: "08.2023",
         title: "Software Engineer Apprentice",

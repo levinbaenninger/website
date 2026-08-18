@@ -279,9 +279,7 @@ export const ContributionGraph = ({
       : new Date().getFullYear();
 
   const totalCount =
-    typeof totalCountProp === "number"
-      ? totalCountProp
-      : data.reduce((sum, activity) => sum + activity.count, 0);
+    totalCountProp ?? data.reduce((sum, activity) => sum + activity.count, 0);
 
   const width = weeks.length * (blockSize + blockMargin) - blockMargin;
   const height = labelHeight + (blockSize + blockMargin) * 7 - blockMargin;
