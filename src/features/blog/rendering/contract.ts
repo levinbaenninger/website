@@ -56,6 +56,21 @@ interface ArticleDiagnostic extends Error {
   readonly ruleId?: string;
 }
 
+const compareArticleDiagnostics = (
+  left: ArticleDiagnostic,
+  right: ArticleDiagnostic
+): number => {
+  const byLine = (left.line ?? 0) - (right.line ?? 0);
+  if (byLine !== 0) {
+    return byLine;
+  }
+  const byColumn = (left.column ?? 0) - (right.column ?? 0);
+  if (byColumn !== 0) {
+    return byColumn;
+  }
+  return (left.ruleId ?? "").localeCompare(right.ruleId ?? "");
+};
+
 class ArticleDiagnostics {
   readonly #diagnostics: ArticleDiagnostic[] = [];
   readonly #file: ArticleFile;
@@ -94,20 +109,7 @@ class ArticleDiagnostics {
 
   throwIfAny(): void {
     if (this.#diagnostics.length > 0) {
-      const sorted = this.#diagnostics.toSorted((left, right) => {
-        const positionOrder =
-          (left.line ?? 0) - (right.line ?? 0) ||
-          (left.column ?? 0) - (right.column ?? 0);
-        if (positionOrder !== 0) {
-          return positionOrder;
-        }
-        const leftRule = left.ruleId ?? "";
-        const rightRule = right.ruleId ?? "";
-        if (leftRule === rightRule) {
-          return 0;
-        }
-        return leftRule < rightRule ? -1 : 1;
-      });
+      const sorted = this.#diagnostics.toSorted(compareArticleDiagnostics);
       throw new Error(
         `Article compilation failed with ${sorted.length} contract violation${sorted.length === 1 ? "" : "s"}:\n${sorted.map((diagnostic) => `${diagnostic.name} [${diagnostic.ruleId ?? "blog/article-contract"}]: ${diagnostic.message}`).join("\n")}`
       );
@@ -117,6 +119,21 @@ class ArticleDiagnostics {
 
 const normalizeSearchText = (value: string): string =>
   value.replaceAll(/\s+/gu, " ").trim();
+
+const textLength = (value: string): number =>
+  [
+    ...new Intl.Segmenter(undefined, {
+      granularity: "grapheme",
+    }).segment(value),
+  ].length;
+
+const isValidLabel = (value: string, maximum: number): boolean =>
+  value.length > 0 &&
+  value === value.trim() &&
+  !/[\r\n]/u.test(value) &&
+  value.isWellFormed() &&
+  value.normalize("NFC") === value &&
+  textLength(value) <= maximum;
 
 const ASSET_IMPORT_PATTERN =
   /^import\s+[A-Za-z_$][\w$]*\s+from\s+["']\.\/assets\/[^"'?#]+["'];?\s*$/u;
@@ -198,41 +215,45 @@ const visibleLabel = (node: ArticleElement): string => {
     : (findStringAttribute(node, labelAttribute) ?? "");
 };
 
+const SEARCH_SKIP_NODE_TYPES = new Set([
+  "code",
+  "definition",
+  "image",
+  "imageReference",
+  "thematicBreak",
+  "yaml",
+]);
+
+const searchChildSeparator = (node: ArticleNode): string => {
+  if (inlineNodeTypes.has(node.type)) {
+    return "";
+  }
+  if (
+    (node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement") &&
+    compositionSearchContracts.get(node.name ?? "")?.joinsInline === true
+  ) {
+    return "";
+  }
+  return " ";
+};
+
 const searchableText = (node: ArticleNode): string => {
   if (node.type === "text" || node.type === "inlineCode") {
     return node.value;
   }
-
-  if (
-    node.type === "code" ||
-    node.type === "definition" ||
-    node.type === "image" ||
-    node.type === "imageReference" ||
-    node.type === "thematicBreak" ||
-    node.type === "yaml"
-  ) {
+  if (SEARCH_SKIP_NODE_TYPES.has(node.type)) {
     return "";
   }
-
-  if ("children" in node && Array.isArray(node.children)) {
-    const separator =
-      inlineNodeTypes.has(node.type) ||
-      ((node.type === "mdxJsxFlowElement" ||
-        node.type === "mdxJsxTextElement") &&
-        compositionSearchContracts.get(node.name ?? "")?.joinsInline === true)
-        ? ""
-        : " ";
-    const children = node.children.map(searchableText).join(separator);
-    if (
-      node.type === "mdxJsxFlowElement" ||
-      node.type === "mdxJsxTextElement"
-    ) {
-      return [visibleLabel(node), children].filter(Boolean).join(" ");
-    }
-    return children;
+  if (!("children" in node) || !Array.isArray(node.children)) {
+    return "";
   }
-
-  return "";
+  const children = node.children
+    .map((child) => searchableText(child))
+    .join(searchChildSeparator(node));
+  if (node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement") {
+    return [visibleLabel(node), children].filter(Boolean).join(" ");
+  }
+  return children;
 };
 
 const collectSearchText = (root: Root): string =>
@@ -253,7 +274,6 @@ const CODE_LANGUAGES = new Set([
   "tsx",
   "yaml",
 ]);
-const CODE_TEXT_PATTERN = /^[^\r\n]+$/u;
 const CODE_TAB_GROUP_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const CODE_ANNOTATION_PATTERN =
   /\[!code (?:(?:\+\+|--|focus|highlight)(?::[1-9]\d*)?|word:(?:\\.|[^:\\\]])+(?::[1-9]\d*)?)\]/gu;
@@ -314,24 +334,22 @@ const validateCodeText = (
   value: string,
   maximum: number
 ): void => {
-  if (
-    !CODE_TEXT_PATTERN.test(value) ||
-    value !== value.trim() ||
-    !value.isWellFormed() ||
-    value.normalize("NFC") !== value ||
-    [
-      ...new Intl.Segmenter(undefined, {
-        granularity: "grapheme",
-      }).segment(value),
-    ].length > maximum
-  ) {
+  if (!isValidLabel(value, maximum)) {
     throw new Error(
       `[blog/code-${key}] Code ${key} ${JSON.stringify(value)} must be trimmed, single-line NFC text of 1–${maximum} characters.`
     );
   }
 };
 
-const parseCodeMetadata = (metadata: string): CodeFenceMetadata => {
+const CODE_METADATA_KEYS = new Set([
+  "lineNumbers",
+  "tab",
+  "tab-group",
+  "title",
+  "twoslash",
+]);
+
+const readMetadataEntries = (metadata: string): Map<string, string | true> => {
   const values = new Map<string, string | true>();
   let index = 0;
   while (index < metadata.length) {
@@ -367,84 +385,109 @@ const parseCodeMetadata = (metadata: string): CodeFenceMetadata => {
     }
     values.set(key, value);
   }
+  return values;
+};
 
+const readQuotedMetadata = (
+  values: ReadonlyMap<string, string | true>,
+  key: "tab" | "title",
+  maximum: number,
+  missingValueMessage: string
+): string | undefined => {
+  const raw = values.get(key);
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (typeof raw !== "string") {
+    throw new TypeError(missingValueMessage);
+  }
+  validateCodeText(key, raw, maximum);
+  return raw;
+};
+
+const parseLineNumbersStart = (raw: string | true): number => {
+  if (raw === true) {
+    return 1;
+  }
+  if (!/^[1-9]\d*$/u.test(raw)) {
+    throw new Error(
+      `[blog/code-line-numbers] Code lineNumbers start ${JSON.stringify(raw)} must be a positive integer.`
+    );
+  }
+  const lineNumbers = Number(raw);
+  if (!Number.isSafeInteger(lineNumbers)) {
+    throw new TypeError(
+      `[blog/code-line-numbers] Code lineNumbers start ${JSON.stringify(raw)} exceeds the safe integer range.`
+    );
+  }
+  return lineNumbers;
+};
+
+const assertKnownMetadataKeys = (
+  values: ReadonlyMap<string, string | true>
+): void => {
   for (const key of values.keys()) {
-    if (
-      key !== "lineNumbers" &&
-      key !== "tab" &&
-      key !== "tab-group" &&
-      key !== "title" &&
-      key !== "twoslash"
-    ) {
+    if (!CODE_METADATA_KEYS.has(key)) {
       throw new Error(
         `[blog/code-meta] Unknown fence metadata key ${JSON.stringify(key)}. Use title, lineNumbers, tab, tab-group, or twoslash.`
       );
     }
   }
+};
 
-  const title = values.get("title");
-  if (title !== undefined && typeof title !== "string") {
-    throw new Error(
-      '[blog/code-title] Code title requires a quoted value such as title="Example".'
-    );
-  }
-  if (typeof title === "string") {
-    validateCodeText("title", title, 120);
-  }
-
-  const tab = values.get("tab");
-  if (tab !== undefined && typeof tab !== "string") {
-    throw new Error(
-      '[blog/code-tab] Code tab requires a quoted value such as tab="TypeScript".'
-    );
-  }
-  if (typeof tab === "string") {
-    validateCodeText("tab", tab, 40);
-  }
-
+const readTabGroup = (
+  values: ReadonlyMap<string, string | true>
+): string | undefined => {
   const tabGroup = values.get("tab-group");
+  if (tabGroup === undefined) {
+    return undefined;
+  }
   if (
-    tabGroup !== undefined &&
-    (typeof tabGroup !== "string" ||
-      tabGroup.length > 80 ||
-      !CODE_TAB_GROUP_PATTERN.test(tabGroup))
+    typeof tabGroup !== "string" ||
+    tabGroup.length > 80 ||
+    !CODE_TAB_GROUP_PATTERN.test(tabGroup)
   ) {
     throw new Error(
       `[blog/code-tabs-group] Code tab-group ${JSON.stringify(tabGroup)} must be a lowercase kebab-case ID of 1–80 characters.`
     );
   }
+  return tabGroup;
+};
 
-  const rawLineNumbers = values.get("lineNumbers");
-  let lineNumbers: number | undefined;
-  if (rawLineNumbers !== undefined) {
-    if (rawLineNumbers === true) {
-      lineNumbers = 1;
-    } else if (/^[1-9]\d*$/u.test(rawLineNumbers)) {
-      lineNumbers = Number(rawLineNumbers);
-      if (!Number.isSafeInteger(lineNumbers)) {
-        throw new TypeError(
-          `[blog/code-line-numbers] Code lineNumbers start ${JSON.stringify(rawLineNumbers)} exceeds the safe integer range.`
-        );
-      }
-    } else {
-      throw new Error(
-        `[blog/code-line-numbers] Code lineNumbers start ${JSON.stringify(rawLineNumbers)} must be a positive integer.`
-      );
-    }
-  }
-
-  const rawTwoslash = values.get("twoslash");
-  if (rawTwoslash !== undefined && rawTwoslash !== true) {
+const assertBareTwoslash = (raw: string | true | undefined): void => {
+  if (raw !== undefined && raw !== true) {
     throw new Error(
       "[blog/code-meta] twoslash is a bare flag and does not accept a value."
     );
   }
+};
+
+const parseCodeMetadata = (metadata: string): CodeFenceMetadata => {
+  const values = readMetadataEntries(metadata);
+  assertKnownMetadataKeys(values);
+
+  const rawLineNumbers = values.get("lineNumbers");
+  const rawTwoslash = values.get("twoslash");
+  assertBareTwoslash(rawTwoslash);
 
   return {
-    lineNumbers,
-    tab: typeof tab === "string" ? tab : undefined,
-    tabGroup: typeof tabGroup === "string" ? tabGroup : undefined,
-    title: typeof title === "string" ? title : undefined,
+    lineNumbers:
+      rawLineNumbers === undefined
+        ? undefined
+        : parseLineNumbersStart(rawLineNumbers),
+    tab: readQuotedMetadata(
+      values,
+      "tab",
+      40,
+      '[blog/code-tab] Code tab requires a quoted value such as tab="TypeScript".'
+    ),
+    tabGroup: readTabGroup(values),
+    title: readQuotedMetadata(
+      values,
+      "title",
+      120,
+      '[blog/code-title] Code title requires a quoted value such as title="Example".'
+    ),
     twoslash: rawTwoslash === true,
   };
 };
@@ -536,44 +579,65 @@ const codeBlockName = (language: string, title: string | undefined): string => {
     : `${title}, ${spoken} code example`;
 };
 
+const assertTwoslashFence = (
+  node: Code,
+  language: string,
+  parsed: CodeFenceMetadata
+): void => {
+  if (!parsed.twoslash) {
+    return;
+  }
+  if (language !== "ts" && language !== "tsx") {
+    throw new Error(
+      `[blog/code-twoslash-language] Twoslash requires ts or tsx, not ${JSON.stringify(language)}.`
+    );
+  }
+  validateTwoslashSource(node);
+};
+
+const applyCodeFenceHtml = (
+  node: Code,
+  language: string,
+  parsed: CodeFenceMetadata
+): void => {
+  node.data ??= {};
+  node.data.hProperties = {
+    ...node.data.hProperties,
+    "data-code-title": parsed.title,
+    "data-code-tab-label": parsed.tab,
+    "data-code-name": codeBlockName(language, parsed.title),
+    "data-copy-source": cleanCopySource(node.value),
+    "data-line-numbers-start": parsed.lineNumbers,
+    "data-twoslash": parsed.twoslash ? "" : undefined,
+  };
+};
+
+const compileCodeFence = (node: Code): CodeFenceMetadata => {
+  const language = node.lang ?? "text";
+  if (!CODE_LANGUAGES.has(language)) {
+    throw new Error(
+      `[blog/code-language] Code language ${JSON.stringify(language)} is not approved. Use text, bash, css, html, js, jsx, json, md, mdx, ts, tsx, yaml, or diff.`
+    );
+  }
+  const parsed = parseCodeMetadata(node.meta ?? "");
+  validateCodeAnnotations(node);
+  assertTwoslashFence(node, language, parsed);
+  if (parsed.tabGroup !== undefined && parsed.tab === undefined) {
+    throw new Error(
+      "[blog/code-tabs-group] tab-group requires a tab label on the same first fence."
+    );
+  }
+  applyCodeFenceHtml(node, language, parsed);
+  return parsed;
+};
+
 const annotateCodeNode = (
   node: Code,
   diagnostics: ArticleDiagnostics
 ): CodeFenceMetadata | undefined => {
   let parsed: CodeFenceMetadata | undefined;
   diagnostics.capture(node, () => {
-    const language = node.lang ?? "text";
-    if (!CODE_LANGUAGES.has(language)) {
-      throw new Error(
-        `[blog/code-language] Code language ${JSON.stringify(language)} is not approved. Use text, bash, css, html, js, jsx, json, md, mdx, ts, tsx, yaml, or diff.`
-      );
-    }
-    parsed = parseCodeMetadata(node.meta ?? "");
-    validateCodeAnnotations(node);
-    if (parsed.twoslash && language !== "ts" && language !== "tsx") {
-      throw new Error(
-        `[blog/code-twoslash-language] Twoslash requires ts or tsx, not ${JSON.stringify(language)}.`
-      );
-    }
-    if (parsed.twoslash) {
-      validateTwoslashSource(node);
-    }
-    if (parsed.tabGroup !== undefined && parsed.tab === undefined) {
-      throw new Error(
-        "[blog/code-tabs-group] tab-group requires a tab label on the same first fence."
-      );
-    }
-
-    node.data ??= {};
-    node.data.hProperties = {
-      ...node.data.hProperties,
-      "data-code-title": parsed.title,
-      "data-code-tab-label": parsed.tab,
-      "data-code-name": codeBlockName(language, parsed.title),
-      "data-copy-source": cleanCopySource(node.value),
-      "data-line-numbers-start": parsed.lineNumbers,
-      "data-twoslash": parsed.twoslash ? "" : undefined,
-    };
+    parsed = compileCodeFence(node);
   });
   return parsed;
 };
@@ -605,6 +669,80 @@ const codeTabsNode = (
     children: [...children],
   }) satisfies ArticleFlowElement;
 
+const groupTabbedCodeRun = (
+  run: readonly Code[],
+  runMetadata: readonly (CodeFenceMetadata | undefined)[],
+  diagnostics: ArticleDiagnostics
+): ArticleFlowElement => {
+  const labels = runMetadata.map((entry) => entry?.tab ?? "");
+  if (new Set(labels).size !== labels.length) {
+    diagnostics.capture(run[0], () => {
+      throw new Error(
+        "[blog/code-tabs-label] Code tab labels must be unique within their consecutive group."
+      );
+    });
+  }
+  const laterGroup = runMetadata
+    .slice(1)
+    .find((entry) => entry?.tabGroup !== undefined);
+  if (laterGroup !== undefined) {
+    diagnostics.capture(run[1], () => {
+      throw new Error(
+        "[blog/code-tabs-group] tab-group may appear only on the first fence in a CodeTabs group."
+      );
+    });
+  }
+  return codeTabsNode(run, labels, runMetadata[0]?.tabGroup);
+};
+
+const collectConsecutiveCode = (
+  children: readonly RootContent[],
+  start: number
+) => {
+  const run: Code[] = [];
+  let index = start;
+  while (index < children.length) {
+    const codeNode = children[index];
+    if (codeNode === undefined || codeNode.type !== "code") {
+      break;
+    }
+    run.push(codeNode);
+    index += 1;
+  }
+  return { nextIndex: index, run };
+};
+
+const flushCodeRun = (
+  run: readonly Code[],
+  metadata: ReadonlyMap<Code, CodeFenceMetadata>,
+  diagnostics: ArticleDiagnostics
+): readonly (Code | ArticleFlowElement)[] => {
+  const runMetadata = run.map((node) => metadata.get(node));
+  const tabbedCount = runMetadata.filter(
+    (entry) => entry?.tab !== undefined
+  ).length;
+  if (tabbedCount === 0) {
+    return run;
+  }
+  if (tabbedCount !== run.length) {
+    diagnostics.capture(run[0], () => {
+      throw new Error(
+        "[blog/code-tabs-boundary] Consecutive code fences cannot mix tabbed and independent blocks. Add tab labels to the complete run or separate it with content."
+      );
+    });
+    return run;
+  }
+  if (run.length < 2) {
+    diagnostics.capture(run[0], () => {
+      throw new Error(
+        "[blog/code-tabs-size] A tabbed code fence must be immediately followed by at least one more tabbed fence."
+      );
+    });
+    return run;
+  }
+  return [groupTabbedCodeRun(run, runMetadata, diagnostics)];
+};
+
 // Grouping must walk the whole tree, not just root.children; nested tabbed runs would otherwise be dropped.
 const groupCodeRuns = <TChild extends RootContent>(
   children: readonly TChild[],
@@ -621,62 +759,9 @@ const groupCodeRuns = <TChild extends RootContent>(
       index += 1;
       continue;
     }
-
-    const run: Code[] = [];
-    while (index < children.length) {
-      const codeNode = children[index];
-      if (codeNode === undefined || codeNode.type !== "code") {
-        break;
-      }
-      run.push(codeNode);
-      index += 1;
-    }
-    const runMetadata = run.map((node) => metadata.get(node));
-    const tabbedCount = runMetadata.filter(
-      (entry) => entry?.tab !== undefined
-    ).length;
-    if (tabbedCount === 0) {
-      grouped.push(...run);
-      continue;
-    }
-    if (tabbedCount !== run.length) {
-      diagnostics.capture(run[0], () => {
-        throw new Error(
-          "[blog/code-tabs-boundary] Consecutive code fences cannot mix tabbed and independent blocks. Add tab labels to the complete run or separate it with content."
-        );
-      });
-      grouped.push(...run);
-      continue;
-    }
-    if (run.length < 2) {
-      diagnostics.capture(run[0], () => {
-        throw new Error(
-          "[blog/code-tabs-size] A tabbed code fence must be immediately followed by at least one more tabbed fence."
-        );
-      });
-      grouped.push(...run);
-      continue;
-    }
-
-    const labels = runMetadata.map((entry) => entry?.tab ?? "");
-    if (new Set(labels).size !== labels.length) {
-      diagnostics.capture(run[0], () => {
-        throw new Error(
-          "[blog/code-tabs-label] Code tab labels must be unique within their consecutive group."
-        );
-      });
-    }
-    const laterGroup = runMetadata
-      .slice(1)
-      .find((entry) => entry?.tabGroup !== undefined);
-    if (laterGroup !== undefined) {
-      diagnostics.capture(run[1], () => {
-        throw new Error(
-          "[blog/code-tabs-group] tab-group may appear only on the first fence in a CodeTabs group."
-        );
-      });
-    }
-    grouped.push(codeTabsNode(run, labels, runMetadata[0]?.tabGroup));
+    const { nextIndex, run } = collectConsecutiveCode(children, index);
+    index = nextIndex;
+    grouped.push(...flushCodeRun(run, metadata, diagnostics));
   }
   return grouped;
 };
@@ -814,6 +899,67 @@ const assignHeadingIds = (
   return headings;
 };
 
+const collectLucideIcons = (
+  source: string,
+  icons: Set<string>,
+  assertDoesNotShadowRegistry: (localName: string) => void
+): void => {
+  const openBrace = source.indexOf("{");
+  const closeBrace = source.indexOf("}");
+  const importedNames = source.slice(openBrace + 1, closeBrace);
+  for (const iconName of importedNames.trim().split(/\s*,\s*/u)) {
+    assertDoesNotShadowRegistry(iconName);
+    if (!LUCIDE_ICON_NAME_PATTERN.test(iconName)) {
+      throw new Error(
+        `[blog/icon-import] ${JSON.stringify(iconName)} is not an approved Lucide icon import. Import one unaliased PascalCase icon name.`
+      );
+    }
+    if (!approvedLucideIconNames.has(iconName)) {
+      throw new Error(
+        `[blog/icon-import] ${JSON.stringify(iconName)} is not exported by the approved Lucide icon registry.`
+      );
+    }
+    if (icons.has(iconName)) {
+      throw new Error(
+        `[blog/import-duplicate] Lucide icon ${JSON.stringify(iconName)} is imported more than once. Keep one named import.`
+      );
+    }
+    icons.add(iconName);
+  }
+};
+
+const collectAssetImport = (
+  source: string,
+  assets: Map<string, string>,
+  icons: ReadonlySet<string>,
+  importedSpecifiers: Set<string>,
+  assertDoesNotShadowRegistry: (localName: string) => void
+): void => {
+  const normalizedImport = source.trim().replace(/;$/u, "");
+  const fromIndex = normalizedImport.indexOf(" from ");
+  const localName = normalizedImport.slice("import ".length, fromIndex).trim();
+  assertDoesNotShadowRegistry(localName);
+  const quotedSpecifier = normalizedImport.slice(fromIndex + " from ".length);
+  const specifier = quotedSpecifier.slice(1, -1);
+  if (!SUPPORTED_ASSET_PATTERN.test(specifier)) {
+    throw new Error(
+      `[blog/import] ${JSON.stringify(specifier)} is not an approved Article-local still-image import. Use AVIF, WebP, PNG, JPEG, or SVG.`
+    );
+  }
+  if (
+    assets.has(localName) ||
+    icons.has(localName) ||
+    importedSpecifiers.has(specifier)
+  ) {
+    throw new Error(
+      `[blog/import-duplicate] ${JSON.stringify(specifier)} is imported more than once. Reuse one binding.`
+    );
+  }
+
+  assets.set(localName, specifier);
+  importedSpecifiers.add(specifier);
+};
+
 const collectImports = (
   root: Root,
   diagnostics: ArticleDiagnostics
@@ -836,98 +982,41 @@ const collectImports = (
         return;
       }
 
-      const assetMatch = ASSET_IMPORT_PATTERN.exec(node.value);
-      if (assetMatch === null) {
-        const lucideMatch = LUCIDE_IMPORT_PATTERN.exec(node.value);
-        if (lucideMatch !== null) {
-          const openBrace = node.value.indexOf("{");
-          const closeBrace = node.value.indexOf("}");
-          const importedNames = node.value.slice(openBrace + 1, closeBrace);
-          for (const iconName of importedNames.trim().split(/\s*,\s*/u)) {
-            assertDoesNotShadowRegistry(iconName);
-            if (!LUCIDE_ICON_NAME_PATTERN.test(iconName)) {
-              throw new Error(
-                `[blog/icon-import] ${JSON.stringify(iconName)} is not an approved Lucide icon import. Import one unaliased PascalCase icon name.`
-              );
-            }
-            if (!approvedLucideIconNames.has(iconName)) {
-              throw new Error(
-                `[blog/icon-import] ${JSON.stringify(iconName)} is not exported by the approved Lucide icon registry.`
-              );
-            }
-            if (icons.has(iconName)) {
-              throw new Error(
-                `[blog/import-duplicate] Lucide icon ${JSON.stringify(iconName)} is imported more than once. Keep one named import.`
-              );
-            }
-            icons.add(iconName);
-          }
-          return;
-        }
-
-        const isLucideImport =
-          node.value.includes('"lucide-react"') ||
-          node.value.includes("'lucide-react'");
-        let ruleId = "blog/export";
-        if (isLucideImport) {
-          ruleId = "blog/icon-import";
-        } else if (node.value.trimStart().startsWith("import")) {
-          ruleId = "blog/import";
-        }
-        throw new Error(
-          isLucideImport
-            ? `[${ruleId}] Lucide imports must be unaliased named icon imports such as import { RocketIcon } from "lucide-react".`
-            : `[${ruleId}] Article-authored modules are limited to default local image imports and approved named Lucide icons.`
+      if (ASSET_IMPORT_PATTERN.exec(node.value) !== null) {
+        collectAssetImport(
+          node.value,
+          assets,
+          icons,
+          importedSpecifiers,
+          assertDoesNotShadowRegistry
         );
+        return;
       }
 
-      const normalizedImport = node.value.trim().replace(/;$/u, "");
-      const fromIndex = normalizedImport.indexOf(" from ");
-      const localName = normalizedImport
-        .slice("import ".length, fromIndex)
-        .trim();
-      assertDoesNotShadowRegistry(localName);
-      const quotedSpecifier = normalizedImport.slice(
-        fromIndex + " from ".length
+      if (LUCIDE_IMPORT_PATTERN.exec(node.value) !== null) {
+        collectLucideIcons(node.value, icons, assertDoesNotShadowRegistry);
+        return;
+      }
+
+      const isLucideImport =
+        node.value.includes('"lucide-react"') ||
+        node.value.includes("'lucide-react'");
+      let ruleId = "blog/export";
+      if (isLucideImport) {
+        ruleId = "blog/icon-import";
+      } else if (node.value.trimStart().startsWith("import")) {
+        ruleId = "blog/import";
+      }
+      throw new Error(
+        isLucideImport
+          ? `[${ruleId}] Lucide imports must be unaliased named icon imports such as import { RocketIcon } from "lucide-react".`
+          : `[${ruleId}] Article-authored modules are limited to default local image imports and approved named Lucide icons.`
       );
-      const specifier = quotedSpecifier.slice(1, -1);
-      if (!SUPPORTED_ASSET_PATTERN.test(specifier)) {
-        throw new Error(
-          `[blog/import] ${JSON.stringify(specifier)} is not an approved Article-local still-image import. Use AVIF, WebP, PNG, JPEG, or SVG.`
-        );
-      }
-      if (
-        assets.has(localName) ||
-        icons.has(localName) ||
-        importedSpecifiers.has(specifier)
-      ) {
-        throw new Error(
-          `[blog/import-duplicate] ${JSON.stringify(specifier)} is imported more than once. Reuse one binding.`
-        );
-      }
-
-      assets.set(localName, specifier);
-      importedSpecifiers.add(specifier);
     });
   });
 
   return { assets, icons };
 };
-
-const textLength = (value: string): number =>
-  [
-    ...new Intl.Segmenter(undefined, {
-      granularity: "grapheme",
-    }).segment(value),
-  ].length;
-
-const isValidLabel = (value: string, maximum: number): boolean =>
-  value.length > 0 &&
-  value === value.trim() &&
-  !/[\r\n]/u.test(value) &&
-  value.isWellFormed() &&
-  value.normalize("NFC") === value &&
-  textLength(value) <= maximum;
 
 const isElement = (
   node: ArticleNode | undefined,
@@ -977,6 +1066,41 @@ const validateAllowedAttributes = (
   return attributes;
 };
 
+const literalAttributeSource = (
+  attribute: ArticleAttribute
+): string | null | undefined => {
+  if (attribute.type !== "mdxJsxAttribute") {
+    return undefined;
+  }
+  if (typeof attribute.value === "object" && attribute.value !== null) {
+    return attribute.value.value;
+  }
+  return attribute.value;
+};
+
+const readLiteralStringAttribute = (
+  attribute: ArticleAttribute | undefined,
+  nodeName: string | null,
+  name: string,
+  maximum: number,
+  ruleId: string,
+  required: boolean
+): string | undefined => {
+  if (attribute === undefined && !required) {
+    return undefined;
+  }
+  if (
+    attribute?.type !== "mdxJsxAttribute" ||
+    typeof attribute.value !== "string" ||
+    !isValidLabel(attribute.value, maximum)
+  ) {
+    throw new Error(
+      `[${ruleId}] ${nodeName} ${name} ${JSON.stringify(attribute === undefined ? undefined : literalAttributeSource(attribute))} is invalid. Use one ${required ? "" : "optional "}literal, trimmed, single-line NFC string of 1–${maximum} characters.`
+    );
+  }
+  return attribute.value;
+};
+
 const requireStringAttribute = (
   node: ArticleElement,
   attributes: ReadonlyMap<string, ArticleAttribute>,
@@ -988,28 +1112,14 @@ const requireStringAttribute = (
 ): string | undefined => {
   let value: string | undefined;
   diagnostics.capture(node, () => {
-    const attribute = attributes.get(name);
-    if (attribute === undefined && !required) {
-      return;
-    }
-    if (
-      attribute?.type !== "mdxJsxAttribute" ||
-      typeof attribute.value !== "string" ||
-      !isValidLabel(attribute.value, maximum)
-    ) {
-      let authoredValue: unknown;
-      if (attribute?.type === "mdxJsxAttribute") {
-        authoredValue =
-          typeof attribute.value === "object" && attribute.value !== null
-            ? attribute.value.value
-            : attribute.value;
-      }
-      throw new Error(
-        `[${ruleId}] ${node.name} ${name} ${JSON.stringify(authoredValue)} is invalid. Use one ${required ? "" : "optional "}literal, trimmed, single-line NFC string of 1–${maximum} characters.`
-      );
-    }
-    const { value: attributeValue } = attribute;
-    value = attributeValue;
+    value = readLiteralStringAttribute(
+      attributes.get(name),
+      node.name,
+      name,
+      maximum,
+      ruleId,
+      required
+    );
   });
   return value;
 };
@@ -1078,28 +1188,35 @@ const validateOnlyChildren = (
   });
 };
 
-const expressionIconName = (
-  attribute: ArticleAttribute
-): string | undefined => {
+const mdxAttributeProgram = (attribute: ArticleAttribute) => {
   if (
     attribute.type !== "mdxJsxAttribute" ||
     typeof attribute.value !== "object" ||
     attribute.value === null ||
     !("data" in attribute.value)
   ) {
-    return undefined;
+    return null;
   }
+  return attribute.value.data?.estree ?? null;
+};
 
-  const program = attribute.value.data?.estree;
+const jsxElementFromProgram = (
+  program: ReturnType<typeof mdxAttributeProgram>
+) => {
   const statement = program?.body[0];
   if (
     program?.body.length !== 1 ||
     statement?.type !== "ExpressionStatement" ||
     statement.expression.type !== "JSXElement"
   ) {
-    return undefined;
+    return null;
   }
-  const element = statement.expression;
+  return statement.expression;
+};
+
+const jsxIconName = (
+  element: NonNullable<ReturnType<typeof jsxElementFromProgram>>
+): string | undefined => {
   if (
     element.openingElement.name.type !== "JSXIdentifier" ||
     element.openingElement.attributes.length !== 0 ||
@@ -1109,6 +1226,13 @@ const expressionIconName = (
     return undefined;
   }
   return element.openingElement.name.name;
+};
+
+const expressionIconName = (
+  attribute: ArticleAttribute
+): string | undefined => {
+  const element = jsxElementFromProgram(mdxAttributeProgram(attribute));
+  return element === null ? undefined : jsxIconName(element);
 };
 
 const validateIconAttribute = (
@@ -1182,6 +1306,65 @@ const fileTreeElement = (entry: FileTreeEntry): ArticleFlowElement => ({
   children: entry.children.map(fileTreeElement),
 });
 
+const resolveFileTreeSiblings = (
+  line: string,
+  parsed: { readonly depth: number; readonly name: string },
+  roots: FileTreeEntry[],
+  stack: FileTreeEntry[]
+): FileTreeEntry[] => {
+  if (parsed.depth > stack.length) {
+    throw new Error(
+      `[blog/files-fence] ${JSON.stringify(line)} skips a tree level. Indent one level at a time.`
+    );
+  }
+  stack.length = parsed.depth;
+  const siblings =
+    parsed.depth === 0 ? roots : stack[parsed.depth - 1]?.children;
+  const parent = parsed.depth === 0 ? undefined : stack[parsed.depth - 1];
+  if (siblings === undefined || (parent !== undefined && !parent.folder)) {
+    throw new Error(
+      `[blog/files-fence] ${JSON.stringify(line)} is nested beneath a file. Only folders contain entries.`
+    );
+  }
+  return siblings;
+};
+
+const registerFileTreeName = (
+  name: string,
+  siblings: FileTreeEntry[],
+  siblingNames: Map<FileTreeEntry[], Set<string>>
+): void => {
+  const names = siblingNames.get(siblings) ?? new Set<string>();
+  siblingNames.set(siblings, names);
+  if (names.has(name)) {
+    throw new Error(
+      `[blog/files-fence] ${JSON.stringify(name)} appears more than once in the same folder.`
+    );
+  }
+  names.add(name);
+};
+
+const appendFileTreeEntry = (
+  line: string,
+  parsed: { readonly depth: number; readonly name: string },
+  roots: FileTreeEntry[],
+  stack: FileTreeEntry[],
+  siblingNames: Map<FileTreeEntry[], Set<string>>
+): void => {
+  const folder = parsed.name.endsWith("/");
+  const name = folder ? parsed.name.slice(0, -1) : parsed.name;
+  if (!isValidLabel(name, 120) || /[/\\]/u.test(name)) {
+    throw new Error(
+      `[blog/files-fence] ${JSON.stringify(parsed.name)} is not a valid trimmed file or folder name.`
+    );
+  }
+  const siblings = resolveFileTreeSiblings(line, parsed, roots, stack);
+  registerFileTreeName(name, siblings, siblingNames);
+  const entry: FileTreeEntry = { children: [], folder, name };
+  siblings.push(entry);
+  stack.push(entry);
+};
+
 const parseFileTree = (node: Code): readonly FileTreeEntry[] => {
   if (node.meta !== null && node.meta !== undefined) {
     throw new Error("[blog/files-fence] files fences do not accept metadata.");
@@ -1197,38 +1380,7 @@ const parseFileTree = (node: Code): readonly FileTreeEntry[] => {
         `[blog/files-fence] ${JSON.stringify(line)} is not a valid two-space-indented file-tree entry.`
       );
     }
-    const folder = parsed.name.endsWith("/");
-    const name = folder ? parsed.name.slice(0, -1) : parsed.name;
-    if (!isValidLabel(name, 120) || /[/\\]/u.test(name)) {
-      throw new Error(
-        `[blog/files-fence] ${JSON.stringify(parsed.name)} is not a valid trimmed file or folder name.`
-      );
-    }
-    if (parsed.depth > stack.length) {
-      throw new Error(
-        `[blog/files-fence] ${JSON.stringify(line)} skips a tree level. Indent one level at a time.`
-      );
-    }
-    stack.length = parsed.depth;
-    const siblings =
-      parsed.depth === 0 ? roots : stack[parsed.depth - 1]?.children;
-    const parent = parsed.depth === 0 ? undefined : stack[parsed.depth - 1];
-    if (siblings === undefined || (parent !== undefined && !parent.folder)) {
-      throw new Error(
-        `[blog/files-fence] ${JSON.stringify(line)} is nested beneath a file. Only folders contain entries.`
-      );
-    }
-    const names = siblingNames.get(siblings) ?? new Set<string>();
-    siblingNames.set(siblings, names);
-    if (names.has(name)) {
-      throw new Error(
-        `[blog/files-fence] ${JSON.stringify(name)} appears more than once in the same folder.`
-      );
-    }
-    names.add(name);
-    const entry: FileTreeEntry = { children: [], folder, name };
-    siblings.push(entry);
-    stack.push(entry);
+    appendFileTreeEntry(line, parsed, roots, stack, siblingNames);
   }
   if (roots.length === 0) {
     throw new Error(
@@ -1292,6 +1444,87 @@ type FigureNode = Extract<
   { readonly type: "mdxJsxFlowElement" | "mdxJsxTextElement" }
 >;
 
+interface FigureAttributeState {
+  alternativeCount: number;
+  sourceName: string | undefined;
+  readonly seenAttributes: Set<string>;
+}
+
+const readFigureSourceName = (value: ArticleAttribute["value"]): string => {
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === "string" ||
+    value.value === "" ||
+    !/^[A-Za-z_$][\w$]*$/u.test(value.value)
+  ) {
+    throw new Error(
+      `[blog/figure-source] Figure src ${JSON.stringify(value)} is not an imported image binding. Pass an Article-local import identifier.`
+    );
+  }
+  return value.value;
+};
+
+const assertInformativeFigureAlt = (value: unknown): void => {
+  if (typeof value !== "string" || !isValidLabel(value, 500)) {
+    throw new Error(
+      `[blog/figure-alt] Figure alt ${JSON.stringify(value)} is invalid. Use informative, trimmed NFC text of 1–500 characters.`
+    );
+  }
+};
+
+const applyNamedFigureAttribute = (
+  attribute: Extract<ArticleAttribute, { readonly type: "mdxJsxAttribute" }>,
+  state: FigureAttributeState
+): void => {
+  switch (attribute.name) {
+    case "src": {
+      state.sourceName = readFigureSourceName(attribute.value);
+      return;
+    }
+    case "alt": {
+      assertInformativeFigureAlt(attribute.value);
+      state.alternativeCount += 1;
+      return;
+    }
+    case "decorative": {
+      if (attribute.value !== null) {
+        throw new Error(
+          `[blog/figure-alternative] Figure decorative received ${JSON.stringify(attribute.value)}. Declare decorative as a bare boolean prop.`
+        );
+      }
+      state.alternativeCount += 1;
+      return;
+    }
+    default: {
+      throw new Error(
+        `[blog/figure-prop] Figure does not accept ${JSON.stringify(attribute.name)}. Use only src, alt, or decorative.`
+      );
+    }
+  }
+};
+
+const applyFigureAttribute = (
+  attribute: ArticleAttribute,
+  state: FigureAttributeState
+): void => {
+  if (
+    attribute.type !== "mdxJsxAttribute" ||
+    typeof attribute.name !== "string"
+  ) {
+    throw new Error(
+      "[blog/figure-prop] Figure received a spread or expression attribute. Use only src, alt, or decorative."
+    );
+  }
+  if (state.seenAttributes.has(attribute.name)) {
+    throw new Error(
+      `[blog/figure-prop] Figure prop ${JSON.stringify(attribute.name)} appears more than once. Keep one value.`
+    );
+  }
+  state.seenAttributes.add(attribute.name);
+  applyNamedFigureAttribute(attribute, state);
+};
+
 const validateFigure = (
   node: FigureNode,
   imports: ReadonlyMap<string, string>,
@@ -1307,99 +1540,35 @@ const validateFigure = (
     return;
   }
 
-  let alternativeCount = 0;
-  let sourceName: string | undefined;
-  const seenAttributes = new Set<string>();
+  const state: FigureAttributeState = {
+    alternativeCount: 0,
+    sourceName: undefined,
+    seenAttributes: new Set<string>(),
+  };
 
   for (const attribute of node.attributes) {
     diagnostics.capture(attribute, () => {
-      if (
-        attribute.type !== "mdxJsxAttribute" ||
-        typeof attribute.name !== "string"
-      ) {
-        throw new Error(
-          "[blog/figure-prop] Figure received a spread or expression attribute. Use only src, alt, or decorative."
-        );
-      }
-      if (
-        attribute.name !== "src" &&
-        attribute.name !== "alt" &&
-        attribute.name !== "decorative"
-      ) {
-        throw new Error(
-          `[blog/figure-prop] Figure does not accept ${JSON.stringify(attribute.name)}. Use only src, alt, or decorative.`
-        );
-      }
-      if (seenAttributes.has(attribute.name)) {
-        throw new Error(
-          `[blog/figure-prop] Figure prop ${JSON.stringify(attribute.name)} appears more than once. Keep one value.`
-        );
-      }
-      seenAttributes.add(attribute.name);
-
-      if (attribute.name === "src") {
-        if (
-          attribute.value === null ||
-          attribute.value === undefined ||
-          typeof attribute.value === "string" ||
-          attribute.value.value === "" ||
-          !/^[A-Za-z_$][\w$]*$/u.test(attribute.value.value)
-        ) {
-          throw new Error(
-            `[blog/figure-source] Figure src ${JSON.stringify(attribute.value)} is not an imported image binding. Pass an Article-local import identifier.`
-          );
-        }
-        sourceName = attribute.value.value;
-        return;
-      }
-
-      if (attribute.name === "alt") {
-        if (
-          typeof attribute.value !== "string" ||
-          attribute.value.length === 0 ||
-          attribute.value !== attribute.value.trim() ||
-          !attribute.value.isWellFormed() ||
-          attribute.value.normalize("NFC") !== attribute.value ||
-          [
-            ...new Intl.Segmenter(undefined, {
-              granularity: "grapheme",
-            }).segment(attribute.value),
-          ].length > 500
-        ) {
-          throw new Error(
-            `[blog/figure-alt] Figure alt ${JSON.stringify(attribute.value)} is invalid. Use informative, trimmed NFC text of 1–500 characters.`
-          );
-        }
-        alternativeCount += 1;
-        return;
-      }
-
-      if (attribute.value !== null) {
-        throw new Error(
-          `[blog/figure-alternative] Figure decorative received ${JSON.stringify(attribute.value)}. Declare decorative as a bare boolean prop.`
-        );
-      }
-      alternativeCount += 1;
+      applyFigureAttribute(attribute, state);
     });
   }
 
   diagnostics.capture(node, () => {
-    if (alternativeCount !== 1) {
+    if (state.alternativeCount !== 1) {
       throw new Error(
-        `[blog/figure-alternative] Figure has ${alternativeCount} valid alternatives. Provide exactly one informative alt or decorative declaration.`
+        `[blog/figure-alternative] Figure has ${state.alternativeCount} valid alternatives. Provide exactly one informative alt or decorative declaration.`
       );
     }
   });
   const validSource = diagnostics.capture(node, () => {
-    if (sourceName === undefined || !imports.has(sourceName)) {
+    if (state.sourceName === undefined || !imports.has(state.sourceName)) {
       throw new Error(
-        `[blog/figure-source] Figure src ${JSON.stringify(sourceName)} is not an imported Article-local image. Pass one imported image binding.`
+        `[blog/figure-source] Figure src ${JSON.stringify(state.sourceName)} is not an imported Article-local image. Pass one imported image binding.`
       );
     }
   });
 
-  if (validSource && sourceName !== undefined) {
-    consumedImports.add(sourceName);
+  if (validSource && state.sourceName !== undefined) {
+    consumedImports.add(state.sourceName);
   }
   validateFigureCaption(
     {
@@ -1975,106 +2144,199 @@ const lowerInteractivePanels = (root: Root): void => {
   });
 };
 
+interface ClosedLanguageContext {
+  readonly consumedAssets: Set<string>;
+  readonly consumedIcons: Set<string>;
+  readonly diagnostics: ArticleDiagnostics;
+  readonly imports: ArticleImports;
+}
+
+type ClosedLanguageValidator = (
+  node: ArticleElement,
+  parent: ArticleNode | undefined,
+  context: ClosedLanguageContext
+) => void;
+
+const closedLanguageValidators = new Map<string, ClosedLanguageValidator>([
+  [
+    "Figure",
+    (node, _parent, { consumedAssets, diagnostics, imports }) => {
+      validateFigure(node, imports.assets, consumedAssets, diagnostics);
+    },
+  ],
+  [
+    "Accordion",
+    (node, _parent, { diagnostics }) => {
+      validateAccordion(node, diagnostics);
+    },
+  ],
+  [
+    "AccordionItem",
+    (node, parent, { diagnostics }) => {
+      validateAccordionItem(node, parent, diagnostics);
+    },
+  ],
+  [
+    "Tabs",
+    (node, _parent, { diagnostics }) => {
+      validateTabs(node, diagnostics);
+    },
+  ],
+  [
+    "Tab",
+    (node, parent, { consumedIcons, diagnostics, imports }) => {
+      validateTab(node, parent, imports.icons, consumedIcons, diagnostics);
+    },
+  ],
+  [
+    "Callout",
+    (node, _parent, { diagnostics }) => {
+      validateCallout(node, diagnostics);
+    },
+  ],
+  [
+    "Cards",
+    (node, _parent, { diagnostics }) => {
+      validateCards(node, diagnostics);
+    },
+  ],
+  [
+    "Card",
+    (node, parent, { consumedIcons, diagnostics, imports }) => {
+      validateCard(node, parent, imports.icons, consumedIcons, diagnostics);
+    },
+  ],
+  [
+    "Files",
+    (node, _parent, { diagnostics }) => {
+      validateFiles(node, diagnostics);
+    },
+  ],
+  [
+    "Folder",
+    (node, parent, { diagnostics }) => {
+      validateFolder(node, parent, diagnostics);
+    },
+  ],
+  [
+    "File",
+    (node, parent, { diagnostics }) => {
+      validateFile(node, parent, diagnostics);
+    },
+  ],
+  [
+    "Steps",
+    (node, _parent, { diagnostics }) => {
+      validateSteps(node, diagnostics);
+    },
+  ],
+  [
+    "Step",
+    (node, parent, { diagnostics }) => {
+      validateStep(node, parent, diagnostics);
+    },
+  ],
+  [
+    "Kbd",
+    (node, _parent, { diagnostics }) => {
+      validateKbd(node, diagnostics);
+    },
+  ],
+]);
+
+const rejectForbiddenArticleSyntax = (node: ArticleNode): void => {
+  if (node.type === "html") {
+    throw new Error(
+      "[blog/raw-html] Raw HTML is outside the closed Article language. Use approved Markdown."
+    );
+  }
+  if (node.type === "mdxFlowExpression" || node.type === "mdxTextExpression") {
+    throw new Error(
+      "[blog/expression] Arbitrary JavaScript expressions are outside the closed Article language. Use literal Markdown."
+    );
+  }
+};
+
+const unapprovedElementRuleId = (name: string | null): string =>
+  typeof name === "string" && name === name.toLowerCase()
+    ? "blog/raw-html"
+    : "blog/element";
+
+const validateApprovedArticleElement = (
+  node: ArticleNode,
+  parent: ArticleNode | undefined,
+  context: ClosedLanguageContext
+): boolean => {
+  if (node.type !== "mdxJsxFlowElement" && node.type !== "mdxJsxTextElement") {
+    return false;
+  }
+  if (typeof node.name === "string" && context.imports.icons.has(node.name)) {
+    throw new Error(
+      `[blog/icon-position] Lucide icon ${JSON.stringify(node.name)} is allowed only as a zero-prop Card.icon or Tab.icon value.`
+    );
+  }
+  if (!articleElementNames.has(node.name ?? "")) {
+    throw new Error(
+      `[${unapprovedElementRuleId(node.name)}] ${JSON.stringify(node.name)} is not an approved Article element.`
+    );
+  }
+  closedLanguageValidators.get(node.name ?? "")?.(node, parent, context);
+  return true;
+};
+
+const rejectLegacyMarkdownPrimitives = (node: ArticleNode): void => {
+  if (node.type === "image" || node.type === "imageReference") {
+    throw new Error(
+      "[blog/image] Figure is the only supported body-image primitive. Import the image and render Figure."
+    );
+  }
+  if (node.type === "footnoteDefinition" || node.type === "footnoteReference") {
+    throw new Error(
+      "[blog/footnote] Footnotes are outside the closed Article language. Use ordinary prose."
+    );
+  }
+  if (
+    node.type === "text" &&
+    (!node.value.isWellFormed() || node.value.normalize("NFC") !== node.value)
+  ) {
+    throw new Error(
+      `[blog/text-normalization] ${JSON.stringify(node.value)} is not NFC-normalized Article prose. Normalize the authored text to NFC.`
+    );
+  }
+};
+
+const validateClosedLanguageNode = (
+  node: ArticleNode,
+  parent: ArticleNode | undefined,
+  context: ClosedLanguageContext
+): void => {
+  rejectForbiddenArticleSyntax(node);
+  if (validateApprovedArticleElement(node, parent, context)) {
+    return;
+  }
+  rejectLegacyMarkdownPrimitives(node);
+};
+
 const validateClosedLanguage = (
   root: Root,
   imports: ArticleImports,
   diagnostics: ArticleDiagnostics
 ): void => {
-  const consumedAssets = new Set<string>();
-  const consumedIcons = new Set<string>();
+  const context: ClosedLanguageContext = {
+    consumedAssets: new Set<string>(),
+    consumedIcons: new Set<string>(),
+    diagnostics,
+    imports,
+  };
 
   visit(root, (node, _index, parent) => {
     diagnostics.capture(node, () => {
-      if (node.type === "html") {
-        throw new Error(
-          "[blog/raw-html] Raw HTML is outside the closed Article language. Use approved Markdown."
-        );
-      }
-      if (
-        node.type === "mdxFlowExpression" ||
-        node.type === "mdxTextExpression"
-      ) {
-        throw new Error(
-          "[blog/expression] Arbitrary JavaScript expressions are outside the closed Article language. Use literal Markdown."
-        );
-      }
-      if (
-        node.type === "mdxJsxFlowElement" ||
-        node.type === "mdxJsxTextElement"
-      ) {
-        if (typeof node.name === "string" && imports.icons.has(node.name)) {
-          throw new Error(
-            `[blog/icon-position] Lucide icon ${JSON.stringify(node.name)} is allowed only as a zero-prop Card.icon or Tab.icon value.`
-          );
-        }
-        if (!articleElementNames.has(node.name ?? "")) {
-          const ruleId =
-            typeof node.name === "string" &&
-            node.name === node.name.toLowerCase()
-              ? "blog/raw-html"
-              : "blog/element";
-          throw new Error(
-            `[${ruleId}] ${JSON.stringify(node.name)} is not an approved Article element.`
-          );
-        }
-        if (node.name === "Figure") {
-          validateFigure(node, imports.assets, consumedAssets, diagnostics);
-        } else if (node.name === "Accordion") {
-          validateAccordion(node, diagnostics);
-        } else if (node.name === "AccordionItem") {
-          validateAccordionItem(node, parent, diagnostics);
-        } else if (node.name === "Tabs") {
-          validateTabs(node, diagnostics);
-        } else if (node.name === "Tab") {
-          validateTab(node, parent, imports.icons, consumedIcons, diagnostics);
-        } else if (node.name === "Callout") {
-          validateCallout(node, diagnostics);
-        } else if (node.name === "Cards") {
-          validateCards(node, diagnostics);
-        } else if (node.name === "Card") {
-          validateCard(node, parent, imports.icons, consumedIcons, diagnostics);
-        } else if (node.name === "Files") {
-          validateFiles(node, diagnostics);
-        } else if (node.name === "Folder") {
-          validateFolder(node, parent, diagnostics);
-        } else if (node.name === "File") {
-          validateFile(node, parent, diagnostics);
-        } else if (node.name === "Steps") {
-          validateSteps(node, diagnostics);
-        } else if (node.name === "Step") {
-          validateStep(node, parent, diagnostics);
-        } else if (node.name === "Kbd") {
-          validateKbd(node, diagnostics);
-        }
-        return;
-      }
-      if (node.type === "image" || node.type === "imageReference") {
-        throw new Error(
-          "[blog/image] Figure is the only supported body-image primitive. Import the image and render Figure."
-        );
-      }
-      if (
-        node.type === "footnoteDefinition" ||
-        node.type === "footnoteReference"
-      ) {
-        throw new Error(
-          "[blog/footnote] Footnotes are outside the closed Article language. Use ordinary prose."
-        );
-      }
-      if (
-        node.type === "text" &&
-        (!node.value.isWellFormed() ||
-          node.value.normalize("NFC") !== node.value)
-      ) {
-        throw new Error(
-          `[blog/text-normalization] ${JSON.stringify(node.value)} is not NFC-normalized Article prose. Normalize the authored text to NFC.`
-        );
-      }
+      validateClosedLanguageNode(node, parent, context);
     });
   });
 
   for (const localName of imports.assets.keys()) {
-    if (!consumedAssets.has(localName)) {
+    if (!context.consumedAssets.has(localName)) {
       diagnostics.capture(root, () => {
         throw new Error(
           `[blog/import-unused] Imported Article asset ${JSON.stringify(localName)} is not consumed by a Figure. Add a Figure or remove the import.`
@@ -2083,7 +2345,7 @@ const validateClosedLanguage = (
     }
   }
   for (const iconName of imports.icons) {
-    if (!consumedIcons.has(iconName)) {
+    if (!context.consumedIcons.has(iconName)) {
       diagnostics.capture(root, () => {
         throw new Error(
           `[blog/import-unused] Imported Lucide icon ${JSON.stringify(iconName)} is not consumed by Card.icon or Tab.icon. Add it to an approved icon position or remove the import.`
@@ -2093,29 +2355,27 @@ const validateClosedLanguage = (
   }
 };
 
-const validateHref = (href: string, headingIds: ReadonlySet<string>): void => {
-  if (!href.startsWith("https://") && href.includes("?")) {
+const validateFragmentHref = (
+  href: string,
+  headingIds: ReadonlySet<string>
+): void => {
+  const fragment = href.slice(1);
+  if (fragment.length === 0 || !headingIds.has(fragment)) {
     throw new Error(
-      `[blog/link-query] Internal link ${JSON.stringify(href)} contains a query string. Remove the query.`
+      `[blog/link-fragment] Same-Article fragment ${JSON.stringify(fragment)} does not match a heading.`
     );
   }
-  if (href.startsWith("#")) {
-    const fragment = href.slice(1);
-    if (fragment.length === 0 || !headingIds.has(fragment)) {
-      throw new Error(
-        `[blog/link-fragment] Same-Article fragment ${JSON.stringify(fragment)} does not match a heading.`
-      );
-    }
-    return;
+};
+
+const validateRootRelativeHref = (href: string): void => {
+  if (href.startsWith("//")) {
+    throw new Error(
+      `[blog/link-internal] Protocol-relative link ${JSON.stringify(href)} is not internal. Use a root-relative path or absolute HTTPS URL.`
+    );
   }
-  if (href.startsWith("/")) {
-    if (href.startsWith("//")) {
-      throw new Error(
-        `[blog/link-internal] Protocol-relative link ${JSON.stringify(href)} is not internal. Use a root-relative path or absolute HTTPS URL.`
-      );
-    }
-    return;
-  }
+};
+
+const validateAbsoluteHref = (href: string): void => {
   if (href.startsWith("https://")) {
     if (!URL.canParse(href)) {
       throw new Error(
@@ -2132,6 +2392,23 @@ const validateHref = (href: string, headingIds: ReadonlySet<string>): void => {
   throw new Error(
     `[blog/link-relative] ${JSON.stringify(href)} is not an approved root-relative Article link.`
   );
+};
+
+const validateHref = (href: string, headingIds: ReadonlySet<string>): void => {
+  if (!href.startsWith("https://") && href.includes("?")) {
+    throw new Error(
+      `[blog/link-query] Internal link ${JSON.stringify(href)} contains a query string. Remove the query.`
+    );
+  }
+  if (href.startsWith("#")) {
+    validateFragmentHref(href, headingIds);
+    return;
+  }
+  if (href.startsWith("/")) {
+    validateRootRelativeHref(href);
+    return;
+  }
+  validateAbsoluteHref(href);
 };
 
 const validateLinks = (

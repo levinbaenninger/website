@@ -236,6 +236,86 @@ const toSocialImage = (article: CanonicalArticle): ArticleSocialImage => ({
   title: article.title,
 });
 
+const assertHeadingFragmentExists = (
+  fragment: string,
+  headings: CanonicalArticle["articleFacts"]["headings"],
+  slug: string
+): void => {
+  if (!headings.some(({ id }) => id === fragment)) {
+    throw new Error(
+      `Article link fragment ${JSON.stringify(fragment)} does not exist in ${JSON.stringify(slug)}.`
+    );
+  }
+};
+
+const parseCanonicalArticleHref = (
+  href: string
+): { readonly slug: string; readonly fragment?: string } | undefined => {
+  if (!/^\/blog\/[a-z0-9]+(?:-[a-z0-9]+)*(?:#[^#]+)?$/u.test(href)) {
+    return undefined;
+  }
+  const targetWithFragment = href.slice("/blog/".length);
+  const fragmentIndex = targetWithFragment.indexOf("#");
+  if (fragmentIndex === -1) {
+    return { slug: targetWithFragment };
+  }
+  return {
+    slug: targetWithFragment.slice(0, fragmentIndex),
+    fragment: targetWithFragment.slice(fragmentIndex + 1),
+  };
+};
+
+const validateCanonicalArticleLink = (
+  article: CanonicalArticle,
+  href: string,
+  articlesBySlug: ReadonlyMap<string, CanonicalArticle>
+): boolean => {
+  const parsed = parseCanonicalArticleHref(href);
+  if (parsed === undefined) {
+    return false;
+  }
+  const target = articlesBySlug.get(parsed.slug);
+  if (target === undefined) {
+    throw new Error(
+      `Article ${JSON.stringify(article.slug)} links to unknown canonical Article ${JSON.stringify(parsed.slug)}.`
+    );
+  }
+  if (article.status === "Published" && target.status === "Draft") {
+    throw new Error(
+      `Published Article ${JSON.stringify(article.slug)} cannot link to Draft Article ${JSON.stringify(parsed.slug)}.`
+    );
+  }
+  if (parsed.fragment !== undefined) {
+    assertHeadingFragmentExists(
+      parsed.fragment,
+      target.articleFacts.headings,
+      parsed.slug
+    );
+  }
+  return true;
+};
+
+const validateFixedDestinationLink = (
+  article: CanonicalArticle,
+  href: string,
+  fixedByPathname: ReadonlyMap<string, ReadonlySet<string>>
+): void => {
+  const hashIndex = href.indexOf("#");
+  const pathname = hashIndex === -1 ? href : href.slice(0, hashIndex);
+  const fragment = hashIndex === -1 ? undefined : href.slice(hashIndex + 1);
+  const allowedFragments = fixedByPathname.get(pathname);
+  if (allowedFragments === undefined) {
+    throw new Error(
+      `Article ${JSON.stringify(article.slug)} links to unknown fixed app destination ${JSON.stringify(pathname)}.`
+    );
+  }
+  if (fragment !== undefined && !allowedFragments.has(fragment)) {
+    throw new Error(
+      `Fixed app destination fragment ${JSON.stringify(fragment)} is not allowed for ${JSON.stringify(pathname)}.`
+    );
+  }
+};
+
 const validateCollectionLinks = (
   articles: readonly CanonicalArticle[],
   fixedDestinations: readonly FixedArticleDestination[]
@@ -253,68 +333,20 @@ const validateCollectionLinks = (
   for (const article of articles) {
     for (const { href } of article.articleFacts.links) {
       if (href.startsWith("#")) {
-        const fragment = href.slice(1);
-        if (!article.articleFacts.headings.some(({ id }) => id === fragment)) {
-          throw new Error(
-            `Article link fragment ${JSON.stringify(fragment)} does not exist in ${JSON.stringify(article.slug)}.`
-          );
-        }
+        assertHeadingFragmentExists(
+          href.slice(1),
+          article.articleFacts.headings,
+          article.slug
+        );
         continue;
       }
-
       if (href.startsWith("https://")) {
         continue;
       }
-
-      const isArticleLink =
-        /^\/blog\/[a-z0-9]+(?:-[a-z0-9]+)*(?:#[^#]+)?$/u.test(href);
-      if (isArticleLink) {
-        const targetWithFragment = href.slice("/blog/".length);
-        const fragmentIndex = targetWithFragment.indexOf("#");
-        const targetSlug =
-          fragmentIndex === -1
-            ? targetWithFragment
-            : targetWithFragment.slice(0, fragmentIndex);
-        const fragment =
-          fragmentIndex === -1
-            ? undefined
-            : targetWithFragment.slice(fragmentIndex + 1);
-        const target = articlesBySlug.get(targetSlug);
-        if (target === undefined) {
-          throw new Error(
-            `Article ${JSON.stringify(article.slug)} links to unknown canonical Article ${JSON.stringify(targetSlug)}.`
-          );
-        }
-        if (article.status === "Published" && target.status === "Draft") {
-          throw new Error(
-            `Published Article ${JSON.stringify(article.slug)} cannot link to Draft Article ${JSON.stringify(targetSlug)}.`
-          );
-        }
-        if (
-          fragment !== undefined &&
-          !target.articleFacts.headings.some(({ id }) => id === fragment)
-        ) {
-          throw new Error(
-            `Article link fragment ${JSON.stringify(fragment)} does not exist in ${JSON.stringify(targetSlug)}.`
-          );
-        }
+      if (validateCanonicalArticleLink(article, href, articlesBySlug)) {
         continue;
       }
-
-      const hashIndex = href.indexOf("#");
-      const pathname = hashIndex === -1 ? href : href.slice(0, hashIndex);
-      const fragment = hashIndex === -1 ? undefined : href.slice(hashIndex + 1);
-      const allowedFragments = fixedByPathname.get(pathname);
-      if (allowedFragments === undefined) {
-        throw new Error(
-          `Article ${JSON.stringify(article.slug)} links to unknown fixed app destination ${JSON.stringify(pathname)}.`
-        );
-      }
-      if (fragment !== undefined && !allowedFragments.has(fragment)) {
-        throw new Error(
-          `Fixed app destination fragment ${JSON.stringify(fragment)} is not allowed for ${JSON.stringify(pathname)}.`
-        );
-      }
+      validateFixedDestinationLink(article, href, fixedByPathname);
     }
   }
 };

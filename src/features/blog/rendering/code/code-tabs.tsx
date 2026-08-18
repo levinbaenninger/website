@@ -50,6 +50,14 @@ export const writeCodeTabPreference = (
   }
 };
 
+const browserCodeTabStorage = (): PreferenceStorage | undefined => {
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+};
+
 interface CodeTabChangeDetail {
   readonly groupId: string;
   readonly label: string;
@@ -137,10 +145,11 @@ export const ArticleCodeTabs = ({
 
   // Apply storage after first paint; reading during render would mismatch SSR.
   useEffect(() => {
+    const storage = browserCodeTabStorage();
     const saved =
-      groupId === undefined
+      groupId === undefined || storage === undefined
         ? undefined
-        : readCodeTabPreference(window.localStorage, groupId, labels);
+        : readCodeTabPreference(storage, groupId, labels);
     let active = true;
     queueMicrotask(() => {
       if (active) {
@@ -173,7 +182,10 @@ export const ArticleCodeTabs = ({
       if (groupId === undefined) {
         return;
       }
-      writeCodeTabPreference(window.localStorage, groupId, label);
+      const storage = browserCodeTabStorage();
+      if (storage !== undefined) {
+        writeCodeTabPreference(storage, groupId, label);
+      }
       window.dispatchEvent(
         new CustomEvent<CodeTabChangeDetail>(CODE_TAB_EVENT, {
           detail: { groupId, label },

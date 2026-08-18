@@ -11,6 +11,7 @@ import {
   useTransform,
 } from "motion/react";
 import { useCallback, useEffect, useRef } from "react";
+import type { RefObject } from "react";
 
 import { metalLatchSound } from "@/shared/audio/sounds/metal-latch";
 import { tick002Sound } from "@/shared/audio/sounds/tick-002";
@@ -157,32 +158,57 @@ const PlotterPass = ({
   );
 };
 
-export const PlotterFigure = ({
+const playDuePlotTicks = (
+  progress: number,
+  ticksPlayedRef: RefObject<number>,
+  playTick: (options: { playbackRate: number }) => void
+): void => {
+  const due = PLOT_PASSES.filter((pass) => progress >= pass.start).length;
+
+  while (ticksPlayedRef.current < due) {
+    const rate =
+      TICK_PLAYBACK_RATES[ticksPlayedRef.current % TICK_PLAYBACK_RATES.length];
+
+    playTick({ playbackRate: rate });
+    ticksPlayedRef.current += 1;
+  }
+};
+
+const startPlotOrReInk = (
+  shouldReduceMotion: boolean,
+  isAudible: boolean,
+  runPlot: (isAudible: boolean) => void,
+  runReInk: (isAudible: boolean) => void
+): void => {
+  if (shouldReduceMotion) {
+    runReInk(isAudible);
+    return;
+  }
+
+  runPlot(isAudible);
+};
+
+const usePlotterInkControls = ({
+  pathsRef,
   penX,
   penY,
-  plotToken,
+  plotOpacity,
+  plotProgress,
 }: {
+  pathsRef: RefObject<(SVGPathElement | null)[]>;
   penX: MotionValue<number>;
   penY: MotionValue<number>;
-  plotToken: number;
+  plotOpacity: MotionValue<number>;
+  plotProgress: MotionValue<number>;
 }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const pathsRef = useRef<(SVGPathElement | null)[]>([]);
   const plotRef = useRef<AnimationPlaybackControls | null>(null);
   const isPlottingRef = useRef(false);
   const isAudibleRef = useRef(false);
   const ticksPlayedRef = useRef(0);
-  const handledTokenRef = useRef(0);
-  const hasAutoPlottedRef = useRef(false);
 
   const [playTick] = useSound(tick002Sound, { volume: TICK_VOLUME });
   const [playLatch] = useSound(metalLatchSound, { volume: LATCH_VOLUME });
 
-  const shouldReduceMotion = useReducedMotion();
-  const isInView = useInView(svgRef, { margin: "80px" });
-
-  const plotProgress = useMotionValue(0);
-  const plotOpacity = useMotionValue(0);
   const penOpacity = useMotionValue(0);
   const pointerX = useMotionValue(PEN_PARK_POINT.x);
   const pointerY = useMotionValue(PEN_PARK_POINT.y);
@@ -198,7 +224,7 @@ export const PlotterFigure = ({
         penY.set(point.y);
       }
     },
-    [penX, penY]
+    [pathsRef, penX, penY]
   );
 
   const parkPen = useCallback(() => {
@@ -254,6 +280,39 @@ export const PlotterFigure = ({
     [parkPen, playLatch, plotOpacity, plotProgress]
   );
 
+  return {
+    isAudibleRef,
+    isPlottingRef,
+    movePenTo,
+    parkPen,
+    penOpacity,
+    playTick,
+    plotRef,
+    pointerX,
+    pointerY,
+    runPlot,
+    runReInk,
+    ticksPlayedRef,
+    trackedX,
+    trackedY,
+  };
+};
+
+const usePlotterProgressTicks = ({
+  isAudibleRef,
+  isPlottingRef,
+  movePenTo,
+  playTick,
+  plotProgress,
+  ticksPlayedRef,
+}: {
+  isAudibleRef: RefObject<boolean>;
+  isPlottingRef: RefObject<boolean>;
+  movePenTo: (progress: number) => void;
+  playTick: (options: { playbackRate: number }) => void;
+  plotProgress: MotionValue<number>;
+  ticksPlayedRef: RefObject<number>;
+}) => {
   useEffect(
     () =>
       plotProgress.on("change", (progress) => {
@@ -267,21 +326,167 @@ export const PlotterFigure = ({
           return;
         }
 
-        const due = PLOT_PASSES.filter((pass) => progress >= pass.start).length;
-
-        while (ticksPlayedRef.current < due) {
-          const rate =
-            TICK_PLAYBACK_RATES[
-              ticksPlayedRef.current % TICK_PLAYBACK_RATES.length
-            ];
-
-          playTick({ playbackRate: rate });
-          ticksPlayedRef.current += 1;
-        }
+        playDuePlotTicks(progress, ticksPlayedRef, playTick);
       }),
-    [movePenTo, playTick, plotProgress]
+    [
+      isAudibleRef,
+      isPlottingRef,
+      movePenTo,
+      playTick,
+      plotProgress,
+      ticksPlayedRef,
+    ]
   );
+};
 
+const useAutoPlotOnView = ({
+  isInView,
+  runPlot,
+  runReInk,
+  shouldReduceMotion,
+}: {
+  isInView: boolean;
+  runPlot: (isAudible: boolean) => void;
+  runReInk: (isAudible: boolean) => void;
+  shouldReduceMotion: boolean | null;
+}) => {
+  const hasAutoPlottedRef = useRef(false);
+
+  useEffect(() => {
+    if (hasAutoPlottedRef.current || !isInView || shouldReduceMotion === null) {
+      return;
+    }
+
+    hasAutoPlottedRef.current = true;
+
+    // Sticky userActivation after a clicked dead link; a typed address has none
+    // and playback would be rejected.
+    startPlotOrReInk(
+      shouldReduceMotion,
+
+      navigator.userActivation?.hasBeenActive,
+      runPlot,
+      runReInk
+    );
+  }, [isInView, runPlot, runReInk, shouldReduceMotion]);
+};
+
+const useReplayOnPlotToken = ({
+  plotToken,
+  runPlot,
+  runReInk,
+  shouldReduceMotion,
+}: {
+  plotToken: number;
+  runPlot: (isAudible: boolean) => void;
+  runReInk: (isAudible: boolean) => void;
+  shouldReduceMotion: boolean | null;
+}) => {
+  const handledTokenRef = useRef(0);
+
+  useEffect(() => {
+    if (plotToken === handledTokenRef.current) {
+      return;
+    }
+
+    handledTokenRef.current = plotToken;
+    startPlotOrReInk(shouldReduceMotion === true, true, runPlot, runReInk);
+  }, [plotToken, runPlot, runReInk, shouldReduceMotion]);
+};
+
+const useStopPlotOnUnmount = (
+  plotRef: RefObject<AnimationPlaybackControls | null>
+) => {
+  useEffect(
+    () => () => {
+      plotRef.current?.stop();
+    },
+    [plotRef]
+  );
+};
+
+const usePlotterPlayback = ({
+  isInView,
+  pathsRef,
+  penX,
+  penY,
+  plotOpacity,
+  plotProgress,
+  plotToken,
+  shouldReduceMotion,
+}: {
+  isInView: boolean;
+  pathsRef: RefObject<(SVGPathElement | null)[]>;
+  penX: MotionValue<number>;
+  penY: MotionValue<number>;
+  plotOpacity: MotionValue<number>;
+  plotProgress: MotionValue<number>;
+  plotToken: number;
+  shouldReduceMotion: boolean | null;
+}) => {
+  const controls = usePlotterInkControls({
+    pathsRef,
+    penX,
+    penY,
+    plotOpacity,
+    plotProgress,
+  });
+
+  usePlotterProgressTicks({
+    isAudibleRef: controls.isAudibleRef,
+    isPlottingRef: controls.isPlottingRef,
+    movePenTo: controls.movePenTo,
+    playTick: controls.playTick,
+    plotProgress,
+    ticksPlayedRef: controls.ticksPlayedRef,
+  });
+  useAutoPlotOnView({
+    isInView,
+    runPlot: controls.runPlot,
+    runReInk: controls.runReInk,
+    shouldReduceMotion,
+  });
+  useReplayOnPlotToken({
+    plotToken,
+    runPlot: controls.runPlot,
+    runReInk: controls.runReInk,
+    shouldReduceMotion,
+  });
+  useStopPlotOnUnmount(controls.plotRef);
+
+  return {
+    isPlottingRef: controls.isPlottingRef,
+    penOpacity: controls.penOpacity,
+    pointerX: controls.pointerX,
+    pointerY: controls.pointerY,
+    trackedX: controls.trackedX,
+    trackedY: controls.trackedY,
+  };
+};
+
+const usePlotterPointer = ({
+  isInView,
+  isPlottingRef,
+  penX,
+  penY,
+  pointerX,
+  pointerY,
+  shouldReduceMotion,
+  svgRef,
+  trackedX,
+  trackedY,
+}: {
+  isInView: boolean;
+  isPlottingRef: RefObject<boolean>;
+  penX: MotionValue<number>;
+  penY: MotionValue<number>;
+  pointerX: MotionValue<number>;
+  pointerY: MotionValue<number>;
+  shouldReduceMotion: boolean | null;
+  svgRef: RefObject<SVGSVGElement | null>;
+  trackedX: MotionValue<number>;
+  trackedY: MotionValue<number>;
+}) => {
   useEffect(() => {
     const followPointer = (value: number, target: MotionValue<number>) => {
       if (!isPlottingRef.current) {
@@ -302,41 +507,7 @@ export const PlotterFigure = ({
         stop();
       }
     };
-  }, [penX, penY, trackedX, trackedY]);
-
-  useEffect(() => {
-    if (hasAutoPlottedRef.current || !isInView || shouldReduceMotion === null) {
-      return;
-    }
-
-    hasAutoPlottedRef.current = true;
-
-    // Sticky userActivation after a clicked dead link; a typed address has none
-    // and playback would be rejected.
-    const isAudible = navigator.userActivation?.hasBeenActive;
-
-    if (shouldReduceMotion) {
-      runReInk(isAudible);
-      return;
-    }
-
-    runPlot(isAudible);
-  }, [isInView, runPlot, runReInk, shouldReduceMotion]);
-
-  useEffect(() => {
-    if (plotToken === handledTokenRef.current) {
-      return;
-    }
-
-    handledTokenRef.current = plotToken;
-
-    if (shouldReduceMotion === true) {
-      runReInk(true);
-      return;
-    }
-
-    runPlot(true);
-  }, [plotToken, runPlot, runReInk, shouldReduceMotion]);
+  }, [isPlottingRef, penX, penY, trackedX, trackedY]);
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
@@ -368,14 +539,51 @@ export const PlotterFigure = ({
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
     };
-  }, [isInView, pointerX, pointerY, shouldReduceMotion]);
+  }, [isInView, pointerX, pointerY, shouldReduceMotion, svgRef]);
+};
 
-  useEffect(
-    () => () => {
-      plotRef.current?.stop();
-    },
-    []
-  );
+export const PlotterFigure = ({
+  penX,
+  penY,
+  plotToken,
+}: {
+  penX: MotionValue<number>;
+  penY: MotionValue<number>;
+  plotToken: number;
+}) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pathsRef = useRef<(SVGPathElement | null)[]>([]);
+
+  const shouldReduceMotion = useReducedMotion();
+  const isInView = useInView(svgRef, { margin: "80px" });
+
+  const plotProgress = useMotionValue(0);
+  const plotOpacity = useMotionValue(0);
+
+  const { isPlottingRef, penOpacity, pointerX, pointerY, trackedX, trackedY } =
+    usePlotterPlayback({
+      isInView,
+      pathsRef,
+      penX,
+      penY,
+      plotOpacity,
+      plotProgress,
+      plotToken,
+      shouldReduceMotion,
+    });
+
+  usePlotterPointer({
+    isInView,
+    isPlottingRef,
+    penX,
+    penY,
+    pointerX,
+    pointerY,
+    shouldReduceMotion,
+    svgRef,
+    trackedX,
+    trackedY,
+  });
 
   return (
     <motion.svg

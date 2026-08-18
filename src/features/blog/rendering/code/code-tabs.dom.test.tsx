@@ -19,10 +19,6 @@ const CodeTabsFixture = ({ groupId = "runtime" }: { groupId?: string }) => (
   </ArticleCodeTabs>
 );
 
-const denied = () => {
-  throw new Error("The operation is insecure.");
-};
-
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
@@ -167,7 +163,9 @@ describe("synchronized code tabs", () => {
     }
     Object.defineProperty(window, "localStorage", {
       configurable: true,
-      value: { getItem: denied, setItem: denied },
+      get() {
+        throw new Error("The operation is insecure.");
+      },
     });
 
     try {

@@ -713,7 +713,8 @@
   max-width: 100%;
   height: 2rem;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
+  justify-content: safe center;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   border-radius: var(--radius);

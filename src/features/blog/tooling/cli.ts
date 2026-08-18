@@ -43,27 +43,32 @@ const runWatch = async (): Promise<void> => {
   });
 };
 
+const generateManifestCommand = async (): Promise<void> => {
+  const result = await generateArticleManifest(paths);
+  process.stdout.write(
+    result.changed
+      ? `Generated ${path.relative(repositoryRoot, paths.manifestPath)}.\n`
+      : "Article manifest is already current.\n"
+  );
+};
+
+const checkManifestCommand = async (): Promise<void> => {
+  await checkArticleManifest(paths);
+  process.stdout.write("Article source bundles and manifest are valid.\n");
+};
+
+const COMMANDS = new Map<string, () => Promise<void>>([
+  ["generate", generateManifestCommand],
+  ["check", checkManifestCommand],
+  ["watch", runWatch],
+]);
+
 const main = async (): Promise<void> => {
-  const command = process.argv.at(2);
-  if (command === "generate") {
-    const result = await generateArticleManifest(paths);
-    process.stdout.write(
-      result.changed
-        ? `Generated ${path.relative(repositoryRoot, paths.manifestPath)}.\n`
-        : "Article manifest is already current.\n"
-    );
-    return;
+  const run = COMMANDS.get(process.argv.at(2) ?? "");
+  if (run === undefined) {
+    throw new Error("Expected one of: generate, check, watch.");
   }
-  if (command === "check") {
-    await checkArticleManifest(paths);
-    process.stdout.write("Article source bundles and manifest are valid.\n");
-    return;
-  }
-  if (command === "watch") {
-    await runWatch();
-    return;
-  }
-  throw new Error("Expected one of: generate, check, watch.");
+  await run();
 };
 
 try {

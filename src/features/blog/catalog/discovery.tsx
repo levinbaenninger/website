@@ -261,46 +261,13 @@ const CatalogBody = ({
   );
 };
 
-const LiveCatalog = ({
-  articles,
-  tags,
-}: {
-  articles: readonly ArticleSummary[];
-  tags: readonly ArticleTagFacet[];
-}) => {
+const useCatalogQueryField = () => {
   const [queryParam, setQueryParam] = useQueryState("q", DISCOVERY_PARAM);
-  const [tagParam, setTagParam] = useQueryState("tag", DISCOVERY_PARAM);
   const fieldRef = useRef<HTMLInputElement>(null);
-  const allOptionRef = useRef<HTMLInputElement>(null);
-
   // Seeded from `?q=` once. Echoing the URL back would steal typing mid-word.
   const [field, setField] = useState(() =>
     normalizeArticleSearchQuery(queryParam ?? "")
   );
-
-  const known = tags.some(({ id }) => id === tagParam);
-  const selected = known && tagParam !== null ? tagParam : ALL_TAGS;
-
-  useEffect(() => {
-    if (tagParam !== null && !known) {
-      void setTagParam(null);
-    }
-  }, [known, setTagParam, tagParam]);
-
-  const query = field.trim();
-  const searching = isEffectiveArticleSearchQuery(field);
-  const { results, retry, status } = useArticleSearch(query);
-  const loadingVisible = useDelayed(
-    status === "loading",
-    LOADING_EMPTY_DELAY_MS
-  );
-
-  const searched =
-    status === "ready" ? projectResults(articles, results) : null;
-  const facets = searched === null ? tags : countByTag(searched, tags);
-  const matched = searched ?? articles;
-  const visible = filterByTag(matched, selected);
-  const selectedLabel = tags.find(({ id }) => id === selected)?.label;
 
   const commitQuery = (value: string) => {
     const next = normalizeArticleSearchQuery(value, {
@@ -317,10 +284,21 @@ const LiveCatalog = ({
     fieldRef.current?.focus();
   };
 
-  const retrySearch = () => {
-    retry();
-    fieldRef.current?.focus();
-  };
+  return { clearSearch, commitQuery, field, fieldRef, setField };
+};
+
+const useCatalogTagSelection = (tags: readonly ArticleTagFacet[]) => {
+  const [tagParam, setTagParam] = useQueryState("tag", DISCOVERY_PARAM);
+  const allOptionRef = useRef<HTMLInputElement>(null);
+  const known = tags.some(({ id }) => id === tagParam);
+  const selected = known && tagParam !== null ? tagParam : ALL_TAGS;
+  const selectedLabel = tags.find(({ id }) => id === selected)?.label;
+
+  useEffect(() => {
+    if (tagParam !== null && !known) {
+      void setTagParam(null);
+    }
+  }, [known, setTagParam, tagParam]);
 
   const selectTag = (value: string) => {
     void setTagParam(value === ALL_TAGS ? null : value);
@@ -331,13 +309,70 @@ const LiveCatalog = ({
     allOptionRef.current?.focus();
   };
 
-  let message = "";
-  if (status === "loading") {
-    message = "Searching Articles.";
-  } else if (status !== "error") {
-    message = resultAnnouncement(visible.length, query, selectedLabel);
-  }
+  return { allOptionRef, selectTag, selected, selectedLabel, showAllTags };
+};
 
+const useCatalogMatches = (
+  articles: readonly ArticleSummary[],
+  tags: readonly ArticleTagFacet[],
+  field: string,
+  selected: string
+) => {
+  const query = field.trim();
+  const searching = isEffectiveArticleSearchQuery(field);
+  const { results, retry, status } = useArticleSearch(query);
+  const loadingVisible = useDelayed(
+    status === "loading",
+    LOADING_EMPTY_DELAY_MS
+  );
+  const searched =
+    status === "ready" ? projectResults(articles, results) : null;
+  const facets = searched === null ? tags : countByTag(searched, tags);
+  const matched = searched ?? articles;
+  const visible = filterByTag(matched, selected);
+
+  return {
+    facets,
+    loadingVisible,
+    matched,
+    query,
+    results,
+    retry,
+    searched,
+    searching,
+    status,
+    visible,
+  };
+};
+
+const catalogStatusMessage = (
+  status: ArticleSearchStatus,
+  visibleCount: number,
+  query: string,
+  selectedLabel: string | undefined
+): string => {
+  if (status === "loading") {
+    return "Searching Articles.";
+  }
+  if (status === "error") {
+    return "";
+  }
+  return resultAnnouncement(visibleCount, query, selectedLabel);
+};
+
+const useCatalogAnnouncement = (
+  status: ArticleSearchStatus,
+  visibleCount: number,
+  query: string,
+  selected: string,
+  selectedLabel: string | undefined
+) => {
+  const message = catalogStatusMessage(
+    status,
+    visibleCount,
+    query,
+    selectedLabel
+  );
   const [announcement, setAnnouncement] = useState("");
   const announcedTag = useRef(selected);
   const announced = useRef(false);
@@ -362,6 +397,45 @@ const LiveCatalog = ({
       clearTimeout(timer);
     };
   }, [message, selected]);
+
+  return announcement;
+};
+
+const LiveCatalog = ({
+  articles,
+  tags,
+}: {
+  articles: readonly ArticleSummary[];
+  tags: readonly ArticleTagFacet[];
+}) => {
+  const { clearSearch, commitQuery, field, fieldRef, setField } =
+    useCatalogQueryField();
+  const { allOptionRef, selectTag, selected, selectedLabel, showAllTags } =
+    useCatalogTagSelection(tags);
+  const {
+    facets,
+    loadingVisible,
+    matched,
+    query,
+    results,
+    retry,
+    searched,
+    searching,
+    status,
+    visible,
+  } = useCatalogMatches(articles, tags, field, selected);
+  const announcement = useCatalogAnnouncement(
+    status,
+    visible.length,
+    query,
+    selected,
+    selectedLabel
+  );
+
+  const retrySearch = () => {
+    retry();
+    fieldRef.current?.focus();
+  };
 
   return (
     <>

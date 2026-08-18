@@ -36,12 +36,6 @@ jobs:
     name: Architecture
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    permissions:
-      contents: read
-      checks: write
-      id-token: write
-      pull-requests: write
-      security-events: write
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -71,6 +65,31 @@ jobs:
         with:
           command: audit
           gate: new-only
+          fail-on-issues: false
+          comment: false
+          review-comments: false
+
+  architecture_comment:
+    name: Architecture Comment
+    if: ${{ always() && needs.architecture.result != 'cancelled' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: architecture
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Comment changed-code audit
+        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
+        with:
+          command: audit
+          gate: new-only
+          fail-on-issues: false
+          branded-token: false
           comment: true
           review-comments: true
           review-guidance: true

@@ -774,6 +774,14 @@ console.log(changed) // [!code word:changed]
       ["```js twoslash\nvalue\n```", "blog/code-twoslash-language"],
       ["```ts\nvalue // [!code unknown]\n```", "blog/code-annotation"],
       ["```ts\nvalue // [!code word:]\n```", "blog/code-annotation"],
+      ["```ts title\nvalue\n```", "blog/code-title"],
+      ["```ts tab\nvalue\n```", "blog/code-tab"],
+      ['```ts title="First" title="Second"\nvalue\n```', "blog/code-meta"],
+      [
+        '```ts title="Example" tab-group="Not_Kebab"\nvalue\n```',
+        "blog/code-tabs-group",
+      ],
+      ["```ts title=\nvalue\n```", "blog/code-meta"],
     ] as const;
 
     await Promise.all(

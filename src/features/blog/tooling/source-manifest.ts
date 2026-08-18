@@ -242,6 +242,119 @@ const findLineAndColumn = (source: string, offset: number) => {
   return { line: lines.length, column: (lines.at(-1)?.length ?? 0) + 1 };
 };
 
+const diagnoseAbsoluteImport = (
+  specifier: string,
+  mdxSourcePath: string,
+  slug: string,
+  location: { readonly line: number; readonly column: number }
+): BlogDiagnostic | undefined => {
+  if (!path.posix.isAbsolute(specifier) && !path.win32.isAbsolute(specifier)) {
+    return undefined;
+  }
+  return createDiagnostic(
+    mdxSourcePath,
+    "blog/import-absolute",
+    "Article-local imports cannot use absolute paths.",
+    'Import an owned image from "./assets/...".',
+    {
+      articleSlug: slug,
+      value: specifier,
+      ...location,
+    }
+  );
+};
+
+const diagnoseRelativeAssetImport = (
+  specifier: string,
+  mdxSourcePath: string,
+  slug: string,
+  location: { readonly line: number; readonly column: number },
+  knownAssets: ReadonlySet<string>,
+  importedAssets: Set<string>
+): BlogDiagnostic | undefined => {
+  const options = {
+    articleSlug: slug,
+    value: specifier,
+    ...location,
+  };
+  if (specifier.includes("?") || specifier.includes("#")) {
+    return createDiagnostic(
+      mdxSourcePath,
+      "blog/import-suffix",
+      "Article-local asset imports cannot contain query strings or fragments.",
+      "Import the exact image filename without a suffix.",
+      options
+    );
+  }
+  if (specifier.split("/").includes("..")) {
+    return createDiagnostic(
+      mdxSourcePath,
+      "blog/import-traversal",
+      "Article-local imports cannot traverse outside their bundle.",
+      'Import an owned image from "./assets/...".',
+      options
+    );
+  }
+  if (!specifier.startsWith("./assets/")) {
+    return createDiagnostic(
+      mdxSourcePath,
+      "blog/import-cross-article",
+      "Article-authored local imports must resolve inside the same Article's assets directory.",
+      'Move the image into this bundle and import it from "./assets/...".',
+      options
+    );
+  }
+  const relativePath = specifier.slice("./assets/".length);
+  if (!knownAssets.has(relativePath)) {
+    return createDiagnostic(
+      mdxSourcePath,
+      "blog/import-missing",
+      "The imported Article asset does not exist with this exact case-sensitive path.",
+      "Correct the path or add the supported image file.",
+      options
+    );
+  }
+  if (importedAssets.has(relativePath)) {
+    return createDiagnostic(
+      mdxSourcePath,
+      "blog/import-duplicate",
+      "An Article-local asset may be imported only once.",
+      "Reuse the first imported binding in every approved media position.",
+      options
+    );
+  }
+  importedAssets.add(relativePath);
+  return undefined;
+};
+
+const diagnoseOrphanAssets = (
+  mdxSourcePath: string,
+  slug: string,
+  assets: readonly ArticleAsset[],
+  importedAssets: ReadonlySet<string>
+): readonly BlogDiagnostic[] =>
+  assets.flatMap((asset) => {
+    if (
+      asset.isCover ||
+      !SUPPORTED_EXTENSIONS.has(asset.extension) ||
+      importedAssets.has(asset.relativePath)
+    ) {
+      return [];
+    }
+    return [
+      createDiagnostic(
+        mdxSourcePath,
+        "blog/asset-orphan",
+        "Every non-Cover Article asset must be imported by its owning Article.",
+        "Import and consume the asset in a Figure, or remove it from the source bundle.",
+        {
+          articleSlug: slug,
+          value: asset.relativePath,
+        }
+      ),
+    ];
+  });
+
 const validateArticleImports = (
   mdxSource: string,
   mdxSourcePath: string,
@@ -258,129 +371,57 @@ const validateArticleImports = (
       mdxSource,
       (match.index ?? 0) + match[0].indexOf(specifier)
     );
-    const options = {
-      articleSlug: slug,
-      value: specifier,
-      ...location,
-    };
-    if (path.posix.isAbsolute(specifier) || path.win32.isAbsolute(specifier)) {
-      diagnostics.push(
-        createDiagnostic(
-          mdxSourcePath,
-          "blog/import-absolute",
-          "Article-local imports cannot use absolute paths.",
-          'Import an owned image from "./assets/...".',
-          options
-        )
-      );
+    const absolute = diagnoseAbsoluteImport(
+      specifier,
+      mdxSourcePath,
+      slug,
+      location
+    );
+    if (absolute !== undefined) {
+      diagnostics.push(absolute);
       continue;
     }
     if (!specifier.startsWith(".")) {
       continue;
     }
-    if (specifier.includes("?") || specifier.includes("#")) {
-      diagnostics.push(
-        createDiagnostic(
-          mdxSourcePath,
-          "blog/import-suffix",
-          "Article-local asset imports cannot contain query strings or fragments.",
-          "Import the exact image filename without a suffix.",
-          options
-        )
-      );
-      continue;
-    }
-    const segments = specifier.split("/");
-    if (segments.includes("..")) {
-      diagnostics.push(
-        createDiagnostic(
-          mdxSourcePath,
-          "blog/import-traversal",
-          "Article-local imports cannot traverse outside their bundle.",
-          'Import an owned image from "./assets/...".',
-          options
-        )
-      );
-      continue;
-    }
-    if (!specifier.startsWith("./assets/")) {
-      diagnostics.push(
-        createDiagnostic(
-          mdxSourcePath,
-          "blog/import-cross-article",
-          "Article-authored local imports must resolve inside the same Article's assets directory.",
-          'Move the image into this bundle and import it from "./assets/...".',
-          options
-        )
-      );
-      continue;
-    }
-    const relativePath = specifier.slice("./assets/".length);
-    if (!knownAssets.has(relativePath)) {
-      diagnostics.push(
-        createDiagnostic(
-          mdxSourcePath,
-          "blog/import-missing",
-          "The imported Article asset does not exist with this exact case-sensitive path.",
-          "Correct the path or add the supported image file.",
-          options
-        )
-      );
-      continue;
-    }
-
-    if (importedAssets.has(relativePath)) {
-      diagnostics.push(
-        createDiagnostic(
-          mdxSourcePath,
-          "blog/import-duplicate",
-          "An Article-local asset may be imported only once.",
-          "Reuse the first imported binding in every approved media position.",
-          options
-        )
-      );
-      continue;
-    }
-    importedAssets.add(relativePath);
-  }
-
-  for (const asset of assets) {
-    if (
-      !asset.isCover &&
-      SUPPORTED_EXTENSIONS.has(asset.extension) &&
-      !importedAssets.has(asset.relativePath)
-    ) {
-      diagnostics.push(
-        createDiagnostic(
-          mdxSourcePath,
-          "blog/asset-orphan",
-          "Every non-Cover Article asset must be imported by its owning Article.",
-          "Import and consume the asset in a Figure, or remove it from the source bundle.",
-          {
-            articleSlug: slug,
-            value: asset.relativePath,
-          }
-        )
-      );
+    const relative = diagnoseRelativeAssetImport(
+      specifier,
+      mdxSourcePath,
+      slug,
+      location,
+      knownAssets,
+      importedAssets
+    );
+    if (relative !== undefined) {
+      diagnostics.push(relative);
     }
   }
+
+  diagnostics.push(
+    ...diagnoseOrphanAssets(mdxSourcePath, slug, assets, importedAssets)
+  );
   return diagnostics;
 };
 
-const inspectBundle = async (
+type BundleRootInspection =
+  | { readonly kind: "reject"; readonly diagnostics: readonly BlogDiagnostic[] }
+  | {
+      readonly kind: "ok";
+      readonly bundleDirectory: string;
+      readonly diagnostics: BlogDiagnostic[];
+    };
+
+const inspectBundleRoot = async (
   paths: BlogToolPaths,
   slug: string
-): Promise<{
-  readonly bundle?: ArticleBundle;
-  readonly diagnostics: readonly BlogDiagnostic[];
-}> => {
-  const diagnostics: BlogDiagnostic[] = [];
+): Promise<BundleRootInspection> => {
   const bundleDirectory = path.join(paths.articlesRoot, slug);
   const bundleSource = toSource(paths.repositoryRoot, bundleDirectory);
   const bundleStats = await lstat(bundleDirectory);
 
   if (bundleStats.isSymbolicLink()) {
     return {
+      kind: "reject",
       diagnostics: [
         createDiagnostic(
           bundleSource,
@@ -394,6 +435,7 @@ const inspectBundle = async (
   }
   if (!bundleStats.isDirectory()) {
     return {
+      kind: "reject",
       diagnostics: [
         createDiagnostic(
           bundleSource,
@@ -405,6 +447,8 @@ const inspectBundle = async (
       ],
     };
   }
+
+  const diagnostics: BlogDiagnostic[] = [];
   if (!isValidSegment(slug)) {
     diagnostics.push(
       createDiagnostic(
@@ -416,86 +460,84 @@ const inspectBundle = async (
       )
     );
   }
+  return { kind: "ok", bundleDirectory, diagnostics };
+};
 
-  const entries = await readdir(bundleDirectory);
-  const sortedEntries = entries.toSorted((left, right) =>
-    compareLexically(left, right)
-  );
+const inspectUnexpectedBundleEntries = (
+  paths: BlogToolPaths,
+  slug: string,
+  bundleDirectory: string,
+  entries: readonly string[]
+): readonly BlogDiagnostic[] => {
   const expectedMdx = `${slug}.mdx`;
   const allowed = new Set([expectedMdx, "assets"]);
-  for (const entry of sortedEntries) {
-    if (!allowed.has(entry)) {
-      diagnostics.push(
-        createDiagnostic(
-          toSource(paths.repositoryRoot, path.join(bundleDirectory, entry)),
-          "blog/bundle-shape",
-          "An Article source bundle is closed and may contain only its matching MDX file and assets directory.",
-          `Keep only ${JSON.stringify(expectedMdx)} and "assets" at the bundle root.`,
-          { articleSlug: slug, value: entry }
-        )
-      );
-    }
-  }
-
-  const mdxPath = path.join(bundleDirectory, expectedMdx);
-  const assetsDirectory = path.join(bundleDirectory, "assets");
-  let requiredEntriesValid = true;
-  for (const [requiredPath, ruleId, explanation, guidance] of [
-    [
-      mdxPath,
-      "blog/bundle-mdx",
-      "The Article bundle is missing its filename-matched MDX source.",
-      `Add ${JSON.stringify(expectedMdx)} at the bundle root.`,
-    ],
-    [
-      assetsDirectory,
-      "blog/bundle-assets",
-      "Every Article bundle requires an assets directory.",
-      'Add an "assets" directory containing exactly one Cover image.',
-    ],
-  ] as const) {
-    try {
-      const stats = await lstat(requiredPath);
-      if (
-        stats.isSymbolicLink() ||
-        (requiredPath === mdxPath ? !stats.isFile() : !stats.isDirectory())
-      ) {
-        requiredEntriesValid = false;
-        diagnostics.push(
+  return entries.flatMap((entry) =>
+    allowed.has(entry)
+      ? []
+      : [
           createDiagnostic(
-            toSource(paths.repositoryRoot, requiredPath),
-            "blog/path-symlink",
-            "Required Article bundle entries must be real files or directories, not symlinks.",
-            "Replace the symlink or special entry with the required owned entry.",
-            { articleSlug: slug }
-          )
-        );
-      }
-    } catch {
-      requiredEntriesValid = false;
-      diagnostics.push(
-        createDiagnostic(
-          toSource(paths.repositoryRoot, requiredPath),
-          ruleId,
-          explanation,
-          guidance,
-          { articleSlug: slug }
-        )
+            toSource(paths.repositoryRoot, path.join(bundleDirectory, entry)),
+            "blog/bundle-shape",
+            "An Article source bundle is closed and may contain only its matching MDX file and assets directory.",
+            `Keep only ${JSON.stringify(expectedMdx)} and "assets" at the bundle root.`,
+            { articleSlug: slug, value: entry }
+          ),
+        ]
+  );
+};
+
+const inspectRequiredBundleEntry = async (
+  paths: BlogToolPaths,
+  slug: string,
+  requiredPath: string,
+  expectedKind: "file" | "directory",
+  missing: {
+    readonly ruleId: string;
+    readonly explanation: string;
+    readonly guidance: string;
+  }
+): Promise<BlogDiagnostic | undefined> => {
+  try {
+    const stats = await lstat(requiredPath);
+    if (
+      stats.isSymbolicLink() ||
+      (expectedKind === "file" ? !stats.isFile() : !stats.isDirectory())
+    ) {
+      return createDiagnostic(
+        toSource(paths.repositoryRoot, requiredPath),
+        "blog/path-symlink",
+        "Required Article bundle entries must be real files or directories, not symlinks.",
+        "Replace the symlink or special entry with the required owned entry.",
+        { articleSlug: slug }
       );
     }
+    return undefined;
+  } catch {
+    return createDiagnostic(
+      toSource(paths.repositoryRoot, requiredPath),
+      missing.ruleId,
+      missing.explanation,
+      missing.guidance,
+      { articleSlug: slug }
+    );
   }
+};
 
-  if (!requiredEntriesValid) {
-    return { diagnostics };
-  }
-
+const collectBundleAssets = async (
+  paths: BlogToolPaths,
+  slug: string,
+  assetsDirectory: string
+): Promise<{
+  readonly assets: readonly ArticleAsset[];
+  readonly diagnostics: readonly BlogDiagnostic[];
+}> => {
   const walked = await walkAssets(
     assetsDirectory,
     "",
     paths.repositoryRoot,
     slug
   );
-  diagnostics.push(...walked.diagnostics);
+  const diagnostics = [...walked.diagnostics];
   const assets = walked.files
     .map((relativePath): ArticleAsset => {
       const absolutePath = path.join(assetsDirectory, relativePath);
@@ -528,7 +570,15 @@ const inspectBundle = async (
       )
     );
   }
+  return { assets, diagnostics };
+};
 
+const inspectBundleMedia = async (
+  paths: BlogToolPaths,
+  slug: string,
+  assets: readonly ArticleAsset[]
+): Promise<readonly BlogDiagnostic[]> => {
+  const diagnostics: BlogDiagnostic[] = [];
   for (const asset of assets) {
     if (!SUPPORTED_EXTENSIONS.has(asset.extension)) {
       continue;
@@ -544,6 +594,65 @@ const inspectBundle = async (
       }))
     );
   }
+  return diagnostics;
+};
+
+const inspectBundle = async (
+  paths: BlogToolPaths,
+  slug: string
+): Promise<{
+  readonly bundle?: ArticleBundle;
+  readonly diagnostics: readonly BlogDiagnostic[];
+}> => {
+  const root = await inspectBundleRoot(paths, slug);
+  if (root.kind === "reject") {
+    return { diagnostics: root.diagnostics };
+  }
+
+  const { bundleDirectory, diagnostics } = root;
+  const entries = await readdir(bundleDirectory);
+  const sortedEntries = entries.toSorted((left, right) =>
+    compareLexically(left, right)
+  );
+  diagnostics.push(
+    ...inspectUnexpectedBundleEntries(
+      paths,
+      slug,
+      bundleDirectory,
+      sortedEntries
+    )
+  );
+
+  const mdxPath = path.join(bundleDirectory, `${slug}.mdx`);
+  const assetsDirectory = path.join(bundleDirectory, "assets");
+  const [mdxEntry, assetsEntry] = await Promise.all([
+    inspectRequiredBundleEntry(paths, slug, mdxPath, "file", {
+      ruleId: "blog/bundle-mdx",
+      explanation:
+        "The Article bundle is missing its filename-matched MDX source.",
+      guidance: `Add ${JSON.stringify(`${slug}.mdx`)} at the bundle root.`,
+    }),
+    inspectRequiredBundleEntry(paths, slug, assetsDirectory, "directory", {
+      ruleId: "blog/bundle-assets",
+      explanation: "Every Article bundle requires an assets directory.",
+      guidance: 'Add an "assets" directory containing exactly one Cover image.',
+    }),
+  ]);
+  if (mdxEntry !== undefined) {
+    diagnostics.push(mdxEntry);
+  }
+  if (assetsEntry !== undefined) {
+    diagnostics.push(assetsEntry);
+  }
+  if (mdxEntry !== undefined || assetsEntry !== undefined) {
+    return { diagnostics };
+  }
+
+  const collected = await collectBundleAssets(paths, slug, assetsDirectory);
+  diagnostics.push(
+    ...collected.diagnostics,
+    ...(await inspectBundleMedia(paths, slug, collected.assets))
+  );
 
   const mdxSource = await readFile(mdxPath, "utf-8");
   diagnostics.push(
@@ -551,21 +660,22 @@ const inspectBundle = async (
       mdxSource,
       toSource(paths.repositoryRoot, mdxPath),
       slug,
-      assets
+      collected.assets
     )
   );
 
+  const cover = collected.assets.find(({ isCover }) => isCover);
   return {
     diagnostics,
     bundle:
-      covers[0] === undefined
+      cover === undefined
         ? undefined
         : {
             slug,
             mdxPath,
             sourcePath: toSource(paths.repositoryRoot, mdxPath),
-            cover: covers[0],
-            assets,
+            cover,
+            assets: collected.assets,
           },
   };
 };
