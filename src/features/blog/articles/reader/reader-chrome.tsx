@@ -1,5 +1,3 @@
-// Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
-
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
 

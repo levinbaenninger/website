@@ -1,5 +1,3 @@
-// Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
-
 "use client";
 
 import { ChevronDownIcon, TextIcon } from "lucide-react";

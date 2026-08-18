@@ -1,6 +1,3 @@
-// Transposed from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
-// Share URL is rendering input, never `window.location`: preview origin, fragment, and leftover query must not leak.
-
 "use client";
 
 import {

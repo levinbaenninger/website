@@ -1,5 +1,3 @@
-// Adapted from ncdai/chanhdai.com @ 83e0b842 (MIT, © Chánh Đại).
-
 import Image from "next/image";
 
 import { formatArticleDate } from "@/features/blog/articles/article-date";
