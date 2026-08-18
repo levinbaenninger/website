@@ -242,6 +242,7 @@ Plain **strong** prose with \`inline code\`.
       ["[Missing](#missing)", "blog/link-fragment"],
       ["[Query](/about?mode=full)", "blog/link-query"],
       ["[Protocol relative](//example.com)", "blog/link-internal"],
+      ["[Backslash host](/\\evil.example)", "blog/link-internal"],
       ["[HTTP](http://example.com)", "blog/link-scheme"],
       ["[Email](mailto:hello@example.com)", "blog/link-scheme"],
       ["[Relative](../another)", "blog/link-relative"],
@@ -895,6 +896,19 @@ const answer: number = 42
 const teaching: string = 42
 \`\`\``);
     expect(teachingError.markup).not.toContain("@errors");
+    expect(teachingError.codeBlocks[0]?.["data-copy-source"]).toBe(
+      "const teaching: string = 42"
+    );
+
+    const ordinaryTypeScript = await renderArticle(`\`\`\`ts
+// @ts-expect-error
+const teaching: string = 42 // [!code highlight]
+// @errors: 2322
+const also: string = 42
+\`\`\``);
+    expect(ordinaryTypeScript.codeBlocks[0]?.["data-copy-source"]).toBe(
+      "// @ts-expect-error\nconst teaching: string = 42\n// @errors: 2322\nconst also: string = 42"
+    );
 
     const tsx = await renderArticle(`\`\`\`tsx twoslash
 const view = <div>Hello</div>

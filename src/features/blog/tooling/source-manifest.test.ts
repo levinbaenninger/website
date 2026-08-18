@@ -269,6 +269,30 @@ export const ARTICLE_MANIFEST = [
     expect(diagnostics).toStrictEqual(sortBlogDiagnostics(diagnostics));
   });
 
+  test("ignores documented imports inside fenced code", async () => {
+    const paths = await createRepository();
+    await createArticle(paths, "documented-import", {
+      mdx: `export const frontmatter = {
+  status: "Draft",
+  title: "Fixture",
+  description: "Fixture Article.",
+  tags: ["react"],
+};
+
+\`\`\`ts
+import image from "/tmp/image.png"
+\`\`\`
+
+## Fixture
+`,
+    });
+
+    await expect(generateArticleManifest(paths)).resolves.toMatchObject({
+      bundles: [expect.objectContaining({ slug: "documented-import" })],
+      changed: true,
+    });
+  });
+
   test("rejects traversal, absolute, cross-Article, and suffixed asset paths", async () => {
     const paths = await createRepository();
     await createArticle(paths, "paths", {

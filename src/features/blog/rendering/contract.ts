@@ -492,10 +492,13 @@ const parseCodeMetadata = (metadata: string): CodeFenceMetadata => {
   };
 };
 
-const cleanCopySource = (source: string): string => {
+const cleanCopySource = (
+  source: string,
+  { twoslash }: { readonly twoslash: boolean }
+): string => {
   const lines = source.split("\n");
   const cleaned = lines.flatMap((line) => {
-    if (TWOSLASH_COPY_DIRECTIVE_PATTERN.test(line)) {
+    if (twoslash && TWOSLASH_COPY_DIRECTIVE_PATTERN.test(line)) {
       return [];
     }
     const withoutAnnotation = line.replace(
@@ -606,7 +609,9 @@ const applyCodeFenceHtml = (
     "data-code-title": parsed.title,
     "data-code-tab-label": parsed.tab,
     "data-code-name": codeBlockName(language, parsed.title),
-    "data-copy-source": cleanCopySource(node.value),
+    "data-copy-source": cleanCopySource(node.value, {
+      twoslash: parsed.twoslash,
+    }),
     "data-line-numbers-start": parsed.lineNumbers,
     "data-twoslash": parsed.twoslash ? "" : undefined,
   };
@@ -2368,9 +2373,9 @@ const validateFragmentHref = (
 };
 
 const validateRootRelativeHref = (href: string): void => {
-  if (href.startsWith("//")) {
+  if (href.startsWith("//") || href.includes("\\")) {
     throw new Error(
-      `[blog/link-internal] Protocol-relative link ${JSON.stringify(href)} is not internal. Use a root-relative path or absolute HTTPS URL.`
+      `[blog/link-internal] ${JSON.stringify(href)} is not an approved internal Article link. Use a root-relative path or absolute HTTPS URL.`
     );
   }
 };

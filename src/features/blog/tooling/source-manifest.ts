@@ -25,6 +25,8 @@ const SUPPORTED_EXTENSIONS = new Set([
 const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const IMPORT_PATTERN =
   /^[\t ]*import(?:[\t \r\n]+[\s\S]*?[\t \r\n]+from)?[\t \r\n]*["']([^"'\r\n]+)["'][\t ]*;?/gmu;
+const FENCED_CODE_PATTERN =
+  /^[ \t]*(`{3,}|~{3,})[^\n]*\n[\s\S]*?^[ \t]*\1[ \t]*$/gmu;
 
 export interface ArticleAsset {
   readonly relativePath: string;
@@ -242,6 +244,21 @@ const findLineAndColumn = (source: string, offset: number) => {
   return { line: lines.length, column: (lines.at(-1)?.length ?? 0) + 1 };
 };
 
+const fencedCodeRanges = (
+  source: string
+): readonly (readonly [number, number])[] => {
+  FENCED_CODE_PATTERN.lastIndex = 0;
+  return [...source.matchAll(FENCED_CODE_PATTERN)].map((match) => {
+    const start = match.index ?? 0;
+    return [start, start + match[0].length] as const;
+  });
+};
+
+const isInsideFencedCode = (
+  index: number,
+  ranges: readonly (readonly [number, number])[]
+): boolean => ranges.some(([start, end]) => index >= start && index < end);
+
 const diagnoseAbsoluteImport = (
   specifier: string,
   mdxSourcePath: string,
@@ -364,8 +381,12 @@ const validateArticleImports = (
   const diagnostics: BlogDiagnostic[] = [];
   const knownAssets = new Set(assets.map(({ relativePath }) => relativePath));
   const importedAssets = new Set<string>();
+  const ignoredRanges = fencedCodeRanges(mdxSource);
 
   for (const match of mdxSource.matchAll(IMPORT_PATTERN)) {
+    if (isInsideFencedCode(match.index ?? 0, ignoredRanges)) {
+      continue;
+    }
     const specifier = match[1] ?? "";
     const location = findLineAndColumn(
       mdxSource,
