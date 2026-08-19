@@ -49,7 +49,7 @@ export const ArticleCard = ({
   snippet?: ArticleSearchSnippet | null;
   title?: HighlightedTextValue | null;
 }) => (
-  <div className="group relative flex h-full flex-col gap-2 rounded-lg p-2 transition-[background-color] ease-out hover:bg-accent has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring">
+  <div className="group relative flex h-full flex-col gap-2 rounded-lg p-2 transition-colors ease-out hover:bg-accent has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring">
     <div className="relative">
       <ArticleCover cover={article.cover} eager={eager} />
       {article.status === "draft" ? <CoverDraftBadge /> : null}
@@ -67,11 +67,12 @@ export const ArticleCard = ({
           {title === null ? article.title : <HighlightedText value={title} />}
         </Link>
       </h2>
-
-      <p className="line-clamp-2 min-h-[2lh] text-sm text-muted-foreground">
+      <p
+        // fallow-ignore-next-line css-token-drift
+        className="line-clamp-2 min-h-[2lh] text-sm text-muted-foreground"
+      >
         <CardProse description={article.description} snippet={snippet} />
       </p>
-
       <div className="mt-auto pt-1">
         <PublicationState
           publishedAt={article.status === "draft" ? null : article.publishedAt}

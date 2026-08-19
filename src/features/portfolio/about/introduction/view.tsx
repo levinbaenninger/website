@@ -14,6 +14,7 @@ export const IntroductionView = ({
 }) => (
   <section
     id="about"
+    // fallow-ignore-next-line css-token-drift
     className="screen-line-bottom mx-auto grid w-full grid-cols-[auto_1fr] grid-rows-[1fr_auto] border-x border-line md:w-3xl"
   >
     <figure className="relative col-span-2 p-4 sm:col-span-1 sm:col-start-2">

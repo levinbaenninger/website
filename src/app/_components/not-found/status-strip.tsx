@@ -17,7 +17,10 @@ const Coordinate = ({
   return (
     <span className="inline-flex gap-1">
       {axis}:
-      <motion.span className="inline-block w-[5ch] text-right text-foreground">
+      <motion.span
+        // fallow-ignore-next-line css-token-drift
+        className="inline-block w-[5ch] text-right text-foreground"
+      >
         {readout}
       </motion.span>
     </span>

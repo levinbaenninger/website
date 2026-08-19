@@ -239,6 +239,7 @@ export const ReaderGrid = ({
   readonly children: React.ReactNode;
   readonly outline?: React.ReactNode;
 }) => (
+  // fallow-ignore-next-line css-token-drift
   <div className="mx-auto grid w-full grid-cols-1 lg:grid-cols-[1fr_var(--container-3xl)_1fr]">
     <div aria-hidden className="max-lg:hidden" />
     {children}
@@ -290,7 +291,7 @@ export const EndPager = ({
             <ArrowLeftIcon aria-hidden className="size-3.5" />
             Previous
           </span>
-          <span className="text-[0.9375rem]/6 font-medium text-balance">
+          <span className="text-base/6 font-medium text-balance">
             {previous.title}
           </span>
         </Link>
@@ -305,7 +306,7 @@ export const EndPager = ({
             Next
             <ArrowRightIcon aria-hidden className="size-3.5" />
           </span>
-          <span className="text-[0.9375rem]/6 font-medium text-balance">
+          <span className="text-base/6 font-medium text-balance">
             {next.title}
           </span>
         </Link>

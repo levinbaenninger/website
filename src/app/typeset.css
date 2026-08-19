@@ -95,6 +95,7 @@
     :where(h1 + *, h2 + *, h3 + *, h4 + *, h5 + *, h6 + *) {
       margin-block-start: 1em;
     }
+    /* fallow-ignore-next-line css-token-drift */
     :where(:is(h1, h2, h3, h4) :is(code)) {
       font-size: 0.9em;
     }

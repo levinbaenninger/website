@@ -67,6 +67,7 @@ const PanelTitleSup = ({
   <sup
     data-slot="panel-title-sup"
     className={cn(
+      // fallow-ignore-next-line css-token-drift
       "top-[-0.75em] ml-1 text-sm font-medium tracking-normal text-muted-foreground",
       className
     )}

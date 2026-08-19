@@ -106,11 +106,12 @@ export const Footer = () => (
         </nav>
       </div>
     </div>
-
-    <div className="screen-line-bottom mx-auto h-[clamp(7rem,24vw,18rem)] w-full max-w-6xl text-foreground">
+    <div
+      // fallow-ignore-next-line css-token-drift
+      className="screen-line-bottom mx-auto h-[clamp(7rem,24vw,18rem)] w-full max-w-6xl text-foreground"
+    >
       <FluidGradientText text="levin" />
     </div>
-
     <div className="h-24" />
     <div className="pb-(--safe-area-bottom)" />
   </footer>

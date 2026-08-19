@@ -124,8 +124,14 @@ const revealInsideList = (list: HTMLElement, link: HTMLElement): void => {
   link.focus({ preventScroll: true });
 };
 
-const LIST_FRAME =
-  "z-50 flex max-h-[calc(100dvh-(--spacing(30)))] w-56 overflow-y-auto overscroll-contain rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-border";
+// Viewport minus sticky chrome; no max-h token is a dvh + spacing calc.
+// fallow-ignore-next-line css-token-drift
+const OUTLINE_MAX_HEIGHT = "max-h-[calc(100dvh-(--spacing(30)))]";
+
+const LIST_FRAME = cn(
+  OUTLINE_MAX_HEIGHT,
+  "z-50 flex w-56 overflow-y-auto overscroll-contain rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-border"
+);
 
 // Click, not hover: a hover panel over prose opens while reaching for the scrollbar.
 export const ArticleOutlineMinimap = ({ outline }: ArticleOutlineProps) => {
@@ -145,7 +151,10 @@ export const ArticleOutlineMinimap = ({ outline }: ArticleOutlineProps) => {
       <div className="ml-auto w-18" data-slot="article-outline-minimap">
         <Popover.Trigger
           aria-label="On this page"
-          className="flex max-h-[calc(100dvh-(--spacing(30)))] w-full cursor-pointer flex-col gap-3 overflow-hidden py-3 pl-6 opacity-100 transition-opacity duration-200 outline-none data-[state=open]:opacity-0"
+          className={cn(
+            OUTLINE_MAX_HEIGHT,
+            "flex w-full cursor-pointer flex-col gap-3 overflow-hidden py-3 pl-6 opacity-100 transition-opacity duration-200 outline-none data-[state=open]:opacity-0"
+          )}
         >
           <ArticleOutlineBars activeId={activeId} outline={outline} />
         </Popover.Trigger>

@@ -21,16 +21,16 @@ export const StackView = () => (
     <PanelContent className="p-0">
       <div className="relative">
         <div
-          className="pointer-events-none absolute inset-y-0 left-48 -z-1 w-px bg-[linear-gradient(to_bottom,var(--line)_4px,transparent_2px)] bg-size-[1px_6px] bg-repeat-y max-sm:hidden"
+          className="pointer-events-none absolute inset-y-0 left-48 -z-1 w-px screen-dashed-line-y max-sm:hidden"
           aria-hidden
         />
 
         {STACK_CATALOG.map((category, index) => (
           <section
-            className="grid items-start gap-y-2 border-b border-line py-4 last:border-none sm:grid-cols-[12rem_1fr]"
+            className="flex flex-col gap-y-2 border-b border-line py-4 last:border-none sm:flex-row sm:items-start"
             key={category.category}
           >
-            <h3 className="pl-4 text-sm/6 text-muted-foreground">
+            <h3 className="pl-4 text-sm/6 text-muted-foreground sm:w-48 sm:shrink-0">
               <span
                 className="mr-1.5 font-mono text-muted-foreground/50 select-none"
                 aria-hidden
@@ -40,7 +40,7 @@ export const StackView = () => (
               {category.category}
             </h3>
 
-            <ul className="flex flex-wrap gap-1.5 px-4">
+            <ul className="flex flex-wrap gap-1.5 px-4 sm:min-w-0 sm:flex-1">
               {category.items.map((item) => (
                 <li className="flex" key={item.title}>
                   <a

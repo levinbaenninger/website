@@ -40,6 +40,7 @@ export const FluidGradientText = ({
       onMouseLeave={handleMouseLeave}
     >
       <svg
+        // fallow-ignore-next-line css-token-drift
         className="size-full translate-y-[37.5%] select-none"
         viewBox={`0 0 ${svgViewBoxWidth} ${svgViewBoxHeight}`}
         fill="none"

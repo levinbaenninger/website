@@ -163,6 +163,10 @@
   }
 }
 
+@utility screen-dashed-line-y {
+  @apply bg-[linear-gradient(to_bottom,var(--line)_4px,transparent_2px)] bg-size-[1px_6px] bg-repeat-y;
+}
+
 @utility diagonal-stripes {
   @apply [--pattern-foreground:var(--color-line)]/56;
   @apply bg-[repeating-linear-gradient(315deg,var(--pattern-foreground)_0,var(--pattern-foreground)_1px,transparent_0,transparent_50%)] bg-size-[10px_10px];
