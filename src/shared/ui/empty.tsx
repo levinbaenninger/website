@@ -1,3 +1,5 @@
+// fallow-ignore-file css-token-drift
+// fallow-ignore-file css-duplicate-block
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 

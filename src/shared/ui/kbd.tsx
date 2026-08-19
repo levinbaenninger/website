@@ -1,3 +1,5 @@
+// fallow-ignore-file css-token-drift
+// fallow-ignore-file css-duplicate-block
 import { cn } from "@/shared/ui/cn";
 
 const Kbd = ({ className, ...props }: React.ComponentProps<"kbd">) => (

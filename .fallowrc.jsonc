@@ -45,19 +45,6 @@
     "unused-types": "warn",
     "unused-dependencies": "warn",
   },
-  "overrides": [
-    {
-      "files": [
-        "src/shared/ui/**/*.ts",
-        "src/shared/ui/**/*.tsx",
-        "src/shared/ui/**/*.css",
-      ],
-      "rules": {
-        "css-duplicate-block": "off",
-        "css-token-drift": "off",
-      },
-    },
-  ],
   "boundaries": {
     "zones": [
       {

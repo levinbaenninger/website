@@ -1,5 +1,7 @@
 "use client";
 
+// fallow-ignore-file css-token-drift
+// fallow-ignore-file css-duplicate-block
 import { Collapsible as CollapsiblePrimitive } from "radix-ui";
 
 const Collapsible = ({

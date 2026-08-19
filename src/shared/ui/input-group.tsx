@@ -1,5 +1,7 @@
 "use client";
 
+// fallow-ignore-file css-token-drift
+// fallow-ignore-file css-duplicate-block
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import * as React from "react";

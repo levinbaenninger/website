@@ -1,5 +1,7 @@
 "use client";
 
+// fallow-ignore-file css-token-drift
+// fallow-ignore-file css-duplicate-block
 import { XIcon } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import * as React from "react";

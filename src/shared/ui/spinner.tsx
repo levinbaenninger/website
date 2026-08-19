@@ -1,3 +1,5 @@
+// fallow-ignore-file css-token-drift
+// fallow-ignore-file css-duplicate-block
 import { Loader2Icon } from "lucide-react";
 
 import { cn } from "@/shared/ui/cn";
