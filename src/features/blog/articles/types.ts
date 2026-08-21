@@ -101,7 +101,9 @@ export interface ArticleSearchDocument {
 
 export interface ArticleSocialImage {
   readonly alt: string;
+  readonly author: string;
   readonly label: "Article";
+  readonly site: string;
   readonly slug: string;
   readonly title: string;
 }

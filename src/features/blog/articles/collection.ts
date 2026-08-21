@@ -231,7 +231,9 @@ const toSearchDocument = (
 
 const toSocialImage = (article: CanonicalArticle): ArticleSocialImage => ({
   alt: `${article.title}: Levin Bänninger`,
+  author: "Levin Bänninger",
   label: "Article",
+  site: "levin.baenninger.me",
   slug: article.slug,
   title: article.title,
 });

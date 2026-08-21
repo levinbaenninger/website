@@ -12,19 +12,27 @@ import type { SocialImageInput } from "@/shared/social-image";
 
 const PORTFOLIO_INPUT = {
   alt: "Levin Bänninger: Portfolio",
+  author: "Levin Bänninger",
   label: "Portfolio",
+  site: "levin.baenninger.me",
+  tagline: "Software Engineer Apprentice at Bühler",
   title: "Levin Bänninger",
 } as const satisfies SocialImageInput;
 
 const BLOG_INPUT = {
   alt: "Levin Bänninger: Blog",
+  author: "Levin Bänninger",
   label: "Blog",
+  site: "levin.baenninger.me",
+  tagline: "Notes on the web, tooling, and learning",
   title: "Levin Bänninger’s Blog",
 } as const satisfies SocialImageInput;
 
 const ARTICLE_INPUT = {
   alt: "Understanding Cache Components: Levin Bänninger",
+  author: "Levin Bänninger",
   label: "Article",
+  site: "levin.baenninger.me",
   title: "Understanding Cache Components",
 } as const satisfies SocialImageInput;
 
@@ -125,7 +133,9 @@ describe("social-image renderer", () => {
     const title = "W".repeat(100);
     const bytes = await toBytes({
       alt: `${title}: Levin Bänninger`,
+      author: "Levin Bänninger",
       label: "Article",
+      site: "levin.baenninger.me",
       title,
     });
 

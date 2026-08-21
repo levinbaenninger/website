@@ -1,6 +1,10 @@
 export interface SocialImageInput {
   readonly alt: string;
+  readonly author: string;
   readonly label: string;
+  readonly site: string;
+  /** Rendered instead of the site row; omit on cards that are about a title. */
+  readonly tagline?: string;
   readonly title: string;
 }
 

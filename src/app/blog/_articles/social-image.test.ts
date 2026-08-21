@@ -5,7 +5,9 @@ import type { ArticleSocialImage } from "@/features/blog/articles/types";
 
 const INPUT = {
   alt: "Visible Article: Levin Bänninger",
+  author: "Levin Bänninger",
   label: "Article",
+  site: "levin.baenninger.me",
   slug: "visible-article",
   title: "Visible Article",
 } as const satisfies ArticleSocialImage;
