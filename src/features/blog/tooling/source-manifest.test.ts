@@ -162,6 +162,7 @@ export const ARTICLE_MANIFEST = [
 
   test("supports a literally empty Article corpus", async () => {
     const paths = await createRepository();
+    await writeFile(path.join(paths.articlesRoot, ".gitkeep"), "");
 
     await expect(generateArticleManifest(paths)).resolves.toMatchObject({
       bundles: [],

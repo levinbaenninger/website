@@ -708,7 +708,9 @@ export const inspectArticleSource = async (
   let entries: string[];
   try {
     entries = await readdir(paths.articlesRoot);
-    entries = entries.toSorted((left, right) => compareLexically(left, right));
+    entries = entries
+      .filter((entry) => !entry.startsWith("."))
+      .toSorted((left, right) => compareLexically(left, right));
   } catch {
     throw new BlogValidationError([
       createDiagnostic(
