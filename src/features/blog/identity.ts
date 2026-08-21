@@ -1,5 +1,5 @@
 const BLOG_DESCRIPTION =
-  "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.";
+  "Writing about nerdy stuff, mostly software, the web, and whatever else catches my attention.";
 
 export const createBlogIdentity = (siteName: string) => ({
   description: BLOG_DESCRIPTION,

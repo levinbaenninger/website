@@ -307,7 +307,7 @@ describe("Article operations", () => {
 
     await expect(articles.listArticleSocialImages()).resolves.toStrictEqual([
       {
-        alt: "Visible Article — Levin Bänninger",
+        alt: "Visible Article: Levin Bänninger",
         label: "Article",
         slug: "published-article",
         title: "Visible Article",
@@ -316,7 +316,7 @@ describe("Article operations", () => {
     await expect(
       articles.findArticleSocialImage("published-article")
     ).resolves.toStrictEqual({
-      alt: "Visible Article — Levin Bänninger",
+      alt: "Visible Article: Levin Bänninger",
       label: "Article",
       slug: "published-article",
       title: "Visible Article",

@@ -74,7 +74,7 @@ describe("Article delivery metadata", () => {
         description: "A precise description.",
         images: [
           {
-            alt: "Canonical Article — Levin Bänninger",
+            alt: "Canonical Article: Levin Bänninger",
             height: 630,
             type: "image/png",
             url: "https://levin.baenninger.me/blog/canonical-article/open-graph.png",
@@ -96,7 +96,7 @@ describe("Article delivery metadata", () => {
         description: "A precise description.",
         images: [
           {
-            alt: "Canonical Article — Levin Bänninger",
+            alt: "Canonical Article: Levin Bänninger",
             height: 630,
             url: "https://levin.baenninger.me/blog/canonical-article/twitter-card.png",
             width: 1200,

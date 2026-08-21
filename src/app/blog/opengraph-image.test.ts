@@ -11,7 +11,7 @@ const responseBytes = async (response: Response): Promise<Buffer> =>
 describe("Blog social-image adapters", () => {
   test("exposes exact metadata and identical OG/Twitter pixels", async () => {
     expect({ alt, contentType, size }).toStrictEqual({
-      alt: "Levin Bänninger — Blog",
+      alt: "Levin Bänninger: Blog",
       contentType: "image/png",
       size: { height: 630, width: 1200 },
     });

@@ -12,7 +12,7 @@ import { CatalogDiscovery } from "./discovery";
 const BLOG_TAGLINE = "Blog";
 
 const BLOG_TITLE =
-  "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.";
+  "Writing about nerdy stuff, mostly software, the web, and whatever else catches my attention.";
 
 interface BlogViewProps {
   readonly articles: readonly ArticleSummary[];

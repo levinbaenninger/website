@@ -11,19 +11,19 @@ import {
 import type { SocialImageInput } from "@/shared/social-image";
 
 const PORTFOLIO_INPUT = {
-  alt: "Levin Bänninger — Portfolio",
+  alt: "Levin Bänninger: Portfolio",
   label: "Portfolio",
   title: "Levin Bänninger",
 } as const satisfies SocialImageInput;
 
 const BLOG_INPUT = {
-  alt: "Levin Bänninger — Blog",
+  alt: "Levin Bänninger: Blog",
   label: "Blog",
   title: "Levin Bänninger’s Blog",
 } as const satisfies SocialImageInput;
 
 const ARTICLE_INPUT = {
-  alt: "Understanding Cache Components — Levin Bänninger",
+  alt: "Understanding Cache Components: Levin Bänninger",
   label: "Article",
   title: "Understanding Cache Components",
 } as const satisfies SocialImageInput;
@@ -124,7 +124,7 @@ describe("social-image renderer", () => {
   test("keeps a maximum-length unbroken Article title inside fixed output bounds", async () => {
     const title = "W".repeat(100);
     const bytes = await toBytes({
-      alt: `${title} — Levin Bänninger`,
+      alt: `${title}: Levin Bänninger`,
       label: "Article",
       title,
     });

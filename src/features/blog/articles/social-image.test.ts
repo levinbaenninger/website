@@ -4,7 +4,7 @@ import { createArticleSocialImageDelivery } from "@/features/blog/articles/socia
 import type { ArticleSocialImage } from "@/features/blog/articles/types";
 
 const INPUT = {
-  alt: "Visible Article — Levin Bänninger",
+  alt: "Visible Article: Levin Bänninger",
   label: "Article",
   slug: "visible-article",
   title: "Visible Article",

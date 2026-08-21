@@ -10,7 +10,7 @@ const identity = {
   canonicalUrl: (pathname: `/${string}`) =>
     new URL(pathname, "https://levin.baenninger.me").href,
   description:
-    "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.",
+    "Writing about nerdy stuff, mostly software, the web, and whatever else catches my attention.",
   name: "Levin Bänninger’s Blog",
 } as const;
 
@@ -91,7 +91,7 @@ describe("RSS discovery", () => {
       "https://levin.baenninger.me/blog"
     );
     expect(getElements(channel, "description")[0]?.textContent).toBe(
-      "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention."
+      "Writing about nerdy stuff, mostly software, the web, and whatever else catches my attention."
     );
     expect(getElements(channel, "language")[0]?.textContent).toBe("en");
     const selfLink = getElements(channel, "link").find(

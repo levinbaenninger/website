@@ -14,10 +14,10 @@ describe("Blog catalog metadata adapter", () => {
         },
       },
       description:
-        "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.",
+        "Writing about nerdy stuff, mostly software, the web, and whatever else catches my attention.",
       openGraph: {
         description:
-          "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.",
+          "Writing about nerdy stuff, mostly software, the web, and whatever else catches my attention.",
         siteName: "Levin Bänninger",
         title: "Blog | Levin Bänninger",
         type: "website",
@@ -28,7 +28,7 @@ describe("Blog catalog metadata adapter", () => {
         card: "summary_large_image",
         creator: "@levinbaenninger",
         description:
-          "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.",
+          "Writing about nerdy stuff, mostly software, the web, and whatever else catches my attention.",
         site: "@levinbaenninger",
         title: "Blog | Levin Bänninger",
       },

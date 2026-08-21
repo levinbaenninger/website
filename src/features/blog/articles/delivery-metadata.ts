@@ -80,7 +80,7 @@ export const createArticleMetadataValues = (
   const canonicalUrl = toCanonicalUrl(article.href, identity);
   const authorUrl = toCanonicalUrl("/", identity);
   const title = `${article.title} | ${identity.siteName}`;
-  const socialImageAlt = `${article.title} — ${identity.siteName}`;
+  const socialImageAlt = `${article.title}: ${identity.siteName}`;
   const openGraphImageUrl = toCanonicalUrl(
     `${article.href}/open-graph.png`,
     identity

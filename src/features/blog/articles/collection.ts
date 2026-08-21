@@ -230,7 +230,7 @@ const toSearchDocument = (
 });
 
 const toSocialImage = (article: CanonicalArticle): ArticleSocialImage => ({
-  alt: `${article.title} — Levin Bänninger`,
+  alt: `${article.title}: Levin Bänninger`,
   label: "Article",
   slug: article.slug,
   title: article.title,

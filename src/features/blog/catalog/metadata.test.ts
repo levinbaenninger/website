@@ -6,7 +6,7 @@ test("defines framework-neutral catalog metadata policy", () => {
   expect(createBlogCatalogMetadata("Example Author")).toStrictEqual({
     canonicalHref: "/blog",
     description:
-      "Writing about nerdy stuff—mostly software, the web, and whatever else catches my attention.",
+      "Writing about nerdy stuff, mostly software, the web, and whatever else catches my attention.",
     rss: {
       href: "/blog/rss.xml",
       mediaType: "application/rss+xml",
