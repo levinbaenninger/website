@@ -38,6 +38,9 @@ vi.mock(import("motion/react"), async (importOriginal) => ({
 const CANONICAL_URL = "https://levin.baenninger.me/blog/representative-article";
 const TITLE = "Representative Article";
 
+let originalHistoryState: unknown;
+let originalUrl: string;
+
 const replaceOnNavigator = (key: string, value: unknown) => {
   Object.defineProperty(navigator, key, { configurable: true, value });
 };
@@ -62,6 +65,8 @@ const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 beforeEach(() => {
+  originalHistoryState = window.history.state;
+  originalUrl = window.location.href;
   reducedMotion.current = false;
   grantClipboard();
 });
@@ -69,6 +74,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  window.history.replaceState(originalHistoryState, "", originalUrl);
   for (const key of ["clipboard", "share", "vibrate"]) {
     Reflect.deleteProperty(navigator, key);
   }

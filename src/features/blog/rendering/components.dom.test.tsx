@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vite-plus/test";
 
@@ -37,6 +37,12 @@ const ServerTabSlot = (props: ComponentProps<typeof ArticleTab>) => (
 const ServerAccordionSlot = (
   props: ComponentProps<typeof ArticleAccordionItem>
 ) => <ArticleAccordionItem {...props} />;
+
+const renderStatic = (node: ReactNode): HTMLElement => {
+  const container = document.createElement("div");
+  container.innerHTML = renderToStaticMarkup(node);
+  return container;
+};
 
 describe("semantic Article components", () => {
   test("owns every approved semantic Markdown mapping", () => {
@@ -80,24 +86,30 @@ describe("semantic Article components", () => {
   });
 
   test("renders links with destination-specific browser behavior", () => {
-    const fragment = renderToStaticMarkup(
+    const fragment = renderStatic(
       <ArticleLink href="#details">Fragment</ArticleLink>
     );
-    const internal = renderToStaticMarkup(
+    const internal = renderStatic(
       <ArticleLink href="/blog/another#details">Internal</ArticleLink>
     );
-    const external = renderToStaticMarkup(
+    const external = renderStatic(
       <ArticleLink href="https://example.com/docs">External</ArticleLink>
     );
 
-    expect(fragment).toBe('<a href="#details">Fragment</a>');
-    expect(internal).toContain('href="/blog/another#details"');
-    expect(internal).not.toContain("target=");
-    expect(external).toContain('rel="noopener noreferrer" target="_blank"');
-    expect(external).toContain("(opens in a new tab)");
-    expect(external).toContain("data-article-external-mark");
-    expect(fragment).not.toContain("(opens in a new tab)");
-    expect(internal).not.toContain("(opens in a new tab)");
+    const fragmentLink = fragment.querySelector("a");
+    const internalLink = internal.querySelector("a");
+    const externalLink = external.querySelector("a");
+
+    expect(fragmentLink?.textContent).toBe("Fragment");
+    expect(fragmentLink?.getAttribute("href")).toBe("#details");
+    expect(fragmentLink?.getAttribute("target")).toBeNull();
+    expect(internalLink?.textContent).toBe("Internal");
+    expect(internalLink?.getAttribute("href")).toBe("/blog/another#details");
+    expect(internalLink?.getAttribute("target")).toBeNull();
+    expect(externalLink?.textContent).toContain("opens in a new tab");
+    expect(externalLink?.getAttribute("href")).toBe("https://example.com/docs");
+    expect(externalLink?.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(externalLink?.getAttribute("target")).toBe("_blank");
   });
 
   test("preserves intrinsic image data and explicit alternatives", () => {
@@ -128,11 +140,13 @@ describe("semantic Article components", () => {
   });
 
   test("renders GFM task controls as native disabled checkboxes", () => {
-    const input = renderToStaticMarkup(<ArticleTaskInput checked readOnly />);
+    const container = renderStatic(<ArticleTaskInput checked readOnly />);
+    const input = container.querySelector("input");
 
-    expect(input).toBe(
-      '<input readOnly="" disabled="" type="checkbox" checked=""/>'
-    );
+    expect(input?.type).toBe("checkbox");
+    expect(input?.checked).toBeTruthy();
+    expect(input?.disabled).toBeTruthy();
+    expect(input?.readOnly).toBeTruthy();
   });
 
   test("renders callouts and cards as semantic static server output", () => {

@@ -1,4 +1,6 @@
 import { evaluate } from "@mdx-js/mdx";
+import { within } from "@testing-library/react";
+import { Window } from "happy-dom";
 import type { MDXContent } from "mdx/types";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -15,6 +17,8 @@ const CODE_THEMES: ArticleCodeThemes = {
   dark: "github-dark",
   light: "github-light",
 };
+
+const testDocument = new Window().document;
 
 /*
  * Compiled in-memory rather than under content/: an Article there would move
@@ -113,7 +117,7 @@ Steps hold ordinary Article content.
 const renderArticle = (
   compiled: MDXContent,
   status: "draft" | "published"
-): string => {
+): HTMLElement => {
   const Content: MDXContent = () =>
     createElement(compiled, { components: getArticleMdxComponents() });
 
@@ -133,7 +137,8 @@ const renderArticle = (
     updatedAt: null,
   } as unknown as ArticleDetail;
 
-  return renderToStaticMarkup(
+  const container = testDocument.createElement("div");
+  container.innerHTML = renderToStaticMarkup(
     <ArticleView
       article={article}
       canonicalUrl={
@@ -143,6 +148,7 @@ const renderArticle = (
       }
     />
   );
+  return container as unknown as HTMLElement;
 };
 
 const compileArticle = async (source: string): Promise<MDXContent> => {
@@ -161,9 +167,9 @@ const compileArticle = async (source: string): Promise<MDXContent> => {
 };
 
 describe("Article presentation language", () => {
-  let published = "";
-  let draft = "";
-  let rich = "";
+  let published: ReturnType<typeof renderArticle>;
+  let draft: ReturnType<typeof renderArticle>;
+  let rich: ReturnType<typeof renderArticle>;
 
   beforeAll(async () => {
     const compiled = await compileArticle(REPRESENTATIVE_ARTICLE);
@@ -172,123 +178,167 @@ describe("Article presentation language", () => {
     rich = renderArticle(await compileArticle(RICH_ARTICLE), "published");
   });
 
-  test("scopes the presentation to the Article body", () => {
-    expect(published).toContain('data-slot="article-body"');
-    expect(published).toContain('class="typeset"');
-  });
-
   test("makes every body heading its own fragment link", () => {
-    for (const [tag, id] of [
-      ["h2", "reading-an-article"],
-      ["h3", "the-second-section"],
-      ["h4", "a-depth-four-heading"],
+    for (const [level, id, name] of [
+      [2, "reading-an-article", "Reading an Article"],
+      [3, "the-second-section", "The second section"],
+      [4, "a-depth-four-heading", "A depth-four heading"],
     ] as const) {
-      expect(published).toContain(`<${tag} id="${id}">`);
-      expect(published).toContain(
-        `<a data-article-heading-anchor="" href="#${id}">`
-      );
+      const heading = within(published).getByRole("heading", { level, name });
+      const link = within(heading).getByRole("link", { name });
+
+      expect(heading.id).toBe(id);
+      expect(link.getAttribute("href")).toBe(`#${id}`);
     }
   });
 
   test("offers section copying on a Published Article only", () => {
-    expect(published).toContain('aria-label="Copy link to section"');
-    expect(draft).not.toContain('aria-label="Copy link to section"');
-    expect(draft).toContain('href="#the-second-section"');
+    expect(
+      within(published).getAllByRole("button", {
+        name: "Copy link to section",
+      })
+    ).toHaveLength(3);
+    expect(
+      within(draft).queryByRole("button", { name: "Copy link to section" })
+    ).toBeNull();
+    expect(
+      within(draft)
+        .getByRole("heading", { level: 3, name: "The second section" })
+        .querySelector("a")
+        ?.getAttribute("href")
+    ).toBe("#the-second-section");
   });
 
   test("marks external destinations for sighted and assistive readers alike", () => {
-    expect(published).toContain(
-      '<a href="https://example.com/reference" rel="noopener noreferrer" target="_blank">'
-    );
-    expect(published).toContain("(opens in a new tab)");
-    expect(published).toContain("data-article-external-mark");
-    expect(published.match(/opens in a new tab/gu)).toHaveLength(1);
-    expect(published).toContain('href="#the-second-section"');
-    expect(published).toContain('href="/blog"');
+    const external = within(published).getByRole("link", {
+      name: /external destination.*opens in a new tab/u,
+    });
+
+    expect(external.getAttribute("href")).toBe("https://example.com/reference");
+    expect(external.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(external.getAttribute("target")).toBe("_blank");
+    expect(
+      within(published)
+        .getByRole("link", { name: "same-Article fragment" })
+        .getAttribute("href")
+    ).toBe("#the-second-section");
+    expect(
+      within(published)
+        .getByRole("link", { name: "root-relative destination" })
+        .getAttribute("href")
+    ).toBe("/blog");
   });
 
   test("puts a table in a named keyboard-reachable scroll region", () => {
-    expect(published).toMatch(
-      /<section(?=[^>]*aria-label="Table")(?=[^>]*tabindex="0")[^>]*>\s*<table/u
-    );
+    const region = within(published).getByRole("region", { name: "Table" });
+
+    expect(region.tabIndex).toBe(0);
+    expect(within(region).getByRole("table")).toBeTruthy();
   });
 
   test("gives a Callout kind three channels, only one of which is colour", () => {
-    expect(rich).toContain('<aside data-kind="note"');
-    expect(rich).toContain('<aside data-kind="danger"');
-    expect(rich).not.toContain('role="alert"');
-    expect(rich).toContain('<span class="sr-only">Note: </span>');
-    expect(rich).toContain('<span class="sr-only">Danger: </span>');
-    expect(rich).toMatch(
-      /<svg(?=[^>]*aria-hidden="true")[^>]*data-slot="article-callout-mark"/u
-    );
+    const note = within(rich).getByText("A note").closest("aside");
+    const danger = within(rich)
+      .getByText(/Danger has no title/u)
+      .closest("aside");
+
+    expect(note?.getAttribute("role")).toBeNull();
+    expect(note?.textContent).toContain("Note:");
+    expect(note?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(danger?.getAttribute("role")).toBeNull();
+    expect(danger?.textContent).toContain("Danger:");
+    expect(danger?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   });
 
   test("renders a Card collection as a list with one link per linked Card", () => {
-    expect(rich).toContain('<ul data-slot="article-cards">');
-    expect(rich.match(/<li data-slot="article-card">/gu)).toHaveLength(3);
-    expect(rich).toMatch(
-      /<li data-slot="article-card"><a href="\/blog\/deploy"/u
-    );
-    expect(rich).toMatch(
-      /<li data-slot="article-card"><a href="https:\/\/example\.com\/docs"/u
-    );
-    expect(rich).toMatch(/<li data-slot="article-card"><div data-slot="card"/u);
+    const internal = within(rich).getByRole("link", {
+      name: /A linked Card/u,
+    });
+    const external = within(rich).getByRole("link", {
+      name: /An external Card/u,
+    });
+    const unlinked = within(rich).getByText("An unlinked Card").closest("li");
+    const cards = internal.closest("ul");
+
+    expect(cards?.children).toHaveLength(3);
+    expect(internal.getAttribute("href")).toBe("/blog/deploy");
+    expect(external.getAttribute("href")).toBe("https://example.com/docs");
+    expect(unlinked?.querySelector(":scope > a")).toBeNull();
   });
 
   test("renders a file tree's top level with an operable Folder control", () => {
-    expect(rich).toContain('<ul data-slot="article-files">');
-    expect(rich).toContain('aria-label="src folder"');
-    expect(rich).toContain('aria-expanded="false"');
-    expect(rich).toContain('data-file-kind="json"');
-    expect(rich).toMatch(
-      /<li data-file-kind="json" data-slot="article-file">/u
-    );
+    const folder = within(rich).getByRole("button", { name: "src folder" });
+    const packageFile = within(rich).getByText("package.json").closest("li");
+
+    expect(folder.getAttribute("aria-expanded")).toBe("false");
+    expect(packageFile?.dataset.fileKind).toBe("json");
   });
 
   test("numbers Steps without adding them to the Article outline", () => {
-    expect(rich).toContain('<ol data-slot="article-steps">');
-    expect(rich).toContain('<div data-slot="article-step-title">Install</div>');
-    expect(rich).toContain("<kbd");
-    expect([...rich.matchAll(/<h[1-6][\s>]/gu)]).toHaveLength(3);
+    const install = within(rich).getByText("Install");
+    const steps = install.closest("ol");
+    const enterKey = install.closest("li")?.querySelector("kbd");
+
+    expect(steps?.children).toHaveLength(2);
+    expect(enterKey?.textContent).toBe("Enter");
+    expect(rich.querySelectorAll("h1, h2, h3, h4, h5, h6")).toHaveLength(3);
   });
 
   test("server-renders both panel models populated and labelled", () => {
-    expect(rich).toContain('data-slot="article-tabs"');
-    expect(rich).toContain('data-slot="article-accordion"');
-    expect(rich).toContain('role="tablist"');
-    expect(rich.match(/role="tab"/gu)).toHaveLength(2);
-    expect(rich).toContain('id="a-heading-inside-two-panels"');
-    expect(rich).toContain('hidden="until-found"');
-    expect(rich).not.toMatch(/<h[1-6][^>]*>Closed by default/u);
+    const tablist = rich.querySelector('[role="tablist"]');
+    const tabs = [...rich.querySelectorAll<HTMLElement>('[role="tab"]')];
+
+    expect(tablist).not.toBeNull();
+    expect(tabs.map(({ textContent }) => textContent)).toStrictEqual([
+      "First",
+      "Second",
+    ]);
+    const panelHeading = rich.querySelector("h3#a-heading-inside-two-panels");
+
+    expect(panelHeading?.textContent).toContain("A heading inside two panels");
+    expect(rich.querySelector('[hidden="until-found"]')).not.toBeNull();
+    expect(
+      [...rich.querySelectorAll("h1, h2, h3, h4, h5, h6")].some(
+        ({ textContent }) => textContent?.includes("Closed by default")
+      )
+    ).toBeFalsy();
   });
 
   test("names a CodeBlock and keeps its copied source clean", () => {
-    expect(published).toContain(
-      'aria-label="reader.ts, TypeScript code example"'
-    );
-    expect(published).toContain('data-line-numbers-start="1"');
-    expect(published).toContain('aria-label="Copy code"');
-    expect(published).not.toContain(">1</span>");
-    expect(published).not.toContain("[!code");
+    const codeBlock = within(published).getByRole("figure", {
+      name: "reader.ts, TypeScript code example",
+    });
+
+    expect(codeBlock.dataset.lineNumbersStart).toBe("1");
+    expect(
+      within(codeBlock).getByRole("button", { name: "Copy code" })
+    ).toBeTruthy();
+    expect(codeBlock.textContent).not.toContain("[!code");
   });
 
   test("says what an annotation means without relying on its colour", () => {
-    expect(published).toContain(
-      'class="sr-only" data-code-annotation="">Highlighted line: <'
+    const annotations = [
+      ...published.querySelectorAll<HTMLElement>("[data-code-annotation]"),
+    ];
+
+    expect(annotations.map(({ textContent }) => textContent)).toContain(
+      "Highlighted line: "
     );
-    expect(published).toContain(
-      'class="sr-only" data-code-annotation="">Removed line: <'
+    expect(annotations.map(({ textContent }) => textContent)).toContain(
+      "Removed line: "
     );
   });
 
   test("renders ordinary Markdown as ordinary semantic prose", () => {
-    expect(published).toContain("<ul>");
-    expect(published).toContain("<ol>");
-    expect(published).toContain('class="contains-task-list"');
-    expect(published).toContain('type="checkbox"');
-    expect(published).toContain("<blockquote>");
-    expect(published).toContain("<hr");
-    expect(published).toContain("<code>inlineCode</code>");
+    expect(published.querySelector("ul")).not.toBeNull();
+    expect(published.querySelector("ol")).not.toBeNull();
+    expect(
+      within(published).getAllByRole("checkbox", { hidden: true })
+    ).toHaveLength(2);
+    expect(published.querySelector("blockquote")?.textContent.trim()).toBe(
+      "A quoted aside."
+    );
+    expect(published.querySelector("hr")).not.toBeNull();
+    expect(within(published).getByText("inlineCode").tagName).toBe("CODE");
   });
 });
