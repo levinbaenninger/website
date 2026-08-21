@@ -6,6 +6,9 @@ import { createArticleMdxOptions } from "./src/features/blog/rendering/compiler"
 const nextConfig: NextConfig = {
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   reactCompiler: true,
+  experimental: {
+    inlineCss: true,
+  },
 };
 
 const articleMdxOptions = createArticleMdxOptions({
