@@ -28,6 +28,7 @@ export const IntroductionView = ({
         className="size-32 rounded-full md:size-40"
         src={avatar.src}
         alt={avatar.alt}
+        fetchPriority="high"
         loading="eager"
         width={160}
         height={160}

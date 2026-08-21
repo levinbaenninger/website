@@ -1,17 +1,5 @@
 "use client";
 
-import type { Day as WeekDay } from "date-fns";
-import {
-  differenceInCalendarDays,
-  eachDayOfInterval,
-  formatISO,
-  getDay,
-  getMonth,
-  getYear,
-  nextDay,
-  parseISO,
-  subWeeks,
-} from "date-fns";
 import {
   createContext,
   Fragment,
@@ -21,6 +9,7 @@ import {
   useRef,
 } from "react";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { Temporal } from "temporal-polyfill";
 
 import { cn } from "@/shared/ui/cn";
 
@@ -31,6 +20,7 @@ export interface Activity {
 }
 
 type Week = (Activity | undefined)[];
+type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface Labels {
   months?: string[];
@@ -79,6 +69,8 @@ const THEME = cn(
   'data-[level="3"]:fill-muted-foreground/60',
   'data-[level="4"]:fill-muted-foreground/80'
 );
+
+const parseActivityDate = (date: string) => Temporal.PlainDate.from(date);
 
 interface ContributionGraphContextType {
   data: Activity[];
@@ -132,11 +124,12 @@ const fillHoles = (activities: Activity[]): Activity[] => {
     return [];
   }
 
-  return eachDayOfInterval({
-    start: parseISO(firstActivity.date),
-    end: parseISO(lastActivity.date),
-  }).map((day) => {
-    const date = formatISO(day, { representation: "date" });
+  const firstDate = parseActivityDate(firstActivity.date);
+  const lastDate = parseActivityDate(lastActivity.date);
+  const numberOfDays = firstDate.until(lastDate).days + 1;
+
+  return Array.from({ length: numberOfDays }, (_, dayIndex) => {
+    const date = firstDate.add({ days: dayIndex }).toString();
 
     const activity = calendar.get(date);
 
@@ -162,15 +155,13 @@ const groupByWeeks = (
 
   const normalizedActivities = fillHoles(activities);
   const [firstActivity] = normalizedActivities;
-  const firstDate = parseISO(firstActivity.date);
-  const firstCalendarDate =
-    getDay(firstDate) === weekStart
-      ? firstDate
-      : subWeeks(nextDay(firstDate, weekStart), 1);
+  const firstDate = parseActivityDate(firstActivity.date);
+  const sundayBasedDay = firstDate.dayOfWeek % 7;
+  const paddingDays = (sundayBasedDay - weekStart + 7) % 7;
 
   const paddedActivities = [
     ...Array.from(
-      { length: differenceInCalendarDays(firstDate, firstCalendarDate) },
+      { length: paddingDays },
       (): Activity | undefined => undefined
     ),
     ...normalizedActivities,
@@ -198,14 +189,12 @@ const getMonthLabels = (
       );
     }
 
-    const month = monthNames[getMonth(parseISO(firstActivity.date))];
+    const firstDate = parseActivityDate(firstActivity.date);
+    const month = monthNames[firstDate.month - 1];
 
     if (!month) {
-      const monthName = new Date(firstActivity.date).toLocaleString("en-US", {
-        month: "short",
-      });
       throw new Error(
-        `Unexpected error: undefined month label for ${monthName}.`
+        `Unexpected error: undefined month label for month ${firstDate.month}.`
       );
     }
 
@@ -275,8 +264,8 @@ export const ContributionGraph = ({
 
   const year =
     data.length > 0
-      ? getYear(parseISO(data[0].date))
-      : new Date().getFullYear();
+      ? parseActivityDate(data[0].date).year
+      : Temporal.Now.plainDateISO(Temporal.Now.timeZoneId()).year;
 
   const totalCount =
     totalCountProp ?? data.reduce((sum, activity) => sum + activity.count, 0);

@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { use } from "react";
 
 import { cn } from "@/shared/ui/cn";
@@ -17,6 +16,11 @@ import {
   ContributionGraphTotalCount,
 } from "./contribution-graph";
 import type { ContributionsResult } from "./get-contributions";
+
+const formatContributionDate = (date: string): string => {
+  const [year, month, day] = date.split("-");
+  return `${day}.${month}.${year}`;
+};
 
 export const GitHubContributions = ({
   contributions,
@@ -65,7 +69,7 @@ export const GitHubContributions = ({
             <TooltipContent className="font-sans">
               <p>
                 {activity.count} contribution{activity.count > 1 ? "s" : null}{" "}
-                on {format(new Date(activity.date), "dd.MM.yyyy")}
+                on {formatContributionDate(activity.date)}
               </p>
             </TooltipContent>
           </Tooltip>

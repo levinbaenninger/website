@@ -1,5 +1,5 @@
-import { Temporal } from "@js-temporal/polyfill";
 import type { MDXContent } from "mdx/types";
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, expectTypeOf, test } from "vite-plus/test";
 
 import { createArticleOperations } from "./collection";

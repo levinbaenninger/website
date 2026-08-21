@@ -1,6 +1,6 @@
-import { Temporal } from "@js-temporal/polyfill";
 import type { MDXContent } from "mdx/types";
 import { renderToStaticMarkup } from "react-dom/server";
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, test } from "vite-plus/test";
 
 import { createArticleOperations } from "@/features/blog/articles/collection";

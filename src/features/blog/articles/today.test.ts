@@ -1,4 +1,4 @@
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "temporal-polyfill";
 import { expect, test, vi } from "vite-plus/test";
 
 import { getZurichToday } from "./today";

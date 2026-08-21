@@ -1,5 +1,5 @@
-import type { Temporal } from "@js-temporal/polyfill";
 import type { MDXContent } from "mdx/types";
+import type { Temporal } from "temporal-polyfill";
 
 import type { ArticleCompilationFacts } from "./facts";
 import { validateArticleMetadata } from "./metadata";

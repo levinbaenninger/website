@@ -1,4 +1,4 @@
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "temporal-polyfill";
 
 import {
   SOCIAL_IMAGE_CONTENT_TYPE,

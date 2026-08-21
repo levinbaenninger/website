@@ -1,5 +1,3 @@
-"use client";
-
 import { formatDuration } from "./format-duration";
 
 export const ExperienceDuration = ({

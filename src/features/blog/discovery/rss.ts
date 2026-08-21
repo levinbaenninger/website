@@ -1,4 +1,4 @@
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "temporal-polyfill";
 
 import type { ArticleDiscoveryEntry } from "@/features/blog/articles/types";
 import { isXml10CompatibleText } from "@/shared/xml/xml-characters";

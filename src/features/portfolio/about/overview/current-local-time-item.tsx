@@ -1,8 +1,8 @@
 "use client";
 
-import { Temporal } from "@js-temporal/polyfill";
 import { ClockIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Temporal } from "temporal-polyfill";
 
 import {
   OverviewItem,
@@ -10,14 +10,15 @@ import {
   OverviewItemIcon,
 } from "./overview-item";
 
-const NANOSECONDS_PER_HOUR = 3_600_000_000_000;
-const getClock = (timeZone: string) => {
-  const now = Temporal.Now.instant();
-  const target = now.toZonedDateTimeISO(timeZone);
-  const viewer = now.toZonedDateTimeISO(Temporal.Now.timeZoneId());
+export const getClock = (
+  timeZone: string,
+  now = Temporal.Now.instant(),
+  viewerTimeZone = Temporal.Now.timeZoneId()
+) => {
   const offsetHours =
-    (target.offsetNanoseconds - viewer.offsetNanoseconds) /
-    NANOSECONDS_PER_HOUR;
+    (now.toZonedDateTimeISO(timeZone).offsetNanoseconds -
+      now.toZonedDateTimeISO(viewerTimeZone).offsetNanoseconds) /
+    3_600_000_000_000;
 
   const time = new Intl.DateTimeFormat("en-US", {
     hour: "2-digit",
