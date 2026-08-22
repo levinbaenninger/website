@@ -78,9 +78,9 @@ export const GitHubContributions = ({
 
       <ContributionGraphFooter className="px-2">
         <ContributionGraphTotalCount>
-          {({ totalCount, year }) => (
+          {({ periodLabel, totalCount }) => (
             <div className="text-muted-foreground">
-              {totalCount.toLocaleString("en")} contributions in {year} on{" "}
+              {totalCount.toLocaleString("en")} contributions {periodLabel} on{" "}
               <a
                 className="text-foreground underline decoration-current/30 decoration-1 underline-offset-3 transition-colors hover:decoration-current"
                 href={githubProfileUrl}

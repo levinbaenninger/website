@@ -55,7 +55,7 @@ const DEFAULT_MONTH_LABELS = [
 const DEFAULT_LABELS: Labels = {
   months: DEFAULT_MONTH_LABELS,
   weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  totalCount: "{{count}} activities in {{year}}",
+  totalCount: "{{count}} activities {{period}}",
   legend: {
     less: "Less",
     more: "More",
@@ -72,6 +72,33 @@ const THEME = cn(
 
 const parseActivityDate = (date: string) => Temporal.PlainDate.from(date);
 
+const getActivityPeriodLabel = (activities: Activity[]): string => {
+  let start = activities[0].date;
+  let end = start;
+
+  for (const { date } of activities) {
+    if (date < start) {
+      start = date;
+    }
+
+    if (date > end) {
+      end = date;
+    }
+  }
+
+  const startDate = parseActivityDate(start);
+  const endDate = parseActivityDate(end);
+
+  if (startDate.year === endDate.year) {
+    return `in ${startDate.year}`;
+  }
+
+  const formatDate = (date: Temporal.PlainDate): string =>
+    `${DEFAULT_MONTH_LABELS[date.month - 1]} ${date.day}, ${date.year}`;
+
+  return `from ${formatDate(startDate)} to ${formatDate(endDate)}`;
+};
+
 interface ContributionGraphContextType {
   data: Activity[];
   weeks: Week[];
@@ -84,7 +111,7 @@ interface ContributionGraphContextType {
   maxLevel: number;
   totalCount: number;
   weekStart: WeekDay;
-  year: number;
+  periodLabel: string;
   width: number;
   height: number;
 }
@@ -262,10 +289,7 @@ export const ContributionGraph = ({
   );
   const labelHeight = fontSize + LABEL_MARGIN;
 
-  const year =
-    data.length > 0
-      ? parseActivityDate(data[0].date).year
-      : Temporal.Now.plainDateISO(Temporal.Now.timeZoneId()).year;
+  const periodLabel = data.length > 0 ? getActivityPeriodLabel(data) : "";
 
   const totalCount =
     totalCountProp ?? data.reduce((sum, activity) => sum + activity.count, 0);
@@ -286,7 +310,7 @@ export const ContributionGraph = ({
       maxLevel,
       totalCount,
       weekStart,
-      year,
+      periodLabel,
       width,
       height,
     }),
@@ -302,7 +326,7 @@ export const ContributionGraph = ({
       maxLevel,
       totalCount,
       weekStart,
-      year,
+      periodLabel,
       width,
       height,
     ]
@@ -469,7 +493,7 @@ export type ContributionGraphTotalCountProps = Omit<
   HTMLAttributes<HTMLDivElement>,
   "children"
 > & {
-  children?: (props: { totalCount: number; year: number }) => ReactNode;
+  children?: (props: { periodLabel: string; totalCount: number }) => ReactNode;
 };
 
 export const ContributionGraphTotalCount = ({
@@ -477,10 +501,10 @@ export const ContributionGraphTotalCount = ({
   children,
   ...props
 }: ContributionGraphTotalCountProps) => {
-  const { totalCount, year, labels } = useContributionGraph();
+  const { totalCount, periodLabel, labels } = useContributionGraph();
 
   if (children) {
-    return <>{children({ totalCount, year })}</>;
+    return <>{children({ periodLabel, totalCount })}</>;
   }
 
   return (
@@ -488,8 +512,8 @@ export const ContributionGraphTotalCount = ({
       {labels.totalCount !== undefined && labels.totalCount !== ""
         ? labels.totalCount
             .replace("{{count}}", String(totalCount))
-            .replace("{{year}}", String(year))
-        : `${totalCount} activities in ${year}`}
+            .replace("{{period}}", periodLabel)
+        : `${totalCount} activities ${periodLabel}`}
     </div>
   );
 };
