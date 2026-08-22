@@ -121,6 +121,14 @@
   html:has(body[data-scroll-locked]) {
     overflow-y: hidden;
   }
+
+  /* Radix's scroll lock copies body margins into physical padding declarations.
+     Preserve the mobile gutter that this layout owns as body padding. */
+  @media (width < 48rem) {
+    html body[data-scroll-locked] {
+      padding-inline: calc(var(--spacing) * 2) !important;
+    }
+  }
 }
 
 @utility screen-line-top {
