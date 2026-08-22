@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { AppShell } from "@/app/_components/app-shell/app-shell";
 import { DevTools } from "@/app/_components/dev-tools";
@@ -52,6 +53,7 @@ export default function RootLayout({
           </TooltipProvider>
           <DevTools />
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
