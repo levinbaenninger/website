@@ -1,6 +1,6 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 
 import { AppShell } from "@/app/_components/app-shell/app-shell";
 import { DevTools } from "@/app/_components/dev-tools";
