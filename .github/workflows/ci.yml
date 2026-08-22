@@ -51,7 +51,7 @@ jobs:
       - name: Enforce architecture boundaries
         run: vp run architecture
       - name: Enforce zero dead code
-        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
+        uses: fallow-rs/fallow@ecf5a314fd3e10974acb4f5a7f867c433030522d # v3.17.0
         with:
           command: dead-code
           format: compact
@@ -61,7 +61,7 @@ jobs:
           comment: false
       - name: Audit changed code with fallow
         if: ${{ github.event_name == 'pull_request' }}
-        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
+        uses: fallow-rs/fallow@ecf5a314fd3e10974acb4f5a7f867c433030522d # v3.17.0
         with:
           command: audit
           gate: new-only
@@ -84,7 +84,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Comment changed-code audit
-        uses: fallow-rs/fallow@3cf8074a0e2e91c895c0a4224ba1c3bec4630d65 # v3.14.0
+        uses: fallow-rs/fallow@ecf5a314fd3e10974acb4f5a7f867c433030522d # v3.17.0
         with:
           command: audit
           gate: new-only
