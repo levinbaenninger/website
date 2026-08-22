@@ -1,0 +1,88 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "src/features/blog/tooling/cli.ts",
+    // Path-string load from the MDX adapter, not the import graph.
+    "src/features/blog/rendering/code/code.ts",
+    "src/features/blog/rendering/contract.ts",
+  ],
+  "ignoreDependencies": [
+    "@mdx-js/loader",
+    "@mdx-js/react",
+    "@next/mdx",
+    "@tanstack/react-devtools",
+    "@tanstack/react-hotkeys-devtools",
+    "babel-plugin-react-compiler",
+    "mprocs",
+    "react-dom",
+    "shadcn",
+    "tailwindcss",
+  ],
+  "ignoreDependencyOverrides": [
+    {
+      "package": "vite",
+      "source": "pnpm-workspace.yaml",
+    },
+    {
+      "package": "vitest",
+      "source": "pnpm-workspace.yaml",
+    },
+  ],
+  "ignoreExportsUsedInFile": true,
+  "ignoreExports": [
+    {
+      "file": "src/shared/ui/**/*.{ts,tsx}",
+      "exports": ["*"],
+    },
+    {
+      // `[slug]` must be escaped so the glob is not a char class.
+      "file": "src/app/blog/[[]slug]/**/route.ts",
+      "exports": ["generateStaticParams"],
+    },
+  ],
+  "rules": {
+    "unused-exports": "warn",
+    "unused-types": "warn",
+    "unused-dependencies": "warn",
+  },
+  "boundaries": {
+    "zones": [
+      {
+        "name": "app",
+        "patterns": [
+          "src/app/**",
+          "src/mdx-components.tsx",
+          "src/mdx.d.ts",
+          "e2e/**",
+          "next.config.ts",
+          "playwright.config.ts",
+          "vite.config.ts",
+        ],
+      },
+      {
+        "name": "features/blog",
+        "patterns": ["src/features/blog/**"],
+      },
+      {
+        "name": "features/portfolio",
+        "patterns": ["src/features/portfolio/**"],
+      },
+      {
+        "name": "shared",
+        "patterns": ["src/shared/**"],
+      },
+    ],
+    "rules": [
+      {
+        "from": "app",
+        "allow": ["features/blog", "features/portfolio", "shared"],
+      },
+      { "from": "features/blog", "allow": ["shared"] },
+      { "from": "features/portfolio", "allow": ["shared"] },
+      { "from": "shared", "allow": [] },
+    ],
+    "coverage": {
+      "requireAllFiles": true,
+    },
+  },
+}

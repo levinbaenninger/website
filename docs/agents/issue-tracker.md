@@ -13,6 +13,18 @@ Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all op
 
 Infer the repo from `git remote -v` -- `gh` does this automatically when run inside a clone.
 
+## Native issue relationships
+
+Use GitHub's native relationships whenever a specification is decomposed into implementation tickets. Markdown references in issue bodies are useful context, but they do not replace native relationships.
+
+- **Create a sub-issue**: `gh issue create --parent <parent-number> --title "..." --body "..."`
+- **Attach existing sub-issues**: `gh issue edit <parent-number> --add-sub-issue <child-number>[,<child-number>...]`
+- **Record a blocker**: run `gh issue edit <blocked-number> --add-blocked-by <blocker-number>[,<blocker-number>...]` on the issue that cannot start yet.
+- **Record the inverse relation**: `gh issue edit <blocker-number> --add-blocking <blocked-number>[,<blocked-number>...]` is equivalent when the blocking issue is the natural starting point.
+- **Verify relationships**: `gh issue view <number> --json parent,subIssues,blockedBy,blocking`.
+
+When publishing a ticket graph, every child ticket must be a native sub-issue of its specification and every dependency edge must be a native `blocked by`/`blocking` relationship. Keep `Parent` and `Blocked by` body sections when the ticket format calls for them so the issue remains readable outside GitHub's relationship UI.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_

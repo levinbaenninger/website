@@ -1,0 +1,398 @@
+/*
+ * Unlayered so this beats `.typeset` in `@layer components` without
+ * `!important`. `code.ts` passes `defaultColor: false`, so both themes arrive
+ * as `--shiki-light` / `--shiki-dark` and the container owns its fill.
+ */
+
+/* fallow-ignore-file css-selector-complexity */
+
+/*
+ * `--frame-fill` rather than a literal: a frame inside a panel must not use
+ * the panel's fill. The gutter reads the same variable so a sticky line number
+ * stays opaque over scrolling code.
+ */
+[data-slot="article-body"] figure[data-code-block] {
+  --frame-fill: var(--surface);
+
+  position: relative;
+  margin-block-start: var(--typeset-flow);
+  border-radius: calc(var(--radius) * 1.4);
+  background-color: var(--frame-fill);
+  color: var(--surface-foreground);
+  padding: 0.25rem;
+  box-shadow: inset 0 0 0 1px var(--frame-ring);
+}
+
+[data-slot="article-body"] [data-article-panel] figure[data-code-block] {
+  --frame-fill: var(--background);
+}
+
+[data-slot="article-body"] figure[data-code-block] pre {
+  margin: 0;
+  border-radius: 0;
+  padding: 1rem 0;
+  background-color: transparent;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  outline: none;
+  scrollbar-width: none;
+}
+
+[data-slot="article-body"] figure[data-code-block] pre::-webkit-scrollbar {
+  display: none;
+}
+
+[data-slot="article-body"] figure[data-code-block] pre:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+[data-slot="article-body"] figure[data-code-block] code {
+  display: block;
+  min-width: 100%;
+  width: max-content;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.0625rem;
+}
+
+[data-slot="article-body"] figure[data-code-block] .line {
+  display: block;
+  padding-inline: 1rem;
+}
+
+/* Both themes from one compilation. Without the dark half, dark mode renders light. */
+/* fallow-ignore-next-line css-dead-surface */
+[data-slot="article-body"] :is(.shiki, .shiki span) {
+  color: var(--shiki-light);
+}
+
+/* fallow-ignore-next-line css-dead-surface */
+.dark [data-slot="article-body"] :is(.shiki, .shiki span) {
+  color: var(--shiki-dark);
+}
+
+[data-slot="article-body"] figure[data-code-block] > figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  text-align: start;
+}
+
+[data-slot="article-body"] figure[data-code-block] > figcaption:has(> span) {
+  margin: -0.25rem -0.25rem 0.25rem;
+  border-start-start-radius: calc(var(--radius) * 1.4 - 0.25rem);
+  border-start-end-radius: calc(var(--radius) * 1.4 - 0.25rem);
+  border-block-end: 1px solid var(--frame-ring);
+  padding: 0.5rem 0.875rem;
+}
+
+[data-slot="article-body"] figure[data-code-block] > figcaption > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block]
+  > figcaption:not(:has(> span)) {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  padding: 0;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block]:not(:has(> figcaption > span))
+  .line {
+  padding-inline-end: 3.5rem;
+}
+
+[data-slot="article-body"] [data-article-code-copy] {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block]:hover
+  [data-article-code-copy],
+[data-slot="article-body"] [data-article-code-copy]:focus-visible,
+[data-slot="article-body"] [data-article-code-copy]:not([data-state="idle"]) {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  [data-slot="article-body"] [data-article-code-copy] {
+    opacity: 1;
+  }
+}
+
+/*
+ * Line numbers are a CSS counter, never text: generated content cannot be
+ * selected or copied. Gutter is sticky and paints `--frame-fill` because the
+ * `pre` underneath is transparent and the code scrolls beneath.
+ */
+[data-slot="article-body"]
+  figure[data-code-block][data-line-numbers-start]
+  code {
+  counter-reset: line calc(var(--line-start, 1) - 1);
+}
+
+[data-slot="article-body"]
+  figure[data-code-block][data-line-numbers-start]
+  .line {
+  padding-inline-start: 0;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block][data-line-numbers-start]
+  .line::before {
+  counter-increment: line;
+  content: counter(line);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: inline-block;
+  width: 4rem;
+  padding-inline-end: 1.5rem;
+  background-color: var(--frame-fill);
+  color: var(--code-number);
+  font-size: 0.875rem;
+  text-align: end;
+}
+
+[data-slot="article-body"] [data-code-annotation] {
+  user-select: none;
+}
+
+[data-slot="article-body"] .line.highlighted {
+  background-color: var(--code-highlight);
+}
+
+/* fallow-ignore-next-line css-dead-surface */
+[data-slot="article-body"] .highlighted-word {
+  border-radius: 0.25rem;
+  background-color: var(--code-highlight);
+  padding: 0.125rem 0;
+  box-shadow: 0 0 0 2px var(--code-highlight);
+}
+
+/* Focus blur must be escapable: `:focus-within` restores it via Shiki's `pre` tab stop. */
+/* fallow-ignore-next-line css-dead-surface */
+[data-slot="article-body"] pre.has-focused .line:not(.focused) {
+  filter: blur(2px);
+  opacity: 0.7;
+  transition:
+    filter 200ms ease,
+    opacity 200ms ease;
+}
+
+/* fallow-ignore-next-line css-dead-surface */
+[data-slot="article-body"] pre.has-focused:hover .line:not(.focused),
+[data-slot="article-body"] pre.has-focused:focus-within .line:not(.focused) {
+  filter: none;
+  opacity: 1;
+}
+
+[data-slot="article-body"] .line.diff.add {
+  background-color: var(--code-added);
+}
+
+[data-slot="article-body"] .line.diff.remove {
+  background-color: var(--code-removed);
+  opacity: 0.75;
+}
+
+/* fallow-ignore-next-line css-dead-surface */
+[data-slot="article-body"] pre.has-diff .line {
+  position: relative;
+}
+
+[data-slot="article-body"] .line.diff::after {
+  position: absolute;
+  left: 0.375rem;
+  color: var(--muted-foreground);
+}
+
+[data-slot="article-body"] .line.diff.add::after {
+  content: "+";
+}
+
+[data-slot="article-body"] .line.diff.remove::after {
+  content: "-";
+}
+
+[data-slot="article-body"]
+  [data-code-tabs]
+  [role="tabpanel"]
+  figure[data-code-block] {
+  margin-block-start: 0;
+}
+
+[data-slot="article-body"] [data-twoslash-trigger] {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: help;
+  text-decoration: underline dotted
+    color-mix(in oklab, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+[data-slot="article-body"] [data-twoslash-trigger]:hover,
+[data-slot="article-body"] [data-twoslash-trigger][data-state="open"] {
+  text-decoration-color: currentColor;
+}
+
+[data-slot="article-body"] [data-twoslash-trigger]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+[data-slot="article-body"] .twoslash-error {
+  background: repeat-x bottom left / 6px 3px
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='3'><path d='M0 3 L3 0 L6 3' fill='none' stroke='%23e45649' stroke-width='1'/></svg>");
+  padding-block-end: 2px;
+}
+
+/*
+ * `^?` queries and expected-error diagnostics stay static under the line.
+ * They are block-level children of the code element, so they start at its
+ * edge while real lines start 16px in; with a gutter that becomes 64px.
+ */
+[data-slot="article-body"] .twoslash-meta-line {
+  margin-inline: 1rem;
+  border-radius: calc(var(--radius) * 0.8);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+[data-slot="article-body"] .twoslash-query-line {
+  color: var(--muted-foreground);
+}
+
+[data-slot="article-body"] .twoslash-query-line .twoslash-popup-container {
+  display: inline;
+}
+
+[data-slot="article-body"] .twoslash-popup-arrow {
+  display: none;
+}
+
+[data-slot="article-body"] .twoslash-error-line {
+  margin-block: 0.25rem;
+  background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+  padding: 0.25rem 0.5rem;
+}
+
+[data-slot="article-body"]
+  figure[data-code-block][data-line-numbers-start]
+  .twoslash-meta-line {
+  margin-inline-start: 4rem;
+}
+
+/*
+ * Popup is portalled, so it cannot inherit `[data-slot="article-body"]` tokens
+ * and must leave the `pre`'s overflow. Width is stated then clamped: a popup
+ * is shrink-to-fit, and `overflow-wrap: anywhere` drives min-content to one
+ * character. `break-word` wraps without touching intrinsic sizing.
+ */
+[data-article-twoslash-popup] {
+  z-index: 50;
+  width: max-content;
+  max-width: min(36rem, calc(100vw - 2rem));
+  border-radius: calc(var(--radius) * 0.8);
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  padding: 0.5rem 0.75rem;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--border) 64%, transparent),
+    0 4px 16px color-mix(in oklab, black 8%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+[data-article-twoslash-popup] .twoslash-popup-code {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* fallow-ignore-next-line css-dead-surface */
+[data-article-twoslash-popup]
+  :is(.shiki, .shiki span, .twoslash-popup-code span) {
+  color: var(--shiki-light);
+}
+
+/* fallow-ignore-next-line css-dead-surface */
+.dark
+  [data-article-twoslash-popup]
+  :is(.shiki, .shiki span, .twoslash-popup-code span) {
+  color: var(--shiki-dark);
+}
+
+[data-article-twoslash-popup] .twoslash-popup-docs {
+  margin-block-start: 0.5rem;
+  border-block-start: 1px solid
+    color-mix(in oklab, var(--border) 64%, transparent);
+  padding-block-start: 0.5rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+}
+
+/* A fenced example inside a doc comment is code, not a nested CodeBlock. */
+[data-article-twoslash-popup] pre {
+  margin: 0;
+  background: none;
+  padding: 0;
+  overflow-x: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="article-body"] [data-article-code-copy] {
+    transition: none;
+  }
+  /* fallow-ignore-next-line css-dead-surface */
+  [data-slot="article-body"] pre.has-focused .line:not(.focused) {
+    transition: none;
+  }
+}
+
+/* Print: wrap (no scrolling), lift focus blur (would print permanently), hide copy. */
+@media print {
+  [data-slot="article-body"] figure[data-code-block] pre,
+  [data-slot="article-body"] figure[data-code-block] code {
+    width: auto;
+    overflow: visible;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+
+  /* fallow-ignore-next-line css-dead-surface */
+  [data-slot="article-body"] pre.has-focused .line:not(.focused) {
+    filter: none;
+    opacity: 1;
+  }
+
+  [data-slot="article-body"] [data-article-code-copy] {
+    display: none;
+  }
+}

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./typeset.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -10,19 +11,9 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  --color-line: var(--line);
+  --color-selection-foreground: var(--selection-foreground);
+  --color-selection: var(--selection);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -66,21 +57,12 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --chart-1: oklch(0.871 0.006 286.286);
-  --chart-2: oklch(0.552 0.016 285.938);
-  --chart-3: oklch(0.442 0.017 285.786);
-  --chart-4: oklch(0.37 0.013 285.805);
-  --chart-5: oklch(0.274 0.006 286.033);
+  --ring: oklch(0.141 0.005 285.823);
+  --selection: oklch(0 0 0);
+  --selection-foreground: oklch(1 0 0);
+  --line: color-mix(in oklab, var(--border) 64%, var(--background));
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
 }
 
 .dark {
@@ -101,175 +83,107 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --chart-1: oklch(0.871 0.006 286.286);
-  --chart-2: oklch(0.552 0.016 285.938);
-  --chart-3: oklch(0.442 0.017 285.786);
-  --chart-4: oklch(0.37 0.013 285.805);
-  --chart-5: oklch(0.274 0.006 286.033);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --ring: oklch(0.985 0 0);
+  --selection: oklch(1 0 0);
+  --selection-foreground: oklch(0 0 0);
 }
 
 @layer base {
+  /* On `*`: `scrollbar-width` does not inherit. No `::-webkit-scrollbar` —
+     `scrollbar-width` disables those in Blink, Gecko never had them, and a
+     webkit-only block made Safari look different. */
   * {
     @apply border-border outline-ring/50;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 28%, transparent)
+      transparent;
+    scrollbar-width: thin;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+  }
+
+  ::selection {
+    @apply bg-selection text-selection-foreground;
+  }
+
   html {
-    @apply font-sans;
+    @apply scroll-pt-12 font-sans;
+  }
+
+  /* Body `overflow: hidden` only locks the viewport if html overflow is
+     visible; `overflow-x: clip` on html blocks that, so lock `overflow-y` on
+     the root instead. */
+  html:has(body[data-scroll-locked]) {
+    overflow-y: hidden;
   }
 }
 
-@utility hit-area-debug {
-  position: relative;
-  &::before {
+@utility screen-line-top {
+  @apply relative;
+  &:before {
+    @apply absolute top-0 left-[-100vw] -z-1 h-px w-[200vw] bg-line;
     content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-    @apply border border-dashed border-blue-500 bg-blue-500/10;
-  }
-  &:hover::before {
-    @apply border border-dashed border-green-500 bg-green-500/10;
   }
 }
 
-@utility hit-area {
-  position: relative;
-  &::before {
+@utility screen-dashed-line-top {
+  @apply screen-line-top;
+  &:before {
+    @apply bg-inherit bg-[linear-gradient(to_right,var(--line)_4px,transparent_2px)] bg-size-[6px_1px] bg-repeat-x;
     content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
   }
 }
 
-@utility hit-area-* {
-  position: relative;
-  --hit-area-t: --spacing(--value(number) * -1);
-  --hit-area-t: calc(--value([*]) * -1);
-  --hit-area-b: --spacing(--value(number) * -1);
-  --hit-area-b: calc(--value([*]) * -1);
-  --hit-area-l: --spacing(--value(number) * -1);
-  --hit-area-l: calc(--value([*]) * -1);
-  --hit-area-r: --spacing(--value(number) * -1);
-  --hit-area-r: calc(--value([*]) * -1);
-  &::before {
+@utility screen-line-bottom {
+  @apply relative;
+  &:after {
+    @apply absolute bottom-0 left-[-100vw] -z-1 h-px w-[200vw] bg-line;
     content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
   }
 }
 
-@utility hit-area-l-* {
-  position: relative;
-  --hit-area-l: --spacing(--value(number) * -1);
-  --hit-area-l: calc(--value([*]) * -1);
-  &::before {
+@utility screen-line-top-none {
+  @apply before:content-none;
+}
+
+@utility screen-line-bottom-none {
+  @apply after:content-none;
+}
+
+@utility screen-dashed-line-bottom {
+  @apply screen-line-bottom;
+  &:after {
+    @apply bg-inherit bg-[linear-gradient(to_right,var(--line)_4px,transparent_2px)] bg-size-[6px_1px] bg-repeat-x;
     content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
   }
 }
 
-@utility hit-area-r-* {
-  position: relative;
-  --hit-area-r: --spacing(--value(number) * -1);
-  --hit-area-r: calc(--value([*]) * -1);
-  &::before {
+@utility screen-dashed-line-y {
+  @apply bg-[linear-gradient(to_bottom,var(--line)_4px,transparent_2px)] bg-size-[1px_6px] bg-repeat-y;
+}
+
+@utility diagonal-stripes {
+  @apply [--pattern-foreground:var(--color-line)]/56;
+  @apply bg-[repeating-linear-gradient(315deg,var(--pattern-foreground)_0,var(--pattern-foreground)_1px,transparent_0,transparent_50%)] bg-size-[10px_10px];
+}
+
+@utility stripe-divider {
+  @apply relative h-8;
+  &:before {
     content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
+    @apply absolute left-[-100vw] -z-1 h-full w-[200vw] diagonal-stripes;
   }
 }
 
-@utility hit-area-t-* {
-  position: relative;
-  --hit-area-t: --spacing(--value(number) * -1);
-  --hit-area-t: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
+@utility bottom-safe-4 {
+  bottom: calc(1rem + var(--safe-area-bottom));
 }
 
-@utility hit-area-b-* {
-  position: relative;
-  --hit-area-b: --spacing(--value(number) * -1);
-  --hit-area-b: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-x-* {
-  position: relative;
-  --hit-area-l: --spacing(--value(number) * -1);
-  --hit-area-l: calc(--value([*]) * -1);
-  --hit-area-r: --spacing(--value(number) * -1);
-  --hit-area-r: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
-}
-
-@utility hit-area-y-* {
-  position: relative;
-  --hit-area-t: --spacing(--value(number) * -1);
-  --hit-area-t: calc(--value([*]) * -1);
-  --hit-area-b: --spacing(--value(number) * -1);
-  --hit-area-b: calc(--value([*]) * -1);
-  &::before {
-    content: "";
-    position: absolute;
-    top: var(--hit-area-t, 0px);
-    right: var(--hit-area-r, 0px);
-    bottom: var(--hit-area-b, 0px);
-    left: var(--hit-area-l, 0px);
-    pointer-events: inherit;
-  }
+@utility bottom-safe-8 {
+  bottom: calc(2rem + var(--safe-area-bottom));
 }

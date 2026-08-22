@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Website
 
-## Getting Started
+Levin's visitor-facing Portfolio and Blog, built as a single Next.js application.
 
-First, run the development server:
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+vp install
+vp run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Vite+ manages the pinned pnpm and Node runtimes. Product code lives in the independent `src/features/blog` and `src/features/portfolio` features; Next.js adapters and application composition live in `src/app`; product-neutral foundations live in `src/shared`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Validation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+vp check
+vp test
+vp run architecture
+vp run build
+vp run e2e
+```
 
-## Learn More
+`vp run verify` runs the production build, browser journeys, Fallow architecture and regression gates, static checks, and Vitest suite. The build requires network access for the GitHub contributions request.
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Dependencies flow from the application to features and shared foundations, and from each feature to shared foundations. Features cannot import peer features. Application code imports feature files directly; feature barrel entrypoints are not used. Fallow owns these architecture rules in `.fallowrc.jsonc`.

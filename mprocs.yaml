@@ -1,0 +1,5 @@
+procs:
+  site:
+    shell: "next dev"
+  articles:
+    shell: "node --experimental-strip-types src/features/blog/tooling/cli.ts watch"

@@ -1,0 +1,895 @@
+/*
+ * Unlayered so this beats `.typeset` in `@layer components` without `!important`.
+ */
+
+/* fallow-ignore-file css-selector-complexity */
+
+/*
+ * Blog tokens stay off `globals.css`. Both themes are explicit — a light-only
+ * token made every code block render the light Shiki theme. `--surface` sits
+ * on the reader, not the body: the outline card would inherit every prose rule.
+ */
+[data-slot="article-reader"] {
+  --surface: oklch(0.985 0 0);
+  --surface-foreground: var(--foreground);
+}
+
+.dark [data-slot="article-reader"] {
+  --surface: oklch(0.21 0.006 285.823);
+}
+
+[data-slot="article-outline-card"] {
+  background-color: var(--surface);
+  color: var(--surface-foreground);
+}
+
+[data-slot="article-body"] {
+  --code: var(--background);
+  --code-number: oklch(0.24 0.01 0 / 0.3);
+  --code-highlight: oklch(0.49 0.18 257.61 / 0.06);
+  --code-added: oklch(0.72 0.19 149 / 0.12);
+  --code-removed: oklch(0.63 0.21 25 / 0.12);
+  --frame-ring: color-mix(in oklab, var(--border) 64%, transparent);
+}
+
+.dark [data-slot="article-body"] {
+  --code-number: oklch(0.92 0.01 0 / 0.32);
+  --code-highlight: oklch(0.62 0.18 257.61 / 0.12);
+}
+
+/*
+ * `.typeset` scales 1.125 below 48rem, so size is restated: an Article reads
+ * at 16px at every width. `--typeset-flow` is 1em against the stock 1.25em.
+ */
+[data-slot="article-body"] {
+  --typeset-size: 16px;
+  --typeset-leading: 1.75;
+  --typeset-flow: 1em;
+
+  font-size: var(--typeset-size);
+  line-height: var(--typeset-leading);
+}
+
+[data-slot="article-body"] a {
+  font-weight: 400;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, currentColor 30%, transparent);
+  transition: text-decoration-color 150ms ease;
+}
+
+[data-slot="article-body"] a:hover,
+[data-slot="article-body"] a:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+[data-slot="article-body"] [data-article-external-mark] {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-inline-start: 0.15em;
+  vertical-align: -0.08em;
+  opacity: 0.6;
+  transition: opacity 150ms ease;
+}
+
+[data-slot="article-body"] a:hover [data-article-external-mark],
+[data-slot="article-body"] a:focus-visible [data-article-external-mark] {
+  opacity: 1;
+}
+
+/*
+ * Bordered rather than filled; wraps rather than clips. `:not()` is load-bearing:
+ * Twoslash prints a hover signature as a bare `<code>` outside `<pre>`.
+ */
+[data-slot="article-body"]
+  :not(pre)
+  > code:not(.twoslash-popup-code, .twoslash-popup-docs code) {
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 0.8);
+  background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  padding: 1px 4px;
+  font-size: 0.875em;
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+[data-slot="article-body"] blockquote {
+  border-inline-start-width: 1px;
+  border-inline-start-color: var(--line);
+  color: var(--muted-foreground);
+  font-style: normal;
+  font-weight: 400;
+}
+
+[data-slot="article-body"] hr {
+  border-block-start-color: var(--line);
+}
+
+[data-slot="article-body"] ol > li::marker {
+  color: var(--muted-foreground);
+}
+
+/*
+ * Drawn, not `::marker`: that accepts a font size and nothing else, so a small
+ * bullet lands on the glyph baseline. `:not([data-slot])` keeps the dot out of
+ * composition lists, which all carry a slot.
+ */
+[data-slot="article-body"] ul:not(.contains-task-list, [data-slot]) {
+  list-style: none;
+}
+
+[data-slot="article-body"] ul:not(.contains-task-list, [data-slot]) > li {
+  position: relative;
+}
+
+[data-slot="article-body"]
+  ul:not(.contains-task-list, [data-slot])
+  > li::before {
+  content: "";
+  position: absolute;
+  left: -1em;
+  top: calc(1lh / 2);
+  width: 0.375em;
+  height: 0.375em;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background-color: var(--muted-foreground);
+}
+
+[data-slot="article-body"]
+  ul
+  ul:not(.contains-task-list, [data-slot])
+  > li::before {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--muted-foreground);
+}
+
+[data-slot="article-body"]
+  ul
+  ul
+  ul:not(.contains-task-list, [data-slot])
+  > li::before {
+  border-radius: 0;
+  background-color: var(--muted-foreground);
+  box-shadow: none;
+}
+
+/* GFM task lists. The input is `disabled`, so it must not read as broken. */
+/* fallow-ignore-next-line css-dead-surface */
+[data-slot="article-body"] ul.contains-task-list {
+  padding-inline-start: 0;
+}
+
+/* fallow-ignore-next-line css-dead-surface */
+[data-slot="article-body"] li.task-list-item {
+  padding-inline-start: 0;
+}
+
+/* fallow-ignore-next-line css-dead-surface */
+[data-slot="article-body"] li.task-list-item > input[type="checkbox"] {
+  accent-color: var(--foreground);
+  opacity: 1;
+  width: 0.875em;
+  height: 0.875em;
+  margin-inline-end: 0.5em;
+  margin-block-end: 0.14em;
+  vertical-align: middle;
+}
+
+[data-slot="article-body"] :is(h2, h3, h4) {
+  font-weight: 500;
+  scroll-margin-block-start: 7rem;
+  /* `pretty`, not `balance`: balancing a two-line heading splits it and
+   * maroons the copy control. The chrome title keeps `balance`. */
+  text-wrap: pretty;
+}
+
+[data-slot="article-body"] h2 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  letter-spacing: -0.025em;
+}
+
+[data-slot="article-body"] h3 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  letter-spacing: -0.025em;
+}
+
+[data-slot="article-body"] h4 {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+[data-slot="article-body"] [data-article-heading-anchor] {
+  font-weight: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+
+[data-slot="article-body"] [data-article-heading-copy] {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-block-end: 0.2em;
+  margin-inline-start: 4px;
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+[data-slot="article-body"] :is(h2, h3, h4):hover [data-article-heading-copy],
+[data-slot="article-body"] [data-article-heading-copy]:focus-visible,
+[data-slot="article-body"]
+  [data-article-heading-copy]:not([data-state="idle"]) {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  [data-slot="article-body"] [data-article-heading-copy] {
+    opacity: 1;
+  }
+}
+
+/*
+ * `.typeset-scroll` supplies `width: max-content` so a wide table overflows
+ * instead of compressing; `min-width: 100%` stops a narrow table sitting at
+ * half the rail.
+ */
+[data-slot="article-body"] [data-article-table] {
+  overscroll-behavior-x: contain;
+}
+
+[data-slot="article-body"] table {
+  min-width: 100%;
+  border-block-end: 0;
+  font-size: 0.875em;
+}
+
+[data-slot="article-body"] :is(thead, tbody) tr {
+  border-block-end: 0;
+}
+
+/* `.typeset` uses `border-collapse: separate`; a row border is never painted. */
+[data-slot="article-body"] :is(th, td) {
+  border-block-start: 0;
+  border-block-end: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  min-width: 9.375rem;
+  vertical-align: top;
+  white-space: normal;
+}
+
+[data-slot="article-body"] tbody tr:last-child :is(th, td) {
+  border-block-end: 0;
+}
+
+[data-slot="article-body"] :is(th, td):first-child {
+  padding-inline-start: 0;
+}
+
+[data-slot="article-body"] :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+[data-slot="article-body"] th {
+  color: var(--foreground);
+  font-weight: 500;
+  text-align: start;
+}
+
+[data-slot="article-body"] [data-slot="article-callout"] {
+  --callout-accent: var(--muted-foreground);
+  --callout-ink: var(--callout-accent);
+
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.5rem;
+  row-gap: 0.125rem;
+  margin-block-start: var(--typeset-flow);
+  border-radius: calc(var(--radius) * 1.4);
+  background-color: color-mix(
+    in oklab,
+    var(--callout-accent) 6%,
+    var(--surface)
+  );
+  color: var(--surface-foreground);
+  padding: 0.5rem 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-align: start;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklab, var(--callout-accent) 28%, transparent);
+}
+
+[data-slot="article-body"] [data-slot="article-callout"][data-kind="note"] {
+  --callout-accent: oklch(0.67 0.17 244.98);
+  --callout-ink: oklch(0.48 0.16 244.98);
+}
+
+[data-slot="article-body"] [data-slot="article-callout"][data-kind="tip"] {
+  --callout-accent: oklch(0.723 0.219 149.579);
+  --callout-ink: oklch(0.44 0.13 149.579);
+}
+
+[data-slot="article-body"] [data-slot="article-callout"][data-kind="warning"] {
+  --callout-accent: oklch(0.72 0.16 75);
+  --callout-ink: oklch(0.45 0.11 75);
+}
+
+[data-slot="article-body"] [data-slot="article-callout"][data-kind="danger"] {
+  --callout-accent: var(--destructive);
+  --callout-ink: oklch(0.47 0.19 27.325);
+}
+
+/* On a dark L≈0.21 surface the accent is already legible; darkened ink disappears. */
+.dark [data-slot="article-body"] [data-slot="article-callout"] {
+  --callout-ink: var(--callout-accent);
+}
+
+[data-slot="article-body"] [data-slot="article-callout-mark"] {
+  grid-row: span 2;
+  align-self: start;
+  width: 1rem;
+  height: 1rem;
+  translate: 0 0.125rem;
+  color: var(--callout-ink);
+}
+
+[data-slot="article-body"]
+  [data-slot="article-callout"]
+  [data-slot="alert-title"] {
+  grid-column-start: 2;
+  color: var(--callout-ink);
+  font-weight: 500;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-callout"]
+  [data-slot="alert-description"] {
+  grid-column-start: 2;
+  color: color-mix(in oklab, var(--surface-foreground) 80%, transparent);
+  text-wrap: pretty;
+}
+
+/* Untitled Callouts still need column 2; auto-placement can park the body under the mark. */
+[data-slot="article-body"]
+  [data-slot="article-callout"]:not(:has([data-slot="alert-title"]))
+  [data-slot="alert-description"] {
+  grid-row-start: 1;
+}
+
+/* `AlertDescription` ships `[&_p:not(:last-child)]:mb-4`; flow here is a leading margin. */
+[data-slot="article-body"]
+  [data-slot="article-callout"]
+  [data-slot="alert-description"]
+  p {
+  margin-block-end: 0;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-callout"]
+  [data-slot="alert-description"]
+  > :first-child {
+  margin-block-start: 0;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-callout"]
+  [data-slot="alert-description"]
+  p
+  + p {
+  margin-block-start: 0.75em;
+}
+
+[data-slot="article-body"] [data-slot="article-cards"] {
+  display: grid;
+  gap: 0.75rem;
+  margin-block-start: var(--typeset-flow);
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+@media (min-width: 40rem) {
+  [data-slot="article-body"] [data-slot="article-cards"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+[data-slot="article-body"] [data-slot="article-card"] {
+  margin: 0;
+  padding-inline-start: 0;
+}
+
+[data-slot="article-body"] [data-slot="article-card"] > a {
+  display: block;
+  height: 100%;
+  border-radius: calc(var(--radius) * 1.4);
+  text-decoration: none;
+}
+
+[data-slot="article-body"] [data-slot="article-card"] [data-slot="card"] {
+  height: 100%;
+  gap: 0;
+  border-radius: calc(var(--radius) * 1.4);
+  background-color: var(--card);
+  color: var(--card-foreground);
+  padding: 1rem;
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: background-color 200ms ease;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-card"]
+  [data-slot="card-header"] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-card"]
+  [data-slot="card-action"] {
+  order: -1;
+  align-self: flex-start;
+  justify-self: start;
+  grid-column: auto;
+  grid-row: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-block-end: 0.5rem;
+  border-radius: calc(var(--radius) * 0.8);
+  background-color: var(--muted);
+  color: var(--foreground);
+  padding: 0.375rem;
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    0 1px 2px color-mix(in oklab, var(--foreground) 8%, transparent);
+}
+
+[data-slot="article-body"]
+  [data-slot="article-card"]
+  [data-slot="card-action"]
+  svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+[data-slot="article-body"] [data-slot="article-card"] [data-slot="card-title"] {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-card"]
+  [data-slot="card-content"] {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  padding: 0;
+  margin-block-start: 0.25rem;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-card"]
+  [data-slot="card-content"]
+  > :first-child {
+  margin-block-start: 0;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-card"]
+  > a:hover
+  [data-slot="card"],
+[data-slot="article-body"]
+  [data-slot="article-card"]
+  > a:focus-visible
+  [data-slot="card"] {
+  background-color: var(--accent);
+}
+
+[data-slot="article-body"] [data-slot="article-card"] > a[target="_blank"] {
+  position: relative;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-card"]
+  > a[target="_blank"]
+  [data-article-external-mark] {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-inline-start: 0;
+}
+
+[data-slot="article-body"] [data-slot="article-files"] {
+  margin-block-start: var(--typeset-flow);
+  border-radius: calc(var(--radius) * 1.4);
+  background-color: var(--surface);
+  color: var(--surface-foreground);
+  padding: 0.5rem;
+  box-shadow: inset 0 0 0 1px var(--frame-ring);
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+[data-slot="article-body"] [data-slot="article-folder-entries"] {
+  list-style: none;
+  margin: 0;
+  padding-inline-start: 1rem;
+}
+
+[data-slot="article-body"]
+  :is([data-slot="article-file"], [data-slot="article-folder"]) {
+  margin: 0;
+  padding-inline-start: 0;
+  font-size: 0.875rem;
+}
+
+[data-slot="article-body"] [data-slot="article-file"] {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: calc(var(--radius) * 0.6);
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-folder"]
+  [data-slot="collapsible-trigger"] {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: calc(var(--radius) * 0.6);
+  padding: 0.25rem 0.5rem;
+  font: inherit;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-folder"]
+  [data-slot="collapsible-trigger"]:hover {
+  background-color: var(--accent);
+}
+
+[data-slot="article-body"]
+  :is([data-slot="article-file"], [data-slot="collapsible-trigger"])
+  svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+[data-slot="article-body"] [data-file-kind="json"] svg {
+  color: oklch(0.72 0.16 75);
+}
+
+[data-slot="article-body"]
+  :is(
+    [data-file-kind="ts"],
+    [data-file-kind="tsx"],
+    [data-file-kind="js"],
+    [data-file-kind="jsx"]
+  )
+  svg {
+  color: oklch(0.67 0.17 244.98);
+}
+
+[data-slot="article-body"]
+  [data-slot="article-folder"]
+  [data-slot="collapsible-trigger"]
+  svg {
+  color: oklch(0.72 0.16 75);
+}
+
+[data-slot="article-body"]
+  [data-slot="collapsible-trigger"][data-state="closed"]
+  [data-state-icon="open"],
+[data-slot="article-body"]
+  [data-slot="collapsible-trigger"][data-state="open"]
+  [data-state-icon="closed"] {
+  display: none;
+}
+
+[data-slot="article-body"] [data-slot="article-steps"] {
+  counter-reset: step;
+  position: relative;
+  margin-block-start: var(--typeset-flow);
+  padding-inline-start: 2.5rem;
+  list-style: none;
+}
+
+@media (min-width: 48rem) {
+  [data-slot="article-body"] [data-slot="article-steps"] {
+    margin-inline-start: 0.75rem;
+    padding-inline-start: 1.75rem;
+  }
+
+  [data-slot="article-body"] [data-slot="article-steps"]::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 1px;
+    translate: -50% 0;
+    background-color: var(--line);
+    pointer-events: none;
+  }
+}
+
+[data-slot="article-body"] [data-slot="article-step"] {
+  counter-increment: step;
+  position: relative;
+  margin-block-start: 1.5em;
+  padding-inline-start: 0;
+}
+
+[data-slot="article-body"] [data-slot="article-step"]:first-child {
+  margin-block-start: 0;
+}
+
+[data-slot="article-body"] [data-slot="article-step-title"] {
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+[data-slot="article-body"] [data-slot="article-step-title"]::before {
+  content: counter(step);
+  position: absolute;
+  left: -2.5rem;
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(var(--radius) * 1.4);
+  background-color: var(--muted);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+  text-indent: 0;
+}
+
+@media (min-width: 48rem) {
+  [data-slot="article-body"] [data-slot="article-step-title"]::before {
+    left: -1.75rem;
+    translate: -50% 0;
+  }
+}
+
+[data-slot="article-body"] [data-slot="article-step-content"] > :first-child {
+  margin-block-start: 0.5em;
+}
+
+[data-slot="article-body"] [data-slot="kbd"] {
+  border: 1px solid var(--border);
+  background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  vertical-align: baseline;
+}
+
+[data-slot="article-body"] [data-slot="article-figure"] {
+  margin-block-start: var(--typeset-flow);
+}
+
+[data-slot="article-body"] [data-slot="article-figure"] img {
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius) * 1.4);
+  margin: 0;
+  box-shadow: inset 0 0 0 1px var(--frame-ring);
+}
+
+[data-slot="article-body"] [data-slot="article-figure"] figcaption {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  text-align: center;
+  margin-block-start: 0.75em;
+}
+
+[data-slot="article-body"] [role="tablist"] {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  height: 2rem;
+  align-items: center;
+  justify-content: start;
+  justify-content: safe center;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  padding: 0.125rem;
+  box-shadow: inset 0 0 0 1px var(--frame-ring);
+  scrollbar-width: none;
+}
+
+/* `scrollbar-width` is not honoured everywhere the strip has to scroll. */
+[data-slot="article-body"] [role="tablist"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* Own height: padding plus the body's 1.75 leading made it 32.5px in a 28px slot. */
+[data-slot="article-body"] [role="tab"] {
+  display: flex;
+  flex: 1 0 auto;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: calc(var(--radius) * 0.8);
+  padding: 0 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  transition:
+    color 200ms ease,
+    background-color 200ms ease;
+  cursor: pointer;
+}
+
+[data-slot="article-body"] [role="tab"]:hover {
+  color: var(--foreground);
+}
+
+/* Strip clips overflow; a ring outside the first or last trigger would be cut in half. */
+[data-slot="article-body"] [role="tab"]:focus-visible {
+  outline-offset: -2px;
+}
+
+/* In dark mode `background` and the strip's `surface` are close enough that a `background` fill disappears. */
+[data-slot="article-body"] [role="tab"][data-state="active"],
+[data-slot="article-body"] [role="tab"][aria-selected="true"] {
+  background-color: oklch(1 0 0);
+  color: var(--foreground);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklab, var(--foreground) 10%, transparent);
+}
+
+.dark [data-slot="article-body"] [role="tab"][data-state="active"],
+.dark [data-slot="article-body"] [role="tab"][aria-selected="true"] {
+  background-color: var(--muted);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklab, var(--foreground) 6%, transparent);
+}
+
+[data-slot="article-body"] [role="tab"] svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/*
+ * Custom elements default to `inline`. Inactive panels use `hidden="until-found"`
+ * (`content-visibility: hidden`), which keeps the host's padding — so padding
+ * is applied only when open.
+ */
+article-panel {
+  display: block;
+}
+
+/* Gap under the strip is the panel's padding: a Tab holding a sentence has a bare text node, not an element child. */
+[data-slot="article-body"] [role="tabpanel"]:not([hidden]) {
+  padding-block-start: 0.5rem;
+}
+
+[data-slot="article-body"] [role="tabpanel"] > :first-child {
+  margin-block-start: 0;
+}
+
+[data-slot="article-body"] [data-slot="article-tabs"],
+[data-slot="article-body"] [data-code-tabs] {
+  display: flex;
+  flex-direction: column;
+  margin-block-start: var(--typeset-flow);
+}
+
+[data-slot="article-body"] [data-slot="article-accordion"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-block-start: var(--typeset-flow);
+}
+
+[data-slot="article-body"] [data-slot="article-accordion-item"] {
+  border-radius: calc(var(--radius) * 1.4);
+  background-color: var(--surface);
+  color: var(--surface-foreground);
+  box-shadow: inset 0 0 0 1px var(--frame-ring);
+  overflow: hidden;
+  transition: background-color 200ms ease;
+}
+
+[data-slot="article-body"] [data-slot="article-accordion-item"]:hover {
+  background-color: color-mix(in oklab, var(--accent) 60%, var(--surface));
+}
+
+[data-slot="article-body"] [data-slot="article-accordion-header"] {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Own line-height: inherit takes the body's 1.75, so 15px text floats in a 26px line box. */
+[data-slot="article-body"] [data-slot="article-accordion-trigger"] {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+  text-align: start;
+  color: inherit;
+  cursor: pointer;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-accordion-trigger"]:focus-visible {
+  outline-offset: -2px;
+}
+
+[data-slot="article-body"] [data-slot="article-disclosure-mark"] {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  transition: rotate 200ms ease;
+}
+
+[data-slot="article-body"]
+  [data-slot="article-accordion-trigger"][data-state="open"]
+  [data-slot="article-disclosure-mark"] {
+  rotate: 180deg;
+}
+
+/* `.typeset` spaces whatever follows a heading, and Radix renders the header as a heading unless told otherwise. */
+[data-slot="article-body"] [data-article-panel="accordion"] {
+  margin-block-start: 0;
+}
+
+[data-slot="article-body"] [data-article-panel="accordion"]:not([hidden]) {
+  padding: 0 1rem 0.75rem;
+}
+
+[data-slot="article-body"] [data-article-panel="accordion"] > :first-child {
+  margin-block-start: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="article-body"] a,
+  [data-slot="article-body"] [data-article-external-mark],
+  [data-slot="article-body"] [data-article-heading-copy],
+  [data-slot="article-body"] [data-slot="article-card"] [data-slot="card"],
+  [data-slot="article-body"] [data-slot="article-accordion-item"],
+  [data-slot="article-body"] [data-slot="article-disclosure-mark"],
+  [data-slot="article-body"] [role="tab"] {
+    transition: none;
+  }
+}

@@ -14,9 +14,15 @@
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "oxc.fmt.configPath": "./vite.config.ts",
+  "oxc.path.oxfmt": "./node_modules/vite-plus/bin/oxfmt",
+  "oxc.path.oxlint": "./node_modules/vite-plus/bin/oxlint",
+  "oxc.typeAware": true,
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit"
-  }
+  },
+  "js/ts.tsdk.path": "./node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "js/ts.experimental.useTsgo": false
 }
