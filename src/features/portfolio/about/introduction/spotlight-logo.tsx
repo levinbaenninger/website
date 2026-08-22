@@ -22,14 +22,14 @@ const VIEWBOX_HEIGHT = 344;
 // The projected mark only inks x [1, 517.24] and y [22.22, 342.5] of the
 // 555x344 box, so the empty space sits on the top and the right. Cropping the
 // viewBox scales the mark up; the top crop spends the vertical void and pulls
-// the mark upwards; the left crop slides it into the padding on the left.
-// Aspect ratio stays locked so the figure keeps its height.
+// the mark upwards. Aspect ratio stays locked so the figure keeps its height.
+// The horizontal nudge is a breakpoint-scoped transform instead of a crop: only
+// the sm+ layout has an avatar column to the left that can absorb the overhang.
 const MARK_SCALE = 1.06;
 const VIEW_TOP_CROP = 26;
-const VIEW_LEFT_CROP = 45;
 const VIEW_WIDTH = VIEWBOX_WIDTH / MARK_SCALE;
 const VIEW_HEIGHT = VIEWBOX_HEIGHT / MARK_SCALE;
-const VIEW_MIN_X = VIEW_LEFT_CROP;
+const VIEW_MIN_X = 0;
 const VIEW_MIN_Y = VIEW_TOP_CROP;
 const VIEW_BOX = `${VIEW_MIN_X} ${VIEW_MIN_Y} ${VIEW_WIDTH.toFixed(2)} ${VIEW_HEIGHT.toFixed(2)}`;
 const ISOMETRIC_X_SCALE = 0.72;
@@ -186,7 +186,7 @@ export const SpotlightLogo = () => {
   }, [isInView, pointerX, pointerY, shouldReduceMotion]);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full sm:-translate-x-8">
       <svg
         className="pointer-events-none absolute inset-0 -z-1 h-auto w-full overflow-visible"
         viewBox={VIEW_BOX}
