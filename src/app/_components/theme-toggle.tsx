@@ -1,10 +1,11 @@
 "use client";
 
-import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useTheme } from "next-themes";
 
 import { clickSoftSound } from "@/shared/audio/sounds/click-soft";
 import { useSound } from "@/shared/audio/use-sound";
+import { useHotkeyLabel } from "@/shared/hotkeys/use-hotkey-label";
 import { Button } from "@/shared/ui/button";
 import { MoonIcon } from "@/shared/ui/icons/moon-icon";
 import { SunIcon } from "@/shared/ui/icons/sun-icon";
@@ -22,6 +23,7 @@ export const ThemeToggle = () => {
   };
 
   const hotkey = "D";
+  const hotkeyLabel = useHotkeyLabel(hotkey);
 
   useHotkey(hotkey, () => {
     switchTheme();
@@ -44,7 +46,7 @@ export const ThemeToggle = () => {
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        Toggle Mode <Kbd>{formatForDisplay(hotkey)}</Kbd>
+        Toggle Mode <Kbd>{hotkeyLabel}</Kbd>
       </TooltipContent>
     </Tooltip>
   );

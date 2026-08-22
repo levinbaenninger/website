@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  formatForDisplay,
-  useHotkey,
-  useHotkeySequences,
-} from "@tanstack/react-hotkeys";
+import { useHotkey, useHotkeySequences } from "@tanstack/react-hotkeys";
 import { MonitorIcon, MoonIcon, SearchIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -15,6 +11,7 @@ import { APP_DESTINATIONS } from "@/app/_config/app-destinations";
 import type { AppDestination } from "@/app/_config/app-destinations";
 import { SOCIAL_PROFILES } from "@/features/portfolio/about/social/profiles";
 import { PORTFOLIO_DESTINATIONS } from "@/features/portfolio/destinations";
+import { useHotkeyLabel } from "@/shared/hotkeys/use-hotkey-label";
 import { Button } from "@/shared/ui/button";
 import {
   Command,
@@ -98,6 +95,8 @@ const CommandMenuGroup = ({
 export const CommandMenu = () => {
   const router = useRouter();
   const { setTheme } = useTheme();
+  const modifierLabel = useHotkeyLabel("mod");
+  const keyLabel = useHotkeyLabel("k");
 
   const [open, setOpen] = useState(false);
 
@@ -195,8 +194,8 @@ export const CommandMenu = () => {
 
         <span className="md:hidden">Search…</span>
         <KbdGroup className="hidden md:inline-flex">
-          <Kbd>{formatForDisplay("mod")}</Kbd>
-          <Kbd>{formatForDisplay("k")}</Kbd>
+          <Kbd>{modifierLabel}</Kbd>
+          <Kbd>{keyLabel}</Kbd>
         </KbdGroup>
       </Button>
 
