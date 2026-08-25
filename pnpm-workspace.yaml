@@ -6,7 +6,9 @@ catalog:
   vite-plus: 0.2.9
 overrides:
   vite: "catalog:"
+  # Pin to the vitest bundled by vite-plus.
   vitest: 4.1.10
+  "@vitest/coverage-v8": 4.1.10
 peerDependencyRules:
   allowAny:
     - vite

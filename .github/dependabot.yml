@@ -8,6 +8,12 @@ updates:
       day: monday
       time: "06:17"
       timezone: Europe/Zurich
+    ignore:
+      # Pin to the vitest bundled by vite-plus.
+      - dependency-name: "@vitest/coverage-v8"
+      # Needs a newer oxlint than vite-plus ships.
+      - dependency-name: ultracite
+        versions: ["7.10.6"]
     groups:
       production-minor-and-patch:
         dependency-type: production
