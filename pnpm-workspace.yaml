@@ -6,7 +6,11 @@ catalog:
   vite-plus: 0.2.9
 overrides:
   vite: "catalog:"
+  # vite-plus bundles this vitest. The coverage provider must match the runner
+  # exactly or `vp test` refuses to start. Bump both together when upgrading
+  # vite-plus.
   vitest: 4.1.10
+  "@vitest/coverage-v8": 4.1.10
 peerDependencyRules:
   allowAny:
     - vite

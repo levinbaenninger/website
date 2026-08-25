@@ -8,6 +8,14 @@ updates:
       day: monday
       time: "06:17"
       timezone: Europe/Zurich
+    ignore:
+      # Must match the vitest version bundled by vite-plus or `vp test` fails
+      # (see PR #72 and #79). Bump this only when upgrading vite-plus.
+      - dependency-name: "@vitest/coverage-v8"
+      # 7.10.6 ships oxlint presets that reference rules the vite-plus oxlint
+      # does not have yet (`react/error-boundaries`).
+      - dependency-name: ultracite
+        versions: ["7.10.6"]
     groups:
       production-minor-and-patch:
         dependency-type: production
