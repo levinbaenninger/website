@@ -9,7 +9,7 @@ import {
   orderRecoveryDestinations,
   selectNotFoundVariant,
 } from "@/app/_config/not-found";
-import { useHotkeyLabel } from "@/shared/hotkeys/use-hotkey-label";
+import { useHotkeyLabelParts } from "@/shared/hotkeys/use-hotkey-label";
 import { Button } from "@/shared/ui/button";
 import { Kbd, KbdGroup } from "@/shared/ui/kbd";
 import {
@@ -31,8 +31,7 @@ const UNRESOLVED_PATH = "—";
  * Static 404 prerenders as `/_not-found`; `path` is null until hydration.
  */
 export const NotFoundPanel = ({ path }: { path: string | null }) => {
-  const modifierLabel = useHotkeyLabel("mod");
-  const keyLabel = useHotkeyLabel("k");
+  const [modifierLabel, keyLabel] = useHotkeyLabelParts("Mod+K");
   const [plotToken, setPlotToken] = useState(0);
   const penX = useMotionValue(PEN_PARK_POINT.x);
   const penY = useMotionValue(PEN_PARK_POINT.y);

@@ -1,6 +1,10 @@
 "use client";
 
 import { detectPlatform, formatForDisplay } from "@tanstack/react-hotkeys";
+import type {
+  DisplayHotkey,
+  DisplayHotkeyChord,
+} from "@tanstack/react-hotkeys";
 import { useSyncExternalStore } from "react";
 
 const subscribe = () => () => {
@@ -8,12 +12,12 @@ const subscribe = () => () => {
 };
 const getServerPlatform = (): ReturnType<typeof detectPlatform> => "linux";
 
-export const useHotkeyLabel = (hotkey: string): string => {
-  const platform = useSyncExternalStore(
-    subscribe,
-    detectPlatform,
-    getServerPlatform
-  );
+const usePlatform = () =>
+  useSyncExternalStore(subscribe, detectPlatform, getServerPlatform);
 
-  return formatForDisplay(hotkey, { platform });
-};
+export const useHotkeyLabel = (hotkey: DisplayHotkey): string =>
+  formatForDisplay(hotkey, { platform: usePlatform() });
+
+/** One label per key, such as `["⌘", "K"]` for `Mod+K` on macOS. */
+export const useHotkeyLabelParts = (hotkey: DisplayHotkeyChord): string[] =>
+  formatForDisplay(hotkey, { platform: usePlatform(), parts: true });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useHotkey, useHotkeySequences } from "@tanstack/react-hotkeys";
+import { useHotkey, useHotkeys } from "@tanstack/react-hotkeys";
 import { MonitorIcon, MoonIcon, SearchIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ import { APP_DESTINATIONS } from "@/app/_config/app-destinations";
 import type { AppDestination } from "@/app/_config/app-destinations";
 import { SOCIAL_PROFILES } from "@/features/portfolio/about/social/profiles";
 import { PORTFOLIO_DESTINATIONS } from "@/features/portfolio/destinations";
-import { useHotkeyLabel } from "@/shared/hotkeys/use-hotkey-label";
+import { useHotkeyLabelParts } from "@/shared/hotkeys/use-hotkey-label";
 import { Button } from "@/shared/ui/button";
 import {
   Command,
@@ -95,8 +95,7 @@ const CommandMenuGroup = ({
 export const CommandMenu = () => {
   const router = useRouter();
   const { setTheme } = useTheme();
-  const modifierLabel = useHotkeyLabel("mod");
-  const keyLabel = useHotkeyLabel("k");
+  const [modifierLabel, keyLabel] = useHotkeyLabelParts("Mod+K");
 
   const [open, setOpen] = useState(false);
 
@@ -166,12 +165,12 @@ export const CommandMenu = () => {
     },
   ];
 
-  useHotkeySequences(
+  useHotkeys(
     APP_DESTINATIONS.flatMap((destination) =>
       destination.shortcut
         ? [
             {
-              sequence: destination.shortcut,
+              hotkey: destination.shortcut,
               callback: () => {
                 router.push(destination.href);
                 setOpen(false);

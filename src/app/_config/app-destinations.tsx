@@ -1,4 +1,4 @@
-import type { UseHotkeySequenceDefinition } from "@tanstack/react-hotkeys";
+import type { HotkeySequence } from "@tanstack/react-hotkeys";
 import { NewspaperIcon } from "lucide-react";
 import type { ReactElement } from "react";
 
@@ -8,7 +8,7 @@ export interface AppDestination {
   title: string;
   href: string;
   icon: ReactElement;
-  shortcut?: UseHotkeySequenceDefinition["sequence"];
+  shortcut?: HotkeySequence;
 }
 
 export const APP_DESTINATIONS: AppDestination[] = [
