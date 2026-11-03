@@ -200,6 +200,14 @@ export default defineConfig({
     options: { typeAware: true, typeCheck: true },
   },
   test: {
+    // Happy DOM 21 rejects `Animation.finished` on cancel without marking it
+    // handled, unlike browsers (capricorn86/happy-dom#2412). Motion cancels
+    // animations on unmount, so ignore exactly that rejection until it is fixed.
+    onUnhandledError: (error) =>
+      !(
+        error.name === "AbortError" &&
+        error.message === "The animation was canceled."
+      ),
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
@@ -207,7 +215,6 @@ export default defineConfig({
         "**/*.{test,spec}.{ts,tsx}",
         "**/*.d.ts",
         "**/*.generated.{ts,tsx}",
-        "**/*.setup.ts",
       ],
       reporter: ["text", "json-summary", "json", "html"],
       reportOnFailure: true,
@@ -228,7 +235,6 @@ export default defineConfig({
           name: "dom",
           environment: "happy-dom",
           include: ["src/**/*.dom.test.{ts,tsx}"],
-          setupFiles: ["src/shared/testing/happy-dom.setup.ts"],
         },
       },
     ],

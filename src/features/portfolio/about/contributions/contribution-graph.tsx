@@ -422,6 +422,7 @@ export const ContributionGraphCalendar = ({
     }
 
     node.scrollLeft = node.scrollWidth - node.clientWidth;
+    // fallow-ignore-next-line added-suppression
     // eslint-disable-next-line react/exhaustive-effect-dependencies -- Re-pin the scroll position whenever the graph resizes.
   }, [width, weeks.length]);
 
