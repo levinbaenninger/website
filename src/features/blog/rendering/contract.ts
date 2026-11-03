@@ -965,6 +965,14 @@ const collectAssetImport = (
   importedSpecifiers.add(specifier);
 };
 
+const assertDoesNotShadowRegistry = (localName: string): void => {
+  if (articleElementNames.has(localName)) {
+    throw new Error(
+      `[blog/import-shadow] Import ${JSON.stringify(localName)} shadows an Article registry component. Choose a local name other than ${[...articleElementNames].map((name) => JSON.stringify(name)).join(", ")}.`
+    );
+  }
+};
+
 const collectImports = (
   root: Root,
   diagnostics: ArticleDiagnostics
@@ -972,14 +980,6 @@ const collectImports = (
   const assets = new Map<string, string>();
   const icons = new Set<string>();
   const importedSpecifiers = new Set<string>();
-
-  const assertDoesNotShadowRegistry = (localName: string): void => {
-    if (articleElementNames.has(localName)) {
-      throw new Error(
-        `[blog/import-shadow] Import ${JSON.stringify(localName)} shadows an Article registry component. Choose a local name other than ${[...articleElementNames].map((name) => JSON.stringify(name)).join(", ")}.`
-      );
-    }
-  };
 
   visit(root, "mdxjsEsm", (node) => {
     diagnostics.capture(node, () => {

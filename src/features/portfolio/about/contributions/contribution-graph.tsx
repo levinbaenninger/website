@@ -72,6 +72,9 @@ const THEME = cn(
 
 const parseActivityDate = (date: string) => Temporal.PlainDate.from(date);
 
+const formatDate = (date: Temporal.PlainDate): string =>
+  `${DEFAULT_MONTH_LABELS[date.month - 1]} ${date.day}, ${date.year}`;
+
 const getActivityPeriodLabel = (activities: Activity[]): string => {
   let start = activities[0].date;
   let end = start;
@@ -92,9 +95,6 @@ const getActivityPeriodLabel = (activities: Activity[]): string => {
   if (startDate.year === endDate.year) {
     return `in ${startDate.year}`;
   }
-
-  const formatDate = (date: Temporal.PlainDate): string =>
-    `${DEFAULT_MONTH_LABELS[date.month - 1]} ${date.day}, ${date.year}`;
 
   return `from ${formatDate(startDate)} to ${formatDate(endDate)}`;
 };
@@ -422,6 +422,7 @@ export const ContributionGraphCalendar = ({
     }
 
     node.scrollLeft = node.scrollWidth - node.clientWidth;
+    // eslint-disable-next-line react/exhaustive-effect-dependencies -- Re-pin the scroll position whenever the graph resizes.
   }, [width, weeks.length]);
 
   return (

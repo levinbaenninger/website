@@ -20,6 +20,11 @@ const vitestTestsOnly: typeof vitest = {
     files: ["**/*.test.{ts,tsx}", "**/__tests__/**/*.{ts,tsx}"],
     rules: {
       ...override.rules,
+      // The suite uses `test` everywhere, including inside `describe`.
+      "vitest/consistent-test-it": [
+        "error",
+        { fn: "test", withinDescribe: "test" },
+      ],
       "vitest/max-expects": "off",
       "vitest/require-mock-type-parameters": "off",
       "vitest/require-top-level-describe": "off",
@@ -69,16 +74,18 @@ export default defineConfig({
       },
       "blog:generate": {
         command: blogTool("generate"),
-        input: [
-          { pattern: "src/features/blog/content/**", base: "workspace" },
-          { pattern: "src/features/blog/tooling/**", base: "workspace" },
-        ],
-        output: [
-          {
-            pattern: "src/features/blog/articles/manifest.generated.ts",
-            base: "workspace",
-          },
-        ],
+        cache: {
+          input: [
+            { pattern: "src/features/blog/content/**", base: "workspace" },
+            { pattern: "src/features/blog/tooling/**", base: "workspace" },
+          ],
+          output: [
+            {
+              pattern: "src/features/blog/articles/manifest.generated.ts",
+              base: "workspace",
+            },
+          ],
+        },
       },
       "blog:check": {
         command: blogTool("check"),
@@ -103,6 +110,8 @@ export default defineConfig({
     ignorePatterns: [
       ...(ultracite.ignorePatterns ?? []),
       ".claude/settings.local.json",
+      // Vendored agent skills (skills-lock.json); keep them byte-identical.
+      ".agents/skills/**",
     ],
     sortTailwindcss: {
       stylesheet: "src/app/globals.css",
@@ -198,6 +207,7 @@ export default defineConfig({
         "**/*.{test,spec}.{ts,tsx}",
         "**/*.d.ts",
         "**/*.generated.{ts,tsx}",
+        "**/*.setup.ts",
       ],
       reporter: ["text", "json-summary", "json", "html"],
       reportOnFailure: true,
@@ -218,6 +228,7 @@ export default defineConfig({
           name: "dom",
           environment: "happy-dom",
           include: ["src/**/*.dom.test.{ts,tsx}"],
+          setupFiles: ["src/shared/testing/happy-dom.setup.ts"],
         },
       },
     ],
