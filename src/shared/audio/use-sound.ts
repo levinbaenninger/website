@@ -206,6 +206,7 @@ const useSoundLifecycle = ({
   useEffect(() => {
     bufferRef.current = null;
     bufferPromiseRef.current = null;
+    // fallow-ignore-next-line added-suppression
     // eslint-disable-next-line react/exhaustive-effect-dependencies -- Drop the decoded buffer whenever the sound source changes.
   }, [bufferPromiseRef, bufferRef, sound.dataUri]);
 
