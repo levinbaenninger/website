@@ -1,9 +1,5 @@
-import type {
-  default as Fuse,
-  FuseResult,
-  FuseResultMatch,
-  IFuseOptions,
-} from "fuse.js";
+import type Fuse from "fuse.js";
+import type { FuseResult, FuseResultMatch, IFuseOptions } from "fuse.js";
 
 import type { ArticleSearchDocument } from "@/features/blog/articles/types";
 

@@ -72,11 +72,11 @@ export const CopyButton = ({
     } catch {
       setState("error");
       navigator.vibrate?.([20, 40, 20]);
-    } finally {
-      resetTimeoutRef.current = setTimeout(() => {
-        setState("idle");
-      }, 1500);
     }
+
+    resetTimeoutRef.current = setTimeout(() => {
+      setState("idle");
+    }, 1500);
   }, [playFeedback, text]);
 
   const icon = {
