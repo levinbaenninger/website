@@ -51,7 +51,7 @@ jobs:
       - name: Enforce architecture boundaries
         run: vp run architecture
       - name: Enforce zero dead code
-        uses: fallow-rs/fallow@d052786ef2baf78fa5b196f06dbccd6f0d26798e # v3.38.1
+        uses: fallow-rs/fallow@2d55db7a9f0e3501c8be43f64400c47be365e668 # v3.44.0
         with:
           command: dead-code
           format: compact
@@ -61,7 +61,7 @@ jobs:
           comment: false
       - name: Audit changed code with fallow
         if: ${{ github.event_name == 'pull_request' }}
-        uses: fallow-rs/fallow@d052786ef2baf78fa5b196f06dbccd6f0d26798e # v3.38.1
+        uses: fallow-rs/fallow@2d55db7a9f0e3501c8be43f64400c47be365e668 # v3.44.0
         with:
           command: audit
           gate: new-only
@@ -84,7 +84,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Comment changed-code audit
-        uses: fallow-rs/fallow@d052786ef2baf78fa5b196f06dbccd6f0d26798e # v3.38.1
+        uses: fallow-rs/fallow@2d55db7a9f0e3501c8be43f64400c47be365e668 # v3.44.0
         with:
           command: audit
           gate: new-only
@@ -204,7 +204,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Review dependency changes
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           fail-on-severity: high
 
